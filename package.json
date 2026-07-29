@@ -4,6 +4,7 @@
   "description": "Get Inspired Society — website scaffold",
   "main": "server.js",
   "scripts": {
+    "build": "node build/build.js",
     "start": "node server.js"
   },
   "engines": {

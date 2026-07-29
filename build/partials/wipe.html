@@ -1,0 +1,32 @@
+<style>
+#wipe{position:fixed;inset:0;background:var(--blue);z-index:200;transform:scaleY(0);transform-origin:bottom;pointer-events:none}
+#wipe.go{animation:wipe 900ms var(--ease) forwards}
+@keyframes wipe{0%{transform:scaleY(0);transform-origin:bottom}45%{transform:scaleY(1);transform-origin:bottom}55%{transform:scaleY(1);transform-origin:top}100%{transform:scaleY(0);transform-origin:top}}
+</style>
+<div id="wipe"></div>
+<script>
+(function(){
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const navEl = document.querySelector('nav');
+  if(navEl){
+    let lastY = 0;
+    addEventListener('scroll', ()=>{
+      const y = scrollY;
+      navEl.classList.toggle('solid', y > 40);
+      navEl.classList.toggle('hide', y > innerHeight*0.7 && y > lastY);
+      lastY = y;
+    }, {passive:true});
+  }
+  const wipeEl = document.getElementById('wipe');
+  if(wipeEl){
+    document.querySelectorAll('a[href^="/"]').forEach(a=>{
+      a.addEventListener('click', ev=>{
+        if(reduce) return;
+        ev.preventDefault();
+        wipeEl.classList.add('go');
+        setTimeout(()=>{ location.href = a.getAttribute('href'); }, 430);
+      });
+    });
+  }
+})();
+</script>
