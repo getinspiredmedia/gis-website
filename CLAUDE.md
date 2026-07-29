@@ -49,7 +49,10 @@
 > Geregistreerd op 2026-07-29 na repository-analyse.
 
 ### Projectstatus
-Express scaffold gereed. Gedeployed op Railway (koppeling handmatig in te stellen). GitHub: `getinspiredmedia/gis-website`.
+Express scaffold gereed en gepusht naar GitHub. Railway project actief.
+- **GitHub:** `getinspiredmedia/gis-website`
+- **Railway intern adres:** `gis-website.railway.internal` (alleen bereikbaar binnen Railway private network)
+- **Railway publiek domein:** nog te bevestigen via Railway-dashboard (`*.up.railway.app`)
 
 ### Frameworks & libraries
 - **Express 4.x** — statische bestandsserver (`express.static`)
