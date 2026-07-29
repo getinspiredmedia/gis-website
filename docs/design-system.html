@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Design system · Get Inspired Society</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Archivo+Code:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#0d2ec4; --ink:#0b0c10; --paper:#ffffff;
+  --muted:#5b616b; --line:#e4e6ec; --wall:#111319; --band:#0f1118;
+  --ease:cubic-bezier(.16,.84,.44,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Archivo',-apple-system,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.6}
+a{color:inherit}
+img{display:block;max-width:100%}
+code{font-family:ui-monospace,'SFMono-Regular',Menlo,monospace;font-size:.86em;background:#f4f5f8;padding:2px 6px;border-radius:3px}
+
+.page{max-width:1000px;margin:0 auto;padding:0 24px}
+.masthead{background:var(--ink);color:#fff;padding:80px 24px 60px;margin-bottom:70px}
+.masthead .page{max-width:1000px;padding:0}
+.masthead h1{font-weight:700;font-size:clamp(2.2rem,6vw,4rem);line-height:.96;letter-spacing:-.025em;font-variation-settings:'wdth' 116}
+.masthead p{margin-top:18px;color:rgba(255,255,255,.7);max-width:52ch;font-size:16px}
+.masthead .tag{display:inline-block;margin-bottom:20px;font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+
+section{margin-bottom:78px}
+.sechead{border-top:2px solid var(--ink);padding-top:14px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+.sechead h2{font-weight:700;font-size:22px;letter-spacing:-.01em}
+.sechead span{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.note{color:var(--muted);font-size:15px;max-width:62ch;margin-bottom:24px}
+.note+.note{margin-top:-14px}
+
+/* colour */
+.swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.sw{border:1px solid var(--line)}
+.sw .chip{height:96px}
+.sw .info{padding:12px 14px;font-size:12px;line-height:1.7}
+.sw .info b{display:block;font-size:13px;font-weight:600}
+.sw .info span{color:var(--muted);font-family:ui-monospace,monospace}
+
+/* type */
+.spec{border-top:1px solid var(--line);padding:22px 0;display:grid;grid-template-columns:1fr 210px;gap:24px;align-items:baseline}
+.spec:last-child{border-bottom:1px solid var(--line)}
+.spec .meta{font-size:12px;color:var(--muted);font-family:ui-monospace,monospace;line-height:1.8}
+.t-statement{font-weight:700;font-size:clamp(2rem,5vw,3.4rem);line-height:.94;letter-spacing:-.02em;font-variation-settings:'wdth' 118}
+.t-h1{font-weight:700;font-size:clamp(1.8rem,4vw,2.8rem);line-height:.98;letter-spacing:-.02em;font-variation-settings:'wdth' 116}
+.t-h2{font-weight:700;font-size:clamp(1.4rem,3vw,2rem);line-height:1.04;letter-spacing:-.02em;font-variation-settings:'wdth' 110}
+.t-h3{font-weight:600;font-size:1.25rem;letter-spacing:-.01em}
+.t-lede{font-size:1.2rem;line-height:1.45;color:var(--muted)}
+.t-body{font-size:15px;line-height:1.65}
+.t-eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+.t-meta{font-size:12px;color:var(--muted)}
+
+/* components */
+.demo{border:1px solid var(--line);padding:26px;margin-bottom:14px}
+.demo.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+.demo.blue{background:var(--blue);color:#fff;border-color:var(--blue)}
+.demolabel{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+
+.btn{display:inline-flex;align-items:center;gap:10px;border:1px solid currentColor;border-radius:999px;padding:13px 24px;font-size:13px;font-weight:600;letter-spacing:.04em;transition:background .3s,color .3s,gap .3s;text-decoration:none}
+.demo .btn:hover{gap:16px}
+.demo.dark .btn:hover{background:#fff;color:var(--ink)}
+.demo.blue .btn:hover{background:#fff;color:var(--blue)}
+.demo:not(.dark):not(.blue) .btn:hover{background:var(--ink);color:#fff}
+.pill{display:inline-flex;border-radius:999px;background:var(--blue);color:#fff;padding:10px 18px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;transition:background .25s,color .25s}
+.pill:hover{background:#fff;color:var(--blue)}
+.menuitem{display:inline-flex;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;transition:background .25s}
+.demo.dark .menuitem:hover{background:rgba(255,255,255,.16)}
+
+.stmt{overflow:hidden;text-align:center;padding:34px 0}
+.stmt p{font-weight:700;font-size:clamp(1.8rem,5vw,3.4rem);line-height:.94;letter-spacing:-.02em;font-variation-settings:'wdth' 118}
+.stmt small{display:block;margin-top:18px;font-size:14px;color:rgba(255,255,255,.72);font-weight:400}
+
+.erow{display:grid;grid-template-columns:200px 1fr;gap:26px;align-items:baseline;padding:22px 0;border-top:1px solid var(--line)}
+.erow:last-child{border-bottom:1px solid var(--line)}
+.erow h4{font-weight:600;font-size:1.15rem}
+.erow p{color:var(--muted);font-size:15px}
+
+.arow{display:grid;grid-template-columns:60px 1fr 76px;gap:20px;align-items:center;padding:20px 16px;margin:0 -16px;border-top:1px solid var(--line);transition:background .35s var(--ease),color .35s;text-decoration:none}
+.arow:last-of-type{border-bottom:1px solid var(--line)}
+.arow .no{font-size:11px;letter-spacing:.2em;color:var(--muted);transition:color .35s}
+.arow h4{font-weight:700;font-size:1.5rem;line-height:1;letter-spacing:-.02em;font-variation-settings:'wdth' 112}
+.arow p{font-size:13px;color:var(--muted);margin-top:6px;transition:color .35s}
+.arow .cv{aspect-ratio:3/4;background:var(--line) center/cover no-repeat;transition:transform .45s var(--ease)}
+.arow:hover{background:var(--blue);color:#fff}
+.arow:hover .no,.arow:hover p{color:rgba(255,255,255,.75)}
+.arow:hover .cv{transform:translateY(-5px) scale(1.05)}
+
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tile{position:relative;aspect-ratio:1;overflow:hidden;background:var(--band);display:block}
+.tile .art{position:absolute;inset:0;background-size:cover;background-position:center;filter:grayscale(1) brightness(.85);transition:transform 1s var(--ease),filter .5s}
+.tile:hover .art{transform:scale(1.06);filter:grayscale(1) brightness(1)}
+.tile .who{position:absolute;left:0;right:0;bottom:0;padding:12px;font-size:12px;color:#fff;background:linear-gradient(transparent,rgba(11,12,16,.8))}
+
+.doors{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line)}
+.door{padding:34px;min-height:220px;display:flex;flex-direction:column;justify-content:flex-end}
+.door.b{background:var(--blue);color:#fff}
+.door h4{font-weight:700;font-size:1.5rem;line-height:1.05;letter-spacing:-.02em;font-variation-settings:'wdth' 110;margin:12px 0 10px}
+.door p{font-size:14px;color:var(--muted);max-width:30ch}
+.door.b p{color:rgba(255,255,255,.78)}
+
+.plaque .pt{font-size:1.4rem;font-weight:600;letter-spacing:-.01em}
+.plaque .pa{margin-top:6px;font-size:14px;color:rgba(255,255,255,.72)}
+.plaque .pp{display:inline-block;margin-top:12px;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.55);border-bottom:1px solid rgba(255,255,255,.28);padding-bottom:3px}
+.progress{margin-top:22px;height:2px;background:rgba(255,255,255,.16)}
+.progress i{display:block;height:100%;width:42%;background:var(--blue)}
+
+.field{margin-bottom:16px}
+.field span{display:block;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.field input,.field textarea{width:100%;font:inherit;font-size:16px;border:1px solid var(--line);padding:15px 17px;transition:border-color .25s}
+.field input:focus,.field textarea:focus{outline:0;border-color:var(--blue)}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:13px 12px 13px 0;border-top:1px solid var(--line);vertical-align:top}
+th{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+td b{font-weight:600}
+td code{white-space:nowrap}
+
+.rules li{margin-bottom:12px;list-style:none;padding-left:24px;position:relative;font-size:15px}
+.rules li::before{content:'';position:absolute;left:0;top:11px;width:10px;height:2px;background:var(--blue)}
+.rules li.no::before{background:#c8102e}
+
+.stmts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.stmtcard{background:var(--blue);color:#fff;padding:22px}
+.stmtcard b{display:block;font-weight:700;font-size:1.15rem;line-height:1.1;letter-spacing:-.02em;font-variation-settings:'wdth' 112}
+.stmtcard span{display:block;margin-top:12px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+
+footer{background:var(--ink);color:rgba(255,255,255,.5);padding:50px 24px;margin-top:70px;text-align:center;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+
+@media(max-width:760px){
+  .spec,.erow{grid-template-columns:1fr;gap:10px}
+  .tiles{grid-template-columns:repeat(2,1fr)}
+  .doors{grid-template-columns:1fr}
+  .arow{grid-template-columns:1fr 70px}
+  .arow .no{grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="page">
+    <span class="tag">Design system</span>
+    <h1>Get Inspired Society</h1>
+    <p>Every token, component and rule used across the eight pages. Open the components and hover them. What you see here is what the pages are made of, not a drawing of it.</p>
+  </div>
+</div>
+
+<div class="page">
+
+<section>
+  <div class="sechead"><h2>Colour</h2><span>Six values, no more</span></div>
+  <p class="note">Blue is for statements, doors and progress. It is never a background for long text. Ink carries the work. Paper is where reading happens.</p>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#0d2ec4"></div><div class="info"><b>Blue</b><span>#0d2ec4</span>Statements, doors, focus</div></div>
+    <div class="sw"><div class="chip" style="background:#0b0c10"></div><div class="info"><b>Ink</b><span>#0b0c10</span>Show pages, footer, nav</div></div>
+    <div class="sw"><div class="chip" style="background:#111319"></div><div class="info"><b>Wall</b><span>#111319</span>On view background</div></div>
+    <div class="sw"><div class="chip" style="background:#0f1118"></div><div class="info"><b>Band</b><span>#0f1118</span>Second dark layer</div></div>
+    <div class="sw"><div class="chip" style="background:#ffffff;border-bottom:1px solid #e4e6ec"></div><div class="info"><b>Paper</b><span>#ffffff</span>Reading pages</div></div>
+    <div class="sw"><div class="chip" style="background:#5b616b"></div><div class="info"><b>Muted</b><span>#5b616b</span>Secondary text</div></div>
+    <div class="sw"><div class="chip" style="background:#e4e6ec"></div><div class="info"><b>Line</b><span>#e4e6ec</span>Rules, borders, empty</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><h2>Type</h2><span>Archivo variable, two weights</span></div>
+  <p class="note">One family. The display sizes use the width axis, not a second typeface. Expanded grotesk on a blue field is the poster voice; everything under 20 pixels stays at normal width.</p>
+
+  <div class="spec"><p class="t-statement">Chosen, not counted.</p><div class="meta">statement<br>700 · wdth 118<br>clamp(2.4rem, 6.6vw, 5.6rem)<br>lh .94 · ls -.02em</div></div>
+  <div class="spec"><p class="t-h1">Twenty places a year.</p><div class="meta">page title<br>700 · wdth 116<br>clamp(2.2rem, 5.4vw, 4.4rem)<br>lh .96</div></div>
+  <div class="spec"><p class="t-h2">Every issue starts with a question.</p><div class="meta">section title<br>700 · wdth 110<br>clamp(1.8rem, 4.2vw, 3.2rem)<br>lh 1.02</div></div>
+  <div class="spec"><p class="t-h3">Open calls</p><div class="meta">row title<br>600 · normal width<br>clamp(1.15rem, 2.2vw, 1.5rem)</div></div>
+  <div class="spec"><p class="t-lede">The same sun. Never the same light.</p><div class="meta">lede<br>400<br>clamp(1rem, 1.7vw, 1.35rem)<br>lh 1.45 · max 30ch</div></div>
+  <div class="spec"><p class="t-body">Four times a year an issue goes out with five artists in it. There is a room you can walk through and a magazine you can read.</p><div class="meta">body<br>400 · 15px<br>lh 1.65 · max 46ch</div></div>
+  <div class="spec"><p class="t-eyebrow">Previously on view</p><div class="meta">eyebrow<br>600 · 11px<br>ls .22em · uppercase</div></div>
+  <div class="spec"><p class="t-meta">Twenty-two spreads. Free to read.</p><div class="meta">meta<br>400 · 12px<br>muted</div></div>
+</section>
+
+<section>
+  <div class="sechead"><h2>Buttons</h2><span>One shape, three grounds</span></div>
+  <p class="note">Every button is an outlined pill in the current text colour. On hover it fills with its opposite and the gap between label and arrow widens. There is no filled primary button anywhere, except the log in pill.</p>
+  <div class="demo"><div class="demolabel">On paper</div><a class="btn" href="#">Read the issue &rarr;</a></div>
+  <div class="demo dark"><div class="demolabel" style="color:rgba(255,255,255,.5)">On ink</div><a class="btn" href="#">See the work &rarr;</a></div>
+  <div class="demo blue"><div class="demolabel" style="color:rgba(255,255,255,.6)">On blue</div><a class="btn" href="#">Log in &rarr;</a></div>
+  <div class="demo dark"><div class="demolabel" style="color:rgba(255,255,255,.5)">Navigation</div>
+    <span class="menuitem">Magazine</span> <span class="menuitem">Gallery</span> <span class="menuitem">Society</span> <a class="pill" href="#">Log in</a>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><h2>Statement panel</h2><span>Exactly one per page</span></div>
+  <p class="note">A blue field with one line on it, and nothing else competing. The line rises from below the fold of its own container when it enters view. Never two on a page, never a paragraph next to it.</p>
+  <div class="demo blue"><div class="stmt"><p>Not everything belongs.<br>The right work does.</p><small>Members shortlist. One of the three gets the top.</small></div></div>
+</section>
+
+<section>
+  <div class="sechead"><h2>Editorial row</h2><span>Label, sentence, exit</span></div>
+  <p class="note">The workhorse. Used for what happens on the Society page and for the routing on Contact. A label on the left, one sentence on the right, an optional link at the end. Stacks on mobile.</p>
+  <div class="erow"><h4>Open calls</h4><p>Four a year, one for every issue. The theme comes first and the work answers it.</p></div>
+  <div class="erow"><h4>On view</h4><p>One work, one week, at the front of the site. Everyone who visits sees it.</p></div>
+</section>
+
+<section>
+  <div class="sechead"><h2>Archive row</h2><span>Hover fills the whole row</span></div>
+  <p class="note">For lists where every entry is a destination. The colour block is the hover state, which is the same vocabulary as the grid, only stretched into a line.</p>
+  <a class="arow" href="#"><span class="no">No. 03</span><div><h4>Chasing Light</h4><p>The same sun. Never the same light.</p></div><div class="cv" style="background-image:url('https://picsum.photos/seed/gis-cover-light/300/400?grayscale')"></div></a>
+  <a class="arow" href="#"><span class="no">No. 02</span><div><h4>No Algorithm</h4><p>Before the feed. Before the scroll. There is attention.</p></div><div class="cv" style="background-image:url('https://picsum.photos/seed/gis-cover-noalgo/300/400?grayscale')"></div></a>
+</section>
+
+<section>
+  <div class="sechead"><h2>Tiles</h2><span>Work, never chrome</span></div>
+  <p class="note">Images sit at reduced brightness and grayscale until you approach them. The name appears on a gradient, not on a card. Tiles never carry buttons, the whole tile is the target.</p>
+  <div class="tiles">
+    <a class="tile" href="#"><span class="art" style="background-image:url('https://picsum.photos/seed/gis-w31-a/600/600?grayscale')"></span><span class="who">Jeff Vonk</span></a>
+    <a class="tile" href="#"><span class="art" style="background-image:url('https://picsum.photos/seed/gis-w31-b/600/600?grayscale')"></span><span class="who">Ulf Berglund</span></a>
+    <a class="tile" href="#"><span class="art" style="background-image:url('https://picsum.photos/seed/gis-w31-c/600/600?grayscale')"></span><span class="who">Janusz Furrer</span></a>
+    <a class="tile" href="#"><span class="art" style="background-image:url('https://picsum.photos/seed/gis-w31-d/600/600?grayscale')"></span><span class="who">Anna Lena Raab</span></a>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><h2>Doors</h2><span>Split late, never in the nav</span></div>
+  <p class="note">Two halves of equal weight, one on paper and one on blue. This is the only place where the two audiences are separated, and it always sits at the bottom of a page.</p>
+  <div class="doors">
+    <div class="door"><span class="t-eyebrow" style="color:var(--muted)">To look</span><h4>Come and see.</h4><p>The work and the magazine are open. No account, no wall.</p></div>
+    <div class="door b"><span class="t-eyebrow" style="opacity:.6">To be seen</span><h4>Show your work.</h4><p>Not everything belongs. If yours does, put it forward.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><h2>Plaque and progress</h2><span>On view only</span></div>
+  <p class="note">Museum wall label, bottom left, always in the same place so the eye stops looking for it. The blue line at the foot of the screen fills over twenty seconds and is the only clock on the site.</p>
+  <div class="demo dark">
+    <div class="plaque">
+      <p class="pt">Low Sun, Rotterdam</p>
+      <p class="pa">Will Corvara</p>
+      <a class="pp" href="#">Portfolio</a>
+    </div>
+    <div class="progress"><i></i></div>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><h2>Fields</h2><span>Ask for as little as possible</span></div>
+  <p class="note">Square corners, hairline border, blue on focus. Labels sit above the field in eyebrow style. No placeholder-only fields, no required-field stars.</p>
+  <div class="demo">
+    <label class="field"><span>Your message</span><textarea rows="3" placeholder="Write here."></textarea></label>
+    <label class="field"><span>Where I can reach you</span><input type="email" placeholder="you@example.com"></label>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><h2>Motion</h2><span>Everything opts out under reduced motion</span></div>
+  <table>
+    <tr><th>Name</th><th>What it does</th><th>Timing</th></tr>
+    <tr><td><b>Block wipe</b></td><td>Blue field sweeps up over the screen, then off the top. Runs between pages.</td><td><code>900ms</code> · navigate at 430ms</td></tr>
+    <tr><td><b>Statement rise</b></td><td>The line travels from 105% below to zero inside a clipped container.</td><td><code>1100ms</code></td></tr>
+    <tr><td><b>Reveal</b></td><td>Opacity zero to one with a 22px lift. Fires once, at 20% in view.</td><td><code>900ms</code></td></tr>
+    <tr><td><b>Tile light</b></td><td>Images fade up in sequence as the grid enters view.</td><td><code>110ms</code> apart</td></tr>
+    <tr><td><b>Masthead shrink</b></td><td>Wordmark drops from 88 to 40 pixels and the black bar arrives.</td><td><code>400ms</code></td></tr>
+    <tr><td><b>Nav retreat</b></td><td>Bar leaves upward on scroll down, returns on scroll up.</td><td><code>450ms</code></td></tr>
+    <tr><td><b>Easing</b></td><td>One curve for everything.</td><td><code>cubic-bezier(.16,.84,.44,1)</code></td></tr>
+  </table>
+</section>
+
+<section>
+  <div class="sechead"><h2>Page recipes</h2><span>Dark shows, light reads</span></div>
+  <p class="note">Show pages open on ink or on the work itself. Personal pages open on paper. Every page runs the same spine: masthead, opening, content, one blue statement, footer.</p>
+  <table>
+    <tr><th>Page</th><th>Ground</th><th>Opening</th><th>Statement</th></tr>
+    <tr><td><b>/</b></td><td>Ink</td><td>Cold open, one work, no copy for two seconds</td><td>No algorithm decides what's here.</td></tr>
+    <tr><td><b>/on-view</b></td><td>Wall</td><td>The rotating wall itself</td><td>Chosen, not counted.</td></tr>
+    <tr><td><b>/magazine</b></td><td>Ink to paper</td><td>Current issue, cover large</td><td>Every issue starts with a question.</td></tr>
+    <tr><td><b>/gallery</b></td><td>Ink</td><td>Poster of the room, loads on click</td><td>Some work needs a wall.</td></tr>
+    <tr><td><b>/society</b></td><td>Ink to paper</td><td>A number, not an invitation</td><td>Not everything belongs. The right work does.</td></tr>
+    <tr><td><b>/about</b></td><td>Paper</td><td>Sticky portrait, running column</td><td>Slow is the point.</td></tr>
+    <tr><td><b>/contact</b></td><td>Blue to paper</td><td>The statement is the opening</td><td>Say something.</td></tr>
+    <tr><td><b>Reader</b></td><td>Ink</td><td>No chrome, spread fills the screen</td><td>None, the work is the page</td></tr>
+  </table>
+</section>
+
+<section>
+  <div class="sechead"><h2>The statements</h2><span>One line owns one page</span></div>
+  <div class="stmts">
+    <div class="stmtcard"><b>No algorithm decides what's here.</b><span>Home</span></div>
+    <div class="stmtcard"><b>Chosen, not counted.</b><span>On view</span></div>
+    <div class="stmtcard"><b>Every issue starts with a question.</b><span>Magazine</span></div>
+    <div class="stmtcard"><b>Some work needs a wall.</b><span>Gallery</span></div>
+    <div class="stmtcard"><b>Not everything belongs. The right work does.</b><span>Society</span></div>
+    <div class="stmtcard"><b>Slow is the point.</b><span>About</span></div>
+    <div class="stmtcard"><b>Say something.</b><span>Contact</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><h2>Writing rules</h2><span>The filter every line passes</span></div>
+  <ul class="rules">
+    <li>Short declarative sentences. Contrast carries the meaning, adjectives do not.</li>
+    <li>Concepts speak for themselves. If a line explains what a thing is, cut it.</li>
+    <li>State facts, not benefits. Twenty places beats a promise about exposure.</li>
+    <li>Every claim must be true today. Nothing that is in motion gets written as if it exists.</li>
+    <li class="no">Never a long dash. Use a comma, a full stop, or a line break.</li>
+    <li class="no">Never the word community in public copy.</li>
+    <li class="no">No lists built on no this, no that, no the other.</li>
+    <li class="no">No marketing register, no urgency, no pressure on a call to action.</li>
+    <li class="no">No feature explanations in the shape of this lets you do X.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="sechead"><h2>Accessibility floor</h2><span>Not optional</span></div>
+  <ul class="rules">
+    <li>White on blue and white on ink only. Ink on blue fails contrast and is never used.</li>
+    <li>Visible focus ring on every interactive element, in the current text colour.</li>
+    <li>All motion sits inside a reduced motion query. On view stops rotating and keeps its arrows.</li>
+    <li>Alt text in English, with the maker's name where the image is a work.</li>
+    <li>Fields carry real labels. Placeholders are examples, never the only label.</li>
+  </ul>
+</section>
+
+</div>
+
+<footer>Get Inspired Society · Design system · Since 2009</footer>
+</body>
+</html>
