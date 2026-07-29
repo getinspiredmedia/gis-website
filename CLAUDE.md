@@ -49,34 +49,61 @@
 > Geregistreerd op 2026-07-29 na repository-analyse.
 
 ### Projectstatus
-Dit project bevindt zich in de **initiële fase**. Er is nog geen code, framework, of configuratie aanwezig. De mapnaam `GIS-website` suggereert een webapplicatie voor geografische informatiesystemen (GIS).
+Express scaffold gereed. Gedeployed op Railway (koppeling handmatig in te stellen). GitHub: `getinspiredmedia/gis-website`.
 
 ### Frameworks & libraries
-- Nog niet bepaald. Vul aan zodra de stack gekozen is.
+- **Express 4.x** — statische bestandsserver (`express.static`)
+- Geen database, geen ORM, geen frontend framework
 
 ### Projectstructuur
 ```
 GIS-website/
-└── CLAUDE.md          # Projectinstructies voor Claude
+├── CLAUDE.md
+├── README.md
+├── package.json
+├── package-lock.json
+├── server.js              # Express entry point
+├── .gitignore
+├── .claude/
+│   └── launch.json        # Dev-server config voor Claude Browser preview
+├── docs/
+│   ├── PRODUCT.md
+│   ├── ARCHITECTURE.md
+│   ├── IMPLEMENTATION_PLAN.md
+│   ├── STATUS.md
+│   └── DECISIONS.md
+└── public/
+    ├── index.html          # /
+    ├── on-view/index.html  # /on-view
+    ├── magazine/index.html # /magazine
+    ├── gallery/index.html  # /gallery
+    ├── society/index.html  # /society
+    ├── about/index.html    # /about
+    ├── contact/index.html  # /contact
+    └── support/index.html  # /support
 ```
-Vul aan zodra de mapstructuur opgezet is.
 
 ### Buildcommando's
-- Nog niet geconfigureerd. Vul aan na project-setup.
+- `npm install` — dependencies installeren
+- `npm start` — server starten (via `node server.js`)
 
 ### Testcommando's
-- Nog niet geconfigureerd. Vul aan na project-setup.
+- Nog geen geautomatiseerde tests. Handmatige verificatie via curl of browser.
 
 ### Linting & formatting
-- Nog niet geconfigureerd. Vul aan na project-setup.
+- Nog niet geconfigureerd.
 
 ### Typechecking
-- Nog niet geconfigureerd. Vul aan na project-setup.
+- Niet van toepassing (plain JavaScript, geen TypeScript).
 
 ### Architectuur
-- Nog niet bepaald. Vul aan zodra de architectuur ontworpen is.
+- Minimale Node/Express server die `public/` statisch serveert.
+- Elk pad (`/over`, `/magazine`, etc.) heeft een eigen submap met `index.html`.
+- Geen API-routes, geen database, geen server-side rendering.
+- Railway auto-deploy op push naar `main`.
 
 ### Belangrijke regels
-- Dit is een GIS-webapplicatie — houd rekening met zware geodata, kaartrendering en performance bij grote datasets.
-- Update deze sectie actief bij elke nieuwe architectuurbeslissing, toegevoegd framework of configuratiewijziging.
-- Houd buildcommando's, testcommando's en mapstructuur altijd gesynchroniseerd met de werkelijke projectstaat.
+- Raak `getinspiredmedia/on-view` of diens Railway project **nooit** aan vanuit dit project.
+- De `/on-view` pagina is een skelet — de keuze "restyled rebuild vs. proxy" is nog niet gemaakt.
+- Geen DNS-configuratie voor `getinspiredsociety.com` tot dit expliciet gevraagd wordt.
+- Update deze sectie actief bij elke nieuwe architectuurbeslissing of configuratiewijziging.
