@@ -9,15 +9,17 @@ Fase 1 — Project setup voltooid. Scaffold gepusht naar GitHub. Railway project
 - Express scaffold met `server.js` en `package.json`
 - 8 lege HTML-skeletten in `public/`
 - `.gitignore`, `README.md`, `CLAUDE.md`, `docs/`
-- GitHub repo `getinspiredmedia/gis-website` aangemaakt en gepusht naar `main`
-- Lokaal getest: alle 8 paden geven 200, `/foo` geeft 404
+- GitHub repo `getinspiredmedia/gis-website` aangemaakt en gepusht naar `master`
 - Railway project actief — intern: `gis-website.railway.internal`, publiek: `gis-website-production.up.railway.app`
+- Railway auto-deploy geconfigureerd op push naar `master`
+- Alle 8 paden geverifieerd op Railway (200) en `/foo` geeft 404
 
 ## Waar we mee bezig zijn
 
-- Inhoud van de pagina's invullen (volgende taken)
+-
 
 ## Wat nog moet gebeuren
+
 - Inhoud van de pagina's invullen (volgende taken)
 - `/on-view` beslissing: restyled rebuild of proxy naar `on-view` app
 
