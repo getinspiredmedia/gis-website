@@ -13,10 +13,14 @@ Fase 1 — Project setup voltooid. Scaffold gepusht naar GitHub. Railway project
 - Railway project actief — intern: `gis-website.railway.internal`, publiek: `gis-website-production.up.railway.app`
 - Railway auto-deploy geconfigureerd op push naar `master`
 - Alle 8 paden geverifieerd op Railway (200) en `/foo` geeft 404
+- `/on-view` roterende wand gebouwd: shuffle-bag, 20s cyclus, Plaque, progress-bar, arrows, statement
+- `/work/:slug` werkdetailpagina gebouwd met statusregel (currently/previously on view)
+- `prefers-reduced-motion` geïmplementeerd: rotatie stopt, pijlen blijven werken
+- Mockdata: 10 werken in `public/data/works.json`
 
 ## Waar we mee bezig zijn
 
--
+- Overige pagina's invullen (magazine, gallery, society, about, contact, support)
 
 ## Wat nog moet gebeuren
 

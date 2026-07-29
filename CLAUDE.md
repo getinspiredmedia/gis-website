@@ -55,7 +55,7 @@ Express scaffold gereed en gepusht naar GitHub. Railway project actief.
 - **Railway publiek domein:** `gis-website-production.up.railway.app`
 
 ### Frameworks & libraries
-- **Express 4.x** — statische bestandsserver (`express.static`)
+- **Express 4.x** — statische bestanden + `/work/:slug` route
 - Geen database, geen ORM, geen frontend framework
 
 ### Projectstructuur
@@ -77,13 +77,15 @@ GIS-website/
 │   └── DECISIONS.md
 └── public/
     ├── index.html          # /
-    ├── on-view/index.html  # /on-view
+    ├── on-view/index.html  # /on-view  ← roterende wand + plaque + progress
     ├── magazine/index.html # /magazine
     ├── gallery/index.html  # /gallery
     ├── society/index.html  # /society
     ├── about/index.html    # /about
     ├── contact/index.html  # /contact
-    └── support/index.html  # /support
+    ├── support/index.html  # /support
+    ├── work/index.html     # /work/:slug  ← shell, slug gelezen via JS
+    └── data/works.json     # mockdata (10 werken)
 ```
 
 ### Buildcommando's
@@ -100,10 +102,12 @@ GIS-website/
 - Niet van toepassing (plain JavaScript, geen TypeScript).
 
 ### Architectuur
-- Minimale Node/Express server die `public/` statisch serveert.
-- Elk pad (`/over`, `/magazine`, etc.) heeft een eigen submap met `index.html`.
-- Geen API-routes, geen database, geen server-side rendering.
-- Railway auto-deploy op push naar `master`.
+- Node/Express: `express.static` voor alle statische paden, daarna `/work/:slug` route.
+- Elk hoofdpad heeft een eigen submap met `index.html` in `public/`.
+- `/on-view` toont roterende wand (shuffle-bag, 20s) met Plaque en progress-bar.
+- `/work/:slug` is een client-side shell: slug wordt gelezen uit de URL, werk opgezocht in `data/works.json`.
+- Geen database, geen server-side rendering. Railway auto-deploy op push naar `master`.
+- **Route-volgorde in server.js:** `express.static` eerst, daarna `/work/:slug`, geen catch-all.
 
 ### Belangrijke regels
 - Raak `getinspiredmedia/on-view` of diens Railway project **nooit** aan vanuit dit project.

@@ -1,11 +1,386 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>On View — Get Inspired Society</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>On View — Get Inspired Society</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue: #0d2ec4;
+  --ink: #0b0c10;
+  --wall: #111319;
+  --band: #0f1118;
+  --paper: #ffffff;
+  --muted: #5b616b;
+  --line: #e4e6ec;
+  --ease: cubic-bezier(.16,.84,.44,1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Archivo', -apple-system, sans-serif;
+  background: var(--wall);
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Wall ── */
+.wall {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--band);
+  opacity: 0;
+  transition: opacity .45s var(--ease);
+  z-index: 0;
+}
+.wall.visible { opacity: 1; }
+.wall::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(11,12,16,.65) 0%, transparent 45%);
+  pointer-events: none;
+}
+
+/* ── Masthead ── */
+.masthead {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  height: 56px;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+.masthead-wordmark {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-decoration: none;
+  color: #fff;
+}
+.masthead-nav { display: flex; align-items: center; gap: 4px; }
+.menuitem {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 9px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fff;
+  transition: background .25s;
+}
+.menuitem:hover { background: rgba(255,255,255,.16); }
+.menuitem:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+/* ── Arrows ── */
+.arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 90;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 50%;
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background .25s var(--ease), border-color .25s var(--ease);
+  line-height: 1;
+}
+.arrow:hover { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.65); }
+.arrow:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.arrow-prev { left: 24px; }
+.arrow-next { right: 24px; }
+
+/* ── Plaque — exact tokens from design-system.html ── */
+.plaque {
+  position: fixed;
+  bottom: 28px;
+  left: 32px;
+  z-index: 90;
+}
+.plaque .pt {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  text-decoration: none;
+  color: #fff;
+  display: block;
+}
+.plaque .pt:hover { text-decoration: underline; }
+.plaque .pa { margin-top: 6px; font-size: 14px; color: rgba(255,255,255,.72); }
+.plaque .pp {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.55);
+  border-bottom: 1px solid rgba(255,255,255,.28);
+  padding-bottom: 3px;
+  text-decoration: none;
+  transition: color .25s, border-color .25s;
+}
+.plaque .pp:hover { color: rgba(255,255,255,.9); border-color: rgba(255,255,255,.6); }
+.plaque .pp:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+/* ── Progress — fixed at foot of screen ── */
+.progress {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: rgba(255,255,255,.16);
+  z-index: 90;
+}
+.progress-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--blue);
+}
+.progress-fill.animate {
+  animation: progress-fill 20s linear forwards;
+}
+@keyframes progress-fill { to { width: 100%; } }
+
+/* ── Page scaffold: spacer so content below wall is reachable ── */
+.viewport-spacer { height: 100vh; pointer-events: none; }
+
+/* ── Statement section ── */
+.statement-section {
+  background: var(--blue);
+  color: #fff;
+  padding: 80px 24px;
+  text-align: center;
+  overflow: hidden;
+}
+.stmt-inner { max-width: 900px; margin: 0 auto; }
+.stmt-line {
+  font-weight: 700;
+  font-size: clamp(2.4rem, 6.6vw, 5.6rem);
+  line-height: .94;
+  letter-spacing: -.02em;
+  font-variation-settings: 'wdth' 118;
+}
+
+/* ── Footer ── */
+footer {
+  background: var(--ink);
+  color: rgba(255,255,255,.4);
+  padding: 40px 24px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .wall { transition: none; }
+  .progress-fill.animate { animation: none; width: 100%; }
+}
+</style>
 </head>
 <body>
-  <!-- TODO: content -->
+
+<nav class="masthead">
+  <a class="masthead-wordmark" href="/">Get Inspired Society</a>
+  <div class="masthead-nav">
+    <a class="menuitem" href="/on-view">On View</a>
+    <a class="menuitem" href="/magazine">Magazine</a>
+    <a class="menuitem" href="/gallery">Gallery</a>
+    <a class="menuitem" href="/society">Society</a>
+  </div>
+</nav>
+
+<div class="wall" id="wall" aria-hidden="true"></div>
+
+<button class="arrow arrow-prev" id="btn-prev" aria-label="Previous work">&#8592;</button>
+<button class="arrow arrow-next" id="btn-next" aria-label="Next work">&#8594;</button>
+
+<div class="plaque" id="plaque">
+  <a class="pt" id="plaque-title" href="#">&nbsp;</a>
+  <p class="pa" id="plaque-artist"></p>
+  <a class="pp" id="plaque-portfolio" href="#">Portfolio</a>
+</div>
+
+<div class="progress" role="progressbar" aria-label="Time remaining">
+  <span class="progress-fill" id="progress-fill"></span>
+</div>
+
+<div class="viewport-spacer"></div>
+
+<section class="statement-section" aria-label="Statement">
+  <div class="stmt-inner">
+    <p class="stmt-line">Chosen, not counted.</p>
+  </div>
+</section>
+
+<footer>Get Inspired Society &middot; On View</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var CYCLE_MS = 20000;
+  var FADE_MS  = 450;
+
+  var wall          = document.getElementById('wall');
+  var plaqueTitle   = document.getElementById('plaque-title');
+  var plaqueArtist  = document.getElementById('plaque-artist');
+  var plaquePortfolio = document.getElementById('plaque-portfolio');
+  var progressFill  = document.getElementById('progress-fill');
+  var btnPrev       = document.getElementById('btn-prev');
+  var btnNext       = document.getElementById('btn-next');
+
+  var works    = [];
+  var shuffled = [];
+  var pos      = 0;
+  var timer    = null;
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* ── Shuffle bag ── */
+  function buildShuffled() {
+    shuffled = works.slice();
+    for (var i = shuffled.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = tmp;
+    }
+    pos = 0;
+  }
+
+  function currentWork() { return shuffled[pos]; }
+
+  function advance() {
+    pos++;
+    if (pos >= shuffled.length) buildShuffled();
+  }
+
+  function retreat() {
+    if (pos > 0) pos--;
+  }
+
+  /* ── Progress bar ── */
+  function resetProgress() {
+    progressFill.classList.remove('animate');
+    void progressFill.offsetWidth; /* reflow */
+    if (!reduceMotion.matches) {
+      progressFill.classList.add('animate');
+    }
+  }
+
+  /* ── Preload next image ── */
+  function preload(work) {
+    if (!work) return;
+    var img = new Image();
+    img.src = work.image;
+  }
+
+  /* ── Show work ── */
+  function showWork(work) {
+    if (reduceMotion.matches) {
+      wall.style.backgroundImage = 'url(\'' + work.image + '\')';
+      wall.classList.add('visible');
+      updatePlaque(work);
+      resetProgress();
+      var next = shuffled[pos + 1] || shuffled[0];
+      preload(next);
+      return;
+    }
+
+    wall.classList.remove('visible');
+    setTimeout(function () {
+      wall.style.backgroundImage = 'url(\'' + work.image + '\')';
+      wall.classList.add('visible');
+      updatePlaque(work);
+      resetProgress();
+      var next = shuffled[(pos) % shuffled.length];
+      preload(next);
+    }, FADE_MS + 50);
+  }
+
+  function updatePlaque(work) {
+    plaqueTitle.textContent = work.title;
+    plaqueTitle.href = '/work/' + work.slug;
+    plaqueArtist.textContent = work.artist;
+    plaquePortfolio.href = work.portfolio;
+  }
+
+  /* ── Auto-rotation ── */
+  function startTimer() {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      advance();
+      showWork(currentWork());
+      startTimer();
+    }, CYCLE_MS);
+  }
+
+  function stopTimer() {
+    clearTimeout(timer);
+    timer = null;
+  }
+
+  /* ── Controls ── */
+  btnNext.addEventListener('click', function () {
+    stopTimer();
+    advance();
+    showWork(currentWork());
+    if (!reduceMotion.matches) startTimer();
+  });
+
+  btnPrev.addEventListener('click', function () {
+    stopTimer();
+    retreat();
+    showWork(currentWork());
+    if (!reduceMotion.matches) startTimer();
+  });
+
+  /* ── Respond to system motion preference changes ── */
+  reduceMotion.addEventListener('change', function (e) {
+    if (e.matches) {
+      stopTimer();
+      progressFill.classList.remove('animate');
+    } else {
+      resetProgress();
+      startTimer();
+    }
+  });
+
+  /* ── Keyboard navigation ── */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft')  { btnPrev.click(); }
+    if (e.key === 'ArrowRight') { btnNext.click(); }
+  });
+
+  /* ── Boot ── */
+  fetch('/data/works.json')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      works = data;
+      buildShuffled();
+      showWork(currentWork());
+      if (!reduceMotion.matches) startTimer();
+    })
+    .catch(function () {
+      plaqueTitle.textContent = 'Could not load works.';
+      plaqueArtist.textContent = '';
+    });
+}());
+</script>
+
 </body>
 </html>

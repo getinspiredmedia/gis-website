@@ -1,0 +1,82 @@
+[
+  {
+    "slug": "low-sun-rotterdam",
+    "title": "Low Sun, Rotterdam",
+    "artist": "Will Corvara",
+    "portfolio": "#",
+    "image": "https://picsum.photos/seed/gis-ov-01/1600/900",
+    "current": true
+  },
+  {
+    "slug": "before-the-feed",
+    "title": "Before the Feed",
+    "artist": "Ulf Berglund",
+    "portfolio": "#",
+    "image": "https://picsum.photos/seed/gis-ov-02/1600/900",
+    "current": false
+  },
+  {
+    "slug": "the-same-sun",
+    "title": "The Same Sun",
+    "artist": "Anna Lena Raab",
+    "portfolio": "#",
+    "image": "https://picsum.photos/seed/gis-ov-03/1600/900",
+    "current": false
+  },
+  {
+    "slug": "no-algorithm",
+    "title": "No Algorithm",
+    "artist": "Jeff Vonk",
+    "portfolio": "#",
+    "image": "https://picsum.photos/seed/gis-ov-04/1600/900",
+    "current": false
+  },
+  {
+    "slug": "chasing-light",
+    "title": "Chasing Light",
+    "artist": "Janusz Furrer",
+    "portfolio": "#",
+    "image": "https://picsum.photos/seed/gis-ov-05/1600/900",
+    "current": false
+  },
+  {
+    "slug": "at-the-edge",
+    "title": "At the Edge",
+    "artist": "Marta Veloz",
+    "portfolio": "#",
+    "image": "https://picsum.photos/seed/gis-ov-06/1600/900",
+    "current": false
+  },
+  {
+    "slug": "winter-harbour",
+    "title": "Winter Harbour",
+    "artist": "Pieter Nijs",
+    "portfolio": "#",
+    "image": "https://picsum.photos/seed/gis-ov-07/1600/900",
+    "current": false
+  },
+  {
+    "slug": "room-404",
+    "title": "Room 404",
+    "artist": "Saoirse Whelan",
+    "portfolio": "#",
+    "image": "https://picsum.photos/seed/gis-ov-08/1600/900",
+    "current": false
+  },
+  {
+    "slug": "still-water",
+    "title": "Still Water",
+    "artist": "Léa Fontaine",
+    "portfolio": "#",
+    "image": "https://picsum.photos/seed/gis-ov-09/1600/900",
+    "current": false
+  },
+  {
+    "slug": "the-threshold",
+    "title": "The Threshold",
+    "artist": "Omar Rashid",
+    "portfolio": "#",
+    "image": "https://picsum.photos/seed/gis-ov-10/1600/900",
+    "current": false
+  }
+]
