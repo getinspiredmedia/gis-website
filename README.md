@@ -26,4 +26,4 @@ npm start
 
 ## Deployment
 
-Gedeployed via Railway. Auto-deploy op push naar `main`.
+Gedeployed via Railway. Auto-deploy op push naar `master`.

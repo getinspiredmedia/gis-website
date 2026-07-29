@@ -103,7 +103,7 @@ GIS-website/
 - Minimale Node/Express server die `public/` statisch serveert.
 - Elk pad (`/over`, `/magazine`, etc.) heeft een eigen submap met `index.html`.
 - Geen API-routes, geen database, geen server-side rendering.
-- Railway auto-deploy op push naar `main`.
+- Railway auto-deploy op push naar `master`.
 
 ### Belangrijke regels
 - Raak `getinspiredmedia/on-view` of diens Railway project **nooit** aan vanuit dit project.
