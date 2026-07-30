@@ -136,7 +136,6 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
   const { name, email, portfolio, work_title, notes } = req.body || {};
   if (!name?.trim() || !email?.trim())            return res.status(400).json({ error: 'Name and email are required.' });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address.' });
-  if (!work_title?.trim())                        return res.status(400).json({ error: 'Work title is required.' });
   if (!req.file)                                  return res.status(400).json({ error: 'No image uploaded.' });
 
   const filename = crypto.randomUUID() + '.webp';
