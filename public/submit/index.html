@@ -98,7 +98,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
     var file = fileInput.files[0];
     if (!file) { preview.style.display = 'none'; return; }
     previewImg.src = URL.createObjectURL(file);
-    preview.style.display = '';
+    preview.style.display = 'block';
   });
 
   drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
@@ -142,7 +142,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
       .then(function (data) {
         if (data.ok) {
           stateForm.style.display = 'none';
-          stateDone.style.display = '';
+          stateDone.style.display = 'block';
         } else {
           showMsg(data.error || 'Something went wrong.');
           submitBtn.disabled = false;
