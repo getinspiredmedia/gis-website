@@ -367,7 +367,7 @@ footer {
   });
 
   /* ── Boot ── */
-  fetch('/data/works.json')
+  fetch('/api/works')
     .then(function (r) { return r.json(); })
     .then(function (data) {
       works = data;
