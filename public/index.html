@@ -196,12 +196,10 @@ nav[data-variant="light"] .menu .enter:hover{background:var(--ink)}
   <div class="veil"></div>
   <div class="caption">
     <div>
-      <span class="eyebrow">On view · Week 31</span>
-      <h1>Will Corvara</h1>
+      <span class="eyebrow">On view</span>
+      <h1 id="hero-artist">&nbsp;</h1>
     </div>
-    <div class="meta">
-      One work<br>Changes in 3 days
-    </div>
+    <div class="meta" id="hero-meta"></div>
   </div>
 </section>
 
@@ -216,14 +214,7 @@ nav[data-variant="light"] .menu .enter:hover{background:var(--ink)}
     <span class="eyebrow">Previously on view</span>
     <a class="eyebrow more" href="/on-view">See all &rarr;</a>
   </header>
-  <div class="grid">
-    <a href="#" class="cell s-3x2"><span class="art a1"></span><span class="name">Will Corvara · Chasing Light</span></a>
-    <a href="#" class="cell k-black s-1x1"><span class="art a2"></span><span class="name">Jeff Vonk</span></a>
-    <a href="#" class="cell s-2x2"><span class="art a3"></span><span class="name">Ulf Berglund</span></a>
-    <a href="#" class="cell k-void s-1x1" aria-hidden="true" tabindex="-1"></a>
-    <a href="#" class="cell s-2x1"><span class="art a4"></span><span class="name">Janusz Furrer</span></a>
-    <a href="#" class="cell k-black s-4x1"><span class="art a5"></span><span class="name">Joaquin Pastor Genzor</span></a>
-  </div>
+  <div class="grid" id="prev-grid"></div>
 </section>
 
 <section class="shelf" id="shelf">
@@ -298,7 +289,90 @@ const cells = new IntersectionObserver((entries)=>{
     }
   });
 },{threshold:.2});
-document.querySelectorAll('.cell').forEach(el=>cells.observe(el));
+
+// ── On View: dynamic hero + previous grid ─────────────────────────────────────
+(function () {
+  const STORAGE_KEY = 'gis_hero';
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // safeUrl: for use inside CSS url('...') — escape single quotes
+  function safeUrl(u) {
+    return String(u || '').replace(/'/g, '%27');
+  }
+
+  fetch('/api/works')
+    .then(r => r.json())
+    .then(works => {
+      if (!works || !works.length) return;
+
+      // ── Hero: one random work from the full rotation pool, fixed per session ──
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      let hero = saved ? works.find(w => w.slug === saved) : null;
+      if (!hero) {
+        hero = works[Math.floor(Math.random() * works.length)];
+        sessionStorage.setItem(STORAGE_KEY, hero.slug);
+      }
+
+      // background-size:contain shows portrait + landscape fully without clipping
+      const plate = document.querySelector('.open .plate');
+      if (plate && hero.image) {
+        plate.style.backgroundImage = "url('" + safeUrl(hero.image) + "')";
+        plate.style.backgroundSize  = 'contain';
+        plate.style.backgroundPosition = 'center';
+        plate.style.backgroundRepeat   = 'no-repeat';
+      }
+      const artistEl = document.getElementById('hero-artist');
+      const metaEl   = document.getElementById('hero-meta');
+      if (artistEl) artistEl.textContent = hero.artist;
+      if (metaEl)   metaEl.innerHTML = esc(hero.title);
+
+      // ── Previous section: works with status='previous' ────────────────────
+      const wallEl = document.getElementById('wall');
+      if (!wallEl) return;
+
+      const prev = works.filter(w => !w.current);
+
+      if (prev.length === 0) {
+        wallEl.remove();
+        return;
+      }
+
+      // Mosaic slot pattern matching the original static design
+      const slots = [
+        {cls: 's-3x2', dark: false},
+        {cls: 's-1x1', dark: true },
+        {cls: 's-2x2', dark: false},
+        {cls: 's-2x1', dark: false},
+        {cls: 's-4x1', dark: true },
+      ];
+
+      let html = '';
+      const n = Math.min(prev.length, slots.length);
+      for (let i = 0; i < n; i++) {
+        const w = prev[i];
+        const s = slots[i];
+        const imgStyle = w.image
+          ? "background-image:url('" + safeUrl(w.image) + "');background-size:cover;background-position:center;"
+          : '';
+        html += '<a href="/work/' + esc(w.slug) + '" class="cell ' + (s.dark ? 'k-black ' : '') + s.cls + '" style="' + imgStyle + '">'
+             +  '<span class="name">' + esc(w.artist) + (w.title ? ' \xb7 ' + esc(w.title) : '') + '</span></a>';
+        // Void filler after slot 2 fills the visual gap at grid col 4 row 2
+        if (i === 2) {
+          html += '<a class="cell k-void s-1x1" aria-hidden="true" tabindex="-1"></a>';
+        }
+      }
+
+      const grid = document.getElementById('prev-grid');
+      if (grid) {
+        grid.innerHTML = html;
+        grid.querySelectorAll('.cell').forEach(el => cells.observe(el));
+      }
+    })
+    .catch(() => {});
+}());
 
 const room = document.querySelector('.room');
 if(room && !reduce){
