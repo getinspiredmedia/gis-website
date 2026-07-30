@@ -214,7 +214,7 @@ footer {
 <div class="plaque" id="plaque">
   <a class="pt" id="plaque-title" href="#">&nbsp;</a>
   <p class="pa" id="plaque-artist"></p>
-  <a class="pp" id="plaque-portfolio" href="#">Portfolio</a>
+  <a class="pp" id="plaque-portfolio" href="#" target="_blank" rel="noopener">Portfolio</a>
 </div>
 
 <div class="progress" role="progressbar" aria-label="Time remaining">
@@ -372,6 +372,9 @@ footer {
     .then(function (data) {
       works = data;
       buildShuffled();
+      // Move the "current" work to the front so it always shows first on load
+      var curIdx = shuffled.findIndex(function (w) { return w.current; });
+      if (curIdx > 0) { shuffled.unshift(shuffled.splice(curIdx, 1)[0]); pos = 0; }
       showWork(currentWork());
       if (!reduceMotion.matches) startTimer();
     })
