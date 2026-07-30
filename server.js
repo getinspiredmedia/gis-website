@@ -153,11 +153,18 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
   db.prepare('INSERT INTO submissions (artist_name,email,portfolio,work_title,notes,image_path) VALUES (?,?,?,?,?,?)')
     .run(name.trim(), email.trim(), portfolio?.trim() || '#', work_title.trim(), notes?.trim() || '', imagePath);
 
-  await sendEmail({
-    to:      ADMIN_EMAIL,
-    subject: `New submission: "${work_title}" by ${name}`,
-    html:    `<p>${name} (${email}) submitted <b>${work_title}</b>.<br>Review: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
-  });
+  await Promise.all([
+    sendEmail({
+      to:      ADMIN_EMAIL,
+      subject: `New submission: "${work_title || '(no title)'}" by ${name}`,
+      html:    `<p>${name} (${email}) submitted a work.<br>Portfolio: ${portfolio || '—'}<br>Title: ${work_title || '—'}<br><br>Review: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
+    }),
+    sendEmail({
+      to:      email,
+      subject: 'We received your work — Get Inspired Society',
+      html:    `<p>Hi ${name},</p><p>We received your submission. We'll review it and be in touch.</p><p>In the meantime, share On View with others:<br><a href="${SITE_URL}/on-view">${SITE_URL}/on-view</a></p>`,
+    }),
+  ]);
 
   res.json({ ok: true });
 });
