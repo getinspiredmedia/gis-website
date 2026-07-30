@@ -11,9 +11,10 @@ const { Resend } = require('resend');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-const DB_PATH      = process.env.DB_PATH     || path.join(__dirname, 'data', 'gis.db');
+const DB_PATH      = process.env.DB_PATH       || path.join(__dirname, 'data', 'gis.db');
 const UPLOAD_DIR   = path.join(__dirname, 'public', 'uploads');
 const ADMIN_PWD    = process.env.ADMIN_PASSWORD || 'admin';
+const SUBMIT_TOKEN = process.env.SUBMIT_TOKEN  || '';
 const RESEND_KEY   = process.env.RESEND_API_KEY;
 const FROM_EMAIL   = process.env.RESEND_FROM   || 'noreply@getinspiredsociety.com';
 const ADMIN_EMAIL  = process.env.ADMIN_EMAIL   || 'andrekreft@gmail.com';
@@ -95,6 +96,10 @@ const upload = multer({
 // ── App middleware ────────────────────────────────────────────────────────────
 
 app.use(express.json());
+
+// Block /submit without token — must go before static so /submit/index.html isn't served directly
+app.get('/submit', (req, res) => res.status(404).send('Not found'));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -217,6 +222,11 @@ app.patch('/api/admin/submissions/:id', requireAdmin, (req, res) => {
 });
 
 // ── Page routes ───────────────────────────────────────────────────────────────
+
+app.get('/submit/:token', (req, res) => {
+  if (!SUBMIT_TOKEN || req.params.token !== SUBMIT_TOKEN) return res.status(404).send('Not found');
+  res.sendFile(path.join(__dirname, 'public', 'submit', 'index.html'));
+});
 
 app.get('/work/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'work', 'index.html'));
