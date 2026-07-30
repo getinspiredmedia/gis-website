@@ -43,7 +43,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
 <body>
 <div class="wrap">
   <div id="state-form">
-    <span class="eyebrow">Get Inspired Society</span>
+    <span class="eyebrow">Get Inspired Society &nbsp;<span style="font-weight:400;opacity:.55">On View</span></span>
     <h1>Put your work forward.</h1>
     <p class="sub">One image, one title. We review everything ourselves.</p>
 
@@ -70,10 +70,6 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
         </div>
         <div class="preview" id="preview"><img id="preview-img" src="" alt="Preview"></div>
       </div>
-      <label class="field">
-        <span>Notes (optional)</span>
-        <textarea id="notes" placeholder="Anything you want us to know about this work."></textarea>
-      </label>
       <button class="btn" type="submit" id="submit-btn">Submit →</button>
       <p class="msg" id="msg"></p>
     </form>
@@ -125,7 +121,6 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
     var name       = document.getElementById('name').value.trim();
     var email      = document.getElementById('email').value.trim();
     var work_title = document.getElementById('work_title').value.trim();
-    var notes      = document.getElementById('notes').value.trim();
     var file       = fileInput.files[0];
     msg.style.display = 'none';
     if (!name)       { showMsg('Please enter your name.'); return; }
@@ -137,7 +132,6 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
     fd.append('name', name);
     fd.append('email', email);
     fd.append('work_title', work_title);
-    fd.append('notes', notes);
     fd.append('image', file);
 
     submitBtn.disabled = true;
