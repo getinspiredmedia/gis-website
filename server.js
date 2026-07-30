@@ -117,6 +117,15 @@ app.get('/api/works', (req, res) => {
   res.json(rows.map(w => ({ ...w, current: w.status === 'current' })));
 });
 
+// Single work by slug — no status filter, used for fallback display of archived works
+app.get('/api/works/:slug', (req, res) => {
+  const row = db.prepare(
+    'SELECT slug,title,artist,portfolio,image_url AS image,status FROM works WHERE slug=?'
+  ).get(req.params.slug);
+  if (!row) return res.status(404).json({ error: 'Not found.' });
+  res.json({ ...row, current: row.status === 'current' });
+});
+
 app.post('/api/contact', async (req, res) => {
   const { message, email, hp } = req.body || {};
   if (hp)                                             return res.json({ ok: true }); // honeypot

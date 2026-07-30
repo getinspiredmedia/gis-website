@@ -366,10 +366,39 @@ footer {
     if (e.key === 'ArrowRight') { btnNext.click(); }
   });
 
+  /* ── Fallback ─────────────────────────────────────────────────────────────
+     Shown when the normal works-set is empty or unreachable.
+     Fetches /work/maasvlakte by slug regardless of its archived status.
+     Kept as a separate code-path so changes to the shuffle-bag never affect it.
+  ── */
+  var FALLBACK_SLUG = 'maasvlakte';
+
+  function showFallback() {
+    fetch('/api/works/' + FALLBACK_SLUG)
+      .then(function (r) { return r.json(); })
+      .then(function (work) {
+        if (!work || work.error) {
+          plaqueTitle.textContent = 'Nothing on the wall right now.';
+          plaqueArtist.textContent = '';
+          return;
+        }
+        // Put fallback into works so prev/next/timer still function (loop of 1)
+        works = [work];
+        buildShuffled();
+        showWork(currentWork());
+        if (!reduceMotion.matches) startTimer();
+      })
+      .catch(function () {
+        plaqueTitle.textContent = 'Nothing on the wall right now.';
+        plaqueArtist.textContent = '';
+      });
+  }
+
   /* ── Boot ── */
   fetch('/api/works')
     .then(function (r) { return r.json(); })
     .then(function (data) {
+      if (!data || !data.length) { showFallback(); return; }
       works = data;
       buildShuffled();
       // Move the "current" work to the front so it always shows first on load
@@ -378,10 +407,7 @@ footer {
       showWork(currentWork());
       if (!reduceMotion.matches) startTimer();
     })
-    .catch(function () {
-      plaqueTitle.textContent = 'Could not load works.';
-      plaqueArtist.textContent = '';
-    });
+    .catch(showFallback);
 }());
 </script>
 
