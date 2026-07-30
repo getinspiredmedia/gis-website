@@ -150,7 +150,7 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
 
   const imagePath = '/uploads/' + filename;
   db.prepare('INSERT INTO submissions (artist_name,email,portfolio,work_title,notes,image_path) VALUES (?,?,?,?,?,?)')
-    .run(name.trim(), email.trim(), portfolio?.trim() || '#', work_title.trim(), notes?.trim() || '', imagePath);
+    .run(name.trim(), email.trim(), portfolio?.trim() || '#', work_title?.trim() || '', notes?.trim() || '', imagePath);
 
   await Promise.all([
     sendEmail({
