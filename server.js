@@ -64,6 +64,9 @@ if (db.prepare('SELECT COUNT(*) as n FROM works').get().n === 0) {
   ))(seed);
 }
 
+// Migration: add portfolio column to submissions if absent (schema added after initial deploy)
+try { db.exec("ALTER TABLE submissions ADD COLUMN portfolio TEXT NOT NULL DEFAULT '#'"); } catch {}
+
 // ── Admin session (reset on restart — acceptable for internal tool) ────────────
 
 const ADMIN_SESSION = crypto.randomUUID();
