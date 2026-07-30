@@ -211,6 +211,11 @@ app.patch('/api/admin/works/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+app.delete('/api/admin/works/:id', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM works WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 // ── Admin: submissions ────────────────────────────────────────────────────────
 
 app.get('/api/admin/submissions', requireAdmin, (req, res) => {

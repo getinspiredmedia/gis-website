@@ -99,17 +99,10 @@ button{font:inherit;cursor:pointer}
     <span class="mark">GIS Admin</span>
     <button class="logout" id="logout-btn">Sign out</button>
   </div>
-  <div class="tabs">
-    <button class="tab active" data-tab="works">Works</button>
-    <button class="tab" data-tab="submissions">Submissions</button>
-  </div>
-
   <!-- Works -->
-  <div class="panel active" id="panel-works">
-    <div class="section-head">
-      <h2>Works on the wall</h2>
-    </div>
-    <div class="form-row" id="add-work-form">
+  <div style="padding:28px 24px;max-width:1100px">
+    <div class="section-head"><h2>Works on the wall</h2></div>
+    <div class="form-row">
       <input id="w-slug"      placeholder="slug (url-safe)">
       <input id="w-title"     placeholder="Title">
       <input id="w-artist"    placeholder="Artist">
@@ -122,11 +115,8 @@ button{font:inherit;cursor:pointer}
       <thead><tr><th>Title</th><th>Artist</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody id="works-body"></tbody>
     </table>
-  </div>
 
-  <!-- Submissions -->
-  <div class="panel" id="panel-submissions">
-    <div class="section-head"><h2>Submissions</h2></div>
+    <div class="section-head" style="margin-top:40px"><h2>Submissions</h2></div>
     <div class="cards" id="submissions-cards"></div>
   </div>
 </div>
@@ -157,16 +147,6 @@ document.getElementById('logout-btn').addEventListener('click',function(){
   sessionStorage.removeItem('gis_admin');location.reload();
 });
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
-document.querySelectorAll('.tab').forEach(function(tab){
-  tab.addEventListener('click',function(){
-    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
-    tab.classList.add('active');
-    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
-  });
-});
-
 // ── API helpers ───────────────────────────────────────────────────────────────
 function api(method, url, body){
   return fetch(url,{
@@ -188,7 +168,7 @@ function loadWorks(){
         '<td><div style="display:flex;gap:6px;flex-wrap:wrap">'+
         (w.status!=='current'?'<button class="btn-sm" onclick="setStatus('+w.id+',\'current\')">Set current</button>':'')+
         (w.status!=='previous'?'<button class="btn-sm" onclick="setStatus('+w.id+',\'previous\')">Set previous</button>':'')+
-        (w.status!=='archived'?'<button class="btn-sm danger" onclick="setStatus('+w.id+',\'archived\')">Archive</button>':'')+
+        '<button class="btn-sm danger" onclick="deleteWork('+w.id+')">Delete</button>'+
         '</div></td></tr>';
     }).join('');
   });
@@ -196,6 +176,11 @@ function loadWorks(){
 
 window.setStatus=function(id,status){
   api('PATCH','/api/admin/works/'+id,{status:status}).then(loadWorks);
+};
+
+window.deleteWork=function(id){
+  if(!confirm('Delete this work?'))return;
+  api('DELETE','/api/admin/works/'+id).then(loadWorks);
 };
 
 document.getElementById('add-work-btn').addEventListener('click',function(){
@@ -219,26 +204,15 @@ function loadSubmissions(){
     var cards=document.getElementById('submissions-cards');
     if(!rows.length){cards.innerHTML='<p class="empty">No submissions yet.</p>';return;}
     cards.innerHTML=rows.map(function(s){
+      var port=s.portfolio&&s.portfolio!=='#'?'<a href="'+esc(s.portfolio)+'" target="_blank" style="color:var(--blue);font-size:12px">'+esc(s.portfolio)+'</a>':'';
       return '<div class="card">'+
         '<img src="'+esc(s.image_path)+'" alt="'+esc(s.work_title)+'">'+
         '<div class="card-body">'+
-        '<h3>'+esc(s.work_title)+'</h3>'+
+        '<h3>'+(s.work_title?esc(s.work_title):'<span style="color:var(--muted)">No title</span>')+'</h3>'+
         '<p class="meta">'+esc(s.artist_name)+' · '+esc(s.email)+'<br>'+esc(s.created_at.slice(0,10))+'</p>'+
-        (s.notes?'<p class="notes">'+esc(s.notes)+'</p>':'')+
-        '<span class="badge badge-'+s.status+'">'+s.status+'</span>'+
-        (s.status==='pending'?
-          '<div class="card-actions" style="margin-top:10px">'+
-          '<button class="btn-sm primary" onclick="reviewSub('+s.id+',\'approve\')">Approve</button>'+
-          '<button class="btn-sm danger" onclick="reviewSub('+s.id+',\'reject\')">Reject</button>'+
-          '</div>':'')+'</div></div>';
+        (port?'<p style="margin-top:6px">'+port+'</p>':'')+
+        '</div></div>';
     }).join('');
-  });
-}
-
-window.reviewSub=function(id,action){
-  api('PATCH','/api/admin/submissions/'+id,{action:action}).then(function(d){
-    if(d.ok){loadSubmissions();if(action==='approve')loadWorks();}
-    else alert(d.error||'Error');
   });
 };
 
