@@ -88,8 +88,33 @@ GIS-website/
     └── data/works.json     # mockdata (10 werken)
 ```
 
+### Buildsysteem — KRITISCH
+Railway draait `npm run build` vóór `npm start`. Dit genereert `public/` uit `build/pages/`.
+
+**Regel: bewerk ALTIJD `build/pages/*.html`, nooit direct `public/*.html` voor pagina's die in het buildsysteem zitten.**
+
+```
+build/pages/index.html    → public/index.html
+build/pages/magazine.html → public/magazine/index.html
+build/pages/gallery.html  → public/gallery/index.html
+build/pages/society.html  → public/society/index.html
+build/pages/about.html    → public/about/index.html
+build/pages/contact.html  → public/contact/index.html
+build/pages/support.html  → public/support/index.html
+```
+
+**Niet in buildsysteem** (bewerk `public/` direct):
+- `public/on-view/index.html`
+- `public/magazine/chasing-light/index.html`
+- `public/magazine/no-algorithm/index.html`
+- `public/magazine/origins/index.html`
+- `public/admin/index.html`
+- `public/submit/index.html`
+- `public/work/index.html`
+
 ### Buildcommando's
 - `npm install` — dependencies installeren
+- `npm run build` — regenereer `public/` uit `build/pages/` (altijd uitvoeren na aanpassing build-bronnen)
 - `npm start` — server starten (via `node server.js`)
 
 ### Testcommando's
