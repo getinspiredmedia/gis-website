@@ -152,7 +152,7 @@ button{font:inherit;cursor:pointer}
 var session = sessionStorage.getItem('gis_admin');
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
-function showApp(){document.getElementById('login').style.display='none';document.getElementById('app').style.display='';}
+function showApp(){document.getElementById('login').style.display='none';document.getElementById('app').style.display='block';}
 if(session) showApp();
 
 document.getElementById('login-btn').addEventListener('click', doLogin);
