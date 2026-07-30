@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chasing Light · Get Inspired Society</title>
+<meta name="description" content="Read Chasing Light, Issue 3 of Get Inspired Society. Five artists, twenty-two spreads.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Archivo',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{display:block;max-width:100%}
+a,button{font-family:inherit;color:inherit;text-decoration:none}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+
+/* opening */
+.opening{padding:clamp(120px,17vh,180px) 24px clamp(32px,5vh,56px);text-align:center}
+.opening .eyebrow{color:var(--muted);display:block;margin-bottom:12px}
+.opening h1{font-weight:700;line-height:.94;letter-spacing:-.025em;font-variation-settings:'wdth' 118;font-size:clamp(2.4rem,6.6vw,5.6rem)}
+.opening .sub{margin-top:16px;font-size:clamp(1rem,1.7vw,1.35rem);color:var(--muted);line-height:1.45}
+
+/* reader */
+.reader{padding:clamp(24px,4vh,48px) 24px clamp(12px,2vh,24px)}
+.wrap{max-width:1120px;margin:0 auto}
+.stagewrap{display:flex;align-items:center;gap:14px}
+.nav-btn{flex:none;width:44px;height:44px;border:.5px solid var(--line);background:var(--paper);border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;color:var(--ink);cursor:pointer;transition:background .15s,color .15s}
+.nav-btn:hover{background:var(--ink);color:#fff}
+.nav-btn[disabled]{opacity:.28;cursor:default;pointer-events:none}
+.stage{flex:1;min-height:180px;display:flex;align-items:center;justify-content:center}
+.single{width:min(320px,70%);aspect-ratio:3/4;background:var(--line);overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px rgba(11,12,16,.18)}
+.spread{width:100%;aspect-ratio:1.413;background:var(--paper);overflow:hidden;display:flex;box-shadow:0 14px 34px rgba(11,12,16,.18)}
+.spread .half{flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.spread .half:first-child{border-right:.5px solid var(--line)}
+.stage img{width:100%;height:100%;object-fit:contain;background:var(--paper)}
+.stage .ph{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.controls{display:flex;align-items:center;justify-content:space-between;margin:16px auto 0}
+.counter{font-size:14px;color:var(--muted);letter-spacing:.04em}
+.fs{display:inline-flex;align-items:center;gap:7px;border:.5px solid var(--line);background:var(--paper);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;transition:background .15s,color .15s}
+.fs:hover{background:var(--ink);color:#fff}
+.reader:fullscreen,.reader:-webkit-full-screen{background:var(--paper);display:flex;flex-direction:column;justify-content:center;padding:24px}
+.reader:fullscreen .stagewrap,.reader:-webkit-full-screen .stagewrap{max-width:1400px;width:100%;margin:0 auto}
+.reader:fullscreen .controls,.reader:-webkit-full-screen .controls{max-width:1400px;width:100%;margin:16px auto 0}
+
+/* artist index */
+.index{background:var(--line);padding:clamp(36px,5vh,64px) 24px;margin-top:clamp(24px,4vh,48px)}
+.index .eyebrow{color:var(--muted);display:block;margin-bottom:18px}
+.list{list-style:none;border-top:.5px solid rgba(11,12,16,.14)}
+.list li{border-bottom:.5px solid rgba(11,12,16,.14)}
+.list button{width:100%;display:flex;align-items:center;justify-content:space-between;padding:15px 4px;background:transparent;border:0;cursor:pointer;text-align:left;font-size:15px;font-weight:600;color:var(--ink);transition:padding-left .15s,color .15s}
+.list button:hover{padding-left:12px;color:var(--blue)}
+.list .arr{font-size:18px;color:var(--muted);transition:transform .15s,color .15s}
+.list button:hover .arr{transform:translateX(4px);color:var(--blue)}
+
+/* download */
+.download{text-align:center;padding:clamp(28px,4vh,48px) 24px}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--ink);border-radius:999px;padding:12px 24px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;background:transparent;transition:background .2s,color .2s}
+.btn-outline:hover{background:var(--ink);color:#fff}
+
+/* print block */
+.print-block{background:var(--blue);color:#fff;padding:clamp(48px,7vh,88px) 28px}
+.print-block .inner{max-width:1120px;margin:0 auto;display:flex;gap:clamp(28px,5vw,64px);align-items:center}
+.print-block .txt{flex:1}
+.print-block h2{font-weight:700;line-height:1.04;letter-spacing:-.02em;font-variation-settings:'wdth' 110;font-size:clamp(1.5rem,3.4vw,2.4rem);margin-bottom:10px}
+.print-block .opts{display:flex;gap:20px;flex-wrap:wrap;margin-top:24px}
+.print-block .opt{display:flex;flex-direction:column;gap:10px;align-items:flex-start;max-width:240px}
+.print-block .note{color:rgba(255,255,255,.72);font-size:13px;line-height:1.5}
+.btn-white{display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--blue);border:1px solid #fff;border-radius:999px;padding:12px 24px;font-size:13px;font-weight:600;transition:background .2s,color .2s,border-color .2s}
+.btn-white:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.55);border-radius:999px;padding:12px 24px;font-size:13px;font-weight:600;transition:background .2s,border-color .2s}
+.btn-ghost:hover{background:var(--ink);border-color:var(--ink)}
+.print-block .print-img{flex:none;width:clamp(140px,26%,260px);aspect-ratio:4/3;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.07) 0,rgba(255,255,255,.07) 8px,transparent 8px,transparent 16px);border:1px dashed rgba(255,255,255,.32);display:flex;align-items:center;justify-content:center}
+.print-block .print-img span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.42)}
+.print-block .print-img img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* portrait hint */
+.hint{position:fixed;left:16px;right:16px;bottom:20px;z-index:100;background:var(--ink);color:#fff;border-radius:999px;display:none;align-items:center;justify-content:center;gap:10px;padding:12px 18px;font-size:14px;font-weight:600;box-shadow:0 8px 30px rgba(11,12,16,.28)}
+.hint.show{display:flex;animation:hintfade 6s ease forwards}
+.hint .rot{display:inline-block;font-size:16px;transform:rotate(90deg)}
+@keyframes hintfade{0%{opacity:0}8%{opacity:1}82%{opacity:1}100%{opacity:0}}
+
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+@media(max-width:720px){
+  .print-block .inner{flex-direction:column}
+  .print-block .print-img{width:100%;max-width:280px;align-self:center}
+  .print-block .opts{justify-content:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .hint.show{opacity:1;animation:none}
+}
+</style>
+</head>
+<body>
+<style>
+#wipe{position:fixed;inset:0;background:var(--blue);z-index:200;transform:scaleY(0);transform-origin:bottom;pointer-events:none}
+#wipe.go{animation:wipe 900ms var(--ease) forwards}
+@keyframes wipe{0%{transform:scaleY(0);transform-origin:bottom}45%{transform:scaleY(1);transform-origin:bottom}55%{transform:scaleY(1);transform-origin:top}100%{transform:scaleY(0);transform-origin:top}}
+</style>
+<div id="wipe"></div>
+<script>
+(function(){
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const navEl = document.querySelector('nav');
+  if(navEl){
+    let lastY = 0;
+    addEventListener('scroll', ()=>{
+      const y = scrollY;
+      navEl.classList.toggle('solid', y > 40);
+      navEl.classList.toggle('hide', y > innerHeight*0.7 && y > lastY);
+      lastY = y;
+    }, {passive:true});
+  }
+  const wipeEl = document.getElementById('wipe');
+  if(wipeEl){
+    document.querySelectorAll('a[href^="/"]').forEach(a=>{
+      a.addEventListener('click', ev=>{
+        if(reduce) return;
+        ev.preventDefault();
+        wipeEl.classList.add('go');
+        setTimeout(()=>{ location.href = a.getAttribute('href'); }, 430);
+      });
+    });
+  }
+})();
+</script>
+
+<style>
+nav{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid transparent;transition:transform .45s var(--ease),background .35s,border-color .35s,padding .35s var(--ease)}
+nav.solid{background:var(--ink);border-bottom-color:rgba(255,255,255,.14);padding:8px 22px}
+nav.hide{transform:translateY(-102%)}
+nav .mark{height:clamp(52px,9vw,88px);transition:height .4s var(--ease)}
+nav.solid .mark{height:clamp(30px,4vw,40px)}
+.menu{display:flex;gap:4px;align-items:center}
+.menu a{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding:9px 13px;border-radius:999px;line-height:1;transition:background .25s,color .25s}
+.menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:rgba(255,255,255,.16)}
+.menu .enter{background:var(--blue);padding:10px 18px;margin-left:12px}
+.menu .enter:hover,.menu .enter:focus-visible{background:#fff;color:var(--blue)}
+@media(max-width:860px){.menu{gap:16px}.menu a{font-size:11px}}
+</style>
+<nav>
+  <a href="/" aria-label="Get Inspired Society, home"><img class="mark" src="/assets/mark.png" alt="Get Inspired Society" width="110" height="88"></a>
+  <div class="menu">
+    <a aria-current="page" href="#">Magazine</a>
+    <a href="/gallery">Gallery</a>
+    <a href="/society">Society</a>
+    <a class="enter" href="https://society.getinspiredsociety.com">Log in</a>
+  </div>
+</nav>
+
+<section class="opening">
+  <span class="eyebrow">Issue 3</span>
+  <h1>Chasing Light</h1>
+  <p class="sub">The same sun. Never the same light.</p>
+</section>
+
+<section class="reader" id="reader" aria-label="Magazine reader" tabindex="-1">
+  <div class="wrap">
+    <div class="stagewrap">
+      <button class="nav-btn" id="prevBtn" aria-label="Previous page">&#8249;</button>
+      <div class="stage" id="stage" aria-live="polite"></div>
+      <button class="nav-btn" id="nextBtn" aria-label="Next page">&#8250;</button>
+    </div>
+    <div class="controls">
+      <span class="counter" id="counter" aria-live="polite">Cover</span>
+      <button class="fs" id="fsBtn"><span aria-hidden="true">&#9974;</span> Fullscreen</button>
+    </div>
+  </div>
+</section>
+
+<section class="index">
+  <div class="wrap">
+    <span class="eyebrow">In this issue</span>
+    <nav aria-label="In this issue"><ul class="list" id="artistList"></ul></nav>
+  </div>
+</section>
+
+<section class="download">
+  <a class="btn-outline" id="downloadBtn" href="#" download>Download the PDF</a>
+</section>
+
+<section class="print-block">
+  <div class="inner">
+    <div class="txt">
+      <h2>Chasing Light, in print.</h2>
+      <div class="opts">
+        <div class="opt">
+          <a class="btn-white" href="#">Order a print</a>
+          <p class="note">A single issue. &euro;25, shipping not included.</p>
+        </div>
+        <div class="opt">
+          <a class="btn-ghost" href="/support">See the plans.</a>
+          <p class="note">Subscribe and support the printing.</p>
+        </div>
+      </div>
+    </div>
+    <div class="print-img" id="printImg">
+      <span>print photo</span>
+    </div>
+  </div>
+</section>
+
+<style>
+footer{background:var(--ink);color:#fff;padding:clamp(60px,9vh,110px) 28px 40px;text-align:center}
+footer .close{font-size:clamp(1.2rem,2.6vw,2rem);font-weight:600;letter-spacing:-.01em;font-variation-settings:'wdth' 106}
+footer .close + .links{margin-top:38px}
+footer .links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+footer .links a:hover{color:#fff}
+footer .stamp{margin-top:26px;font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.14em;text-transform:uppercase}
+</style>
+<footer>
+  <div class="links">
+    <a href="/on-view">On view</a><a href="#">Magazine</a><a href="/gallery">Gallery</a><a href="/society">Society</a><a href="/about">About</a><a href="/contact">Contact</a>
+  </div>
+  <p class="stamp">Get Inspired Society &middot; Since 2009 &middot; Rotterdam</p>
+</footer>
+
+<div class="hint" id="hint" role="status">
+  <span class="rot" aria-hidden="true">&#9633;</span> Turn your phone for the full spread
+</div>
+
+<script>
+const ISSUE = {
+  number: "Issue 3",
+  title: "Chasing Light",
+  cover: "/magazine/chasing-light/assets/covers/chasing-light.webp",
+  coverAlt: "Cover of Get Inspired Society, Issue 3, Chasing Light.",
+  pdf: null,
+  spreads: [
+    { src: "/magazine/chasing-light/assets/spreads/01.webp", alt: "Editorial opening for Chasing Light: a note on the theme beside the colophon." },
+    { src: "/magazine/chasing-light/assets/spreads/02.webp", alt: "Introduction to Will Corvara, beside a warm interior where light falls across a hand and drapery." },
+    { src: "/magazine/chasing-light/assets/spreads/03.webp", alt: "Two photographs by Will Corvara: a sculpted head lit in orange, and light through a grille on a red wall." },
+    { src: "/magazine/chasing-light/assets/spreads/04.webp", alt: "Two photographs by Will Corvara: light through textured glass, and a red-lit window with leaf shadows." },
+    { src: "/magazine/chasing-light/assets/spreads/05.webp", alt: "A green-lit window in a dark facade, beside the line: five artists, five chases, the same sun, never the same light." },
+    { src: "/magazine/chasing-light/assets/spreads/06.webp", alt: "Introduction to Jeff Vonk, beside a dark forest of palms catching low light." },
+    { src: "/magazine/chasing-light/assets/spreads/07.webp", alt: "Two photographs by Jeff Vonk: a bird of paradise flower lit in the dark, and golden light across water." },
+    { src: "/magazine/chasing-light/assets/spreads/08.webp", alt: "Two photographs by Jeff Vonk: a motion-blurred golden field, and a hand pouring by low light." },
+    { src: "/magazine/chasing-light/assets/spreads/09.webp", alt: "Two photographs by Jeff Vonk: a car behind a fence at night, and shifting green and orange reflections." },
+    { src: "/magazine/chasing-light/assets/spreads/10.webp", alt: "Introduction to Ulf Berglund, beside a monochrome view through a window toward a lit tower." },
+    { src: "/magazine/chasing-light/assets/spreads/11.webp", alt: "Two black and white photographs by Ulf Berglund: aurora above a barn, and a branch against moonlit water." },
+    { src: "/magazine/chasing-light/assets/spreads/12.webp", alt: "Two black and white photographs by Ulf Berglund: a lit spire beneath clouds, and a glowing building at night." },
+    { src: "/magazine/chasing-light/assets/spreads/13.webp", alt: "Two black and white photographs by Ulf Berglund: winter sun through a round window, and a frosted streetlamp against the sky." },
+    { src: "/magazine/chasing-light/assets/spreads/14.webp", alt: "Introduction to Janusz Furrer, beside a yellow wall with a red door and a hard diagonal shadow." },
+    { src: "/magazine/chasing-light/assets/spreads/15.webp", alt: "Two photographs by Janusz Furrer: a figure in a blue stairwell, and warm light on a dark wall." },
+    { src: "/magazine/chasing-light/assets/spreads/16.webp", alt: "Two photographs by Janusz Furrer: shadow on a red wall, and a rail yard seen through blinds." },
+    { src: "/magazine/chasing-light/assets/spreads/17.webp", alt: "Two photographs by Janusz Furrer: a long shadow along a red wall, and the photographer's shadow beside a yellow boat." },
+    { src: "/magazine/chasing-light/assets/spreads/18.webp", alt: "Introduction to Joaquin Pastor Genzor, beside a hand-shaped shadow on a curved sunlit wall." },
+    { src: "/magazine/chasing-light/assets/spreads/19.webp", alt: "Two photographs by Joaquin Pastor Genzor: a tower reflected in a puddle, and a silhouette caught in a mirror." },
+    { src: "/magazine/chasing-light/assets/spreads/20.webp", alt: "Two photographs by Joaquin Pastor Genzor: a seated silhouette in golden light, and a figure in a sunlit alley." },
+    { src: "/magazine/chasing-light/assets/spreads/21.webp", alt: "Two photographs by Joaquin Pastor Genzor: a figure carrying pink bags down a shadowed street, and a lone walker with a long shadow in a shaft of light." },
+    { src: "/magazine/chasing-light/assets/spreads/22.webp", alt: "Closing spread: an invitation to explore Get Inspired Society." }
+  ],
+  artists: [
+    { name: "Will Corvara",          spread: 2 },
+    { name: "Jeff Vonk",             spread: 6 },
+    { name: "Ulf Berglund",          spread: 10 },
+    { name: "Janusz Furrer",         spread: 14 },
+    { name: "Joaquin Pastor Genzor", spread: 18 }
+  ]
+};
+
+const views = [{ type:"cover", src:ISSUE.cover, alt:ISSUE.coverAlt }]
+  .concat(ISSUE.spreads.map(s => ({ type:"spread", src:s.src, alt:s.alt })));
+let current = 0;
+const spreadCount = ISSUE.spreads.length;
+
+const stage   = document.getElementById("stage");
+const counter = document.getElementById("counter");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+function pad(n){ return String(n).padStart(2,"0"); }
+
+function placeholder(type){
+  return type === "cover"
+    ? '<div class="single"><span class="ph">cover</span></div>'
+    : '<div class="spread"><span class="half ph">left</span><span class="half ph">right</span></div>';
+}
+
+function render(){
+  const v = views[current];
+  const box = document.createElement("div");
+  box.className = v.type === "cover" ? "single" : "spread";
+  if(v.src){
+    const img = document.createElement("img");
+    img.src = v.src; img.alt = v.alt;
+    img.onerror = () => { stage.innerHTML = placeholder(v.type); };
+    box.appendChild(img);
+  } else {
+    stage.innerHTML = placeholder(v.type);
+    return;
+  }
+  stage.innerHTML = "";
+  stage.appendChild(box);
+  counter.textContent = current === 0 ? "Cover" : "Spread " + pad(current) + " / " + pad(spreadCount);
+  prevBtn.disabled = current === 0;
+  nextBtn.disabled = current === views.length - 1;
+}
+
+function goTo(i){ current = Math.max(0, Math.min(views.length - 1, i)); render(); }
+function go(delta){ goTo(current + delta); }
+
+prevBtn.addEventListener("click", () => go(-1));
+nextBtn.addEventListener("click", () => go(1));
+document.addEventListener("keydown", (e) => {
+  if(e.key === "ArrowLeft")  go(-1);
+  if(e.key === "ArrowRight") go(1);
+});
+
+const reader = document.getElementById("reader");
+const fsBtn  = document.getElementById("fsBtn");
+fsBtn.addEventListener("click", () => {
+  if(!document.fullscreenElement){ if(reader.requestFullscreen) reader.requestFullscreen(); }
+  else { if(document.exitFullscreen) document.exitFullscreen(); }
+});
+document.addEventListener("fullscreenchange", () => {
+  const on = !!document.fullscreenElement;
+  fsBtn.innerHTML = on
+    ? '<span aria-hidden="true">&#10005;</span> Exit fullscreen'
+    : '<span aria-hidden="true">&#9974;</span> Fullscreen';
+});
+
+const listEl = document.getElementById("artistList");
+ISSUE.artists.forEach(a => {
+  const li = document.createElement("li");
+  const btn = document.createElement("button");
+  btn.innerHTML = '<span>' + a.name + '</span><span class="arr" aria-hidden="true">&#8594;</span>';
+  btn.setAttribute("aria-label", "Go to " + a.name);
+  btn.addEventListener("click", () => {
+    goTo(a.spread);
+    reader.scrollIntoView({ behavior:"smooth", block:"start" });
+  });
+  li.appendChild(btn);
+  listEl.appendChild(li);
+});
+
+const dl = document.getElementById("downloadBtn");
+if(ISSUE.pdf){ dl.href = ISSUE.pdf; } else { dl.setAttribute("aria-disabled","true"); }
+dl.addEventListener("click", (e) => { if(!ISSUE.pdf) e.preventDefault(); });
+
+(function(){
+  const img = new Image();
+  img.onload = () => {
+    const el = document.getElementById("printImg");
+    el.innerHTML = "";
+    el.appendChild(img);
+    img.alt = "The printed edition of Chasing Light, held in hand.";
+  };
+  img.src = "/magazine/chasing-light/assets/print/holding.webp";
+})();
+
+const hint = document.getElementById("hint");
+function maybeHint(){
+  const narrow = window.innerWidth < 700;
+  const portrait = window.innerHeight > window.innerWidth;
+  if(narrow && portrait){ hint.classList.add("show"); } else { hint.classList.remove("show"); }
+}
+window.addEventListener("load", maybeHint);
+window.addEventListener("orientationchange", () => { hint.classList.remove("show"); setTimeout(maybeHint, 300); });
+window.addEventListener("resize", () => {
+  if(window.innerWidth >= 700 || window.innerHeight <= window.innerWidth) hint.classList.remove("show");
+});
+
+render();
+</script>
+</body>
+</html>
