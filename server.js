@@ -133,39 +133,49 @@ app.post('/api/contact', async (req, res) => {
 // ── Submit ────────────────────────────────────────────────────────────────────
 
 app.post('/api/submit', upload.single('image'), async (req, res) => {
-  const { name, email, portfolio, work_title, notes } = req.body || {};
-  if (!name?.trim() || !email?.trim())            return res.status(400).json({ error: 'Name and email are required.' });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address.' });
-  if (!req.file)                                  return res.status(400).json({ error: 'No image uploaded.' });
-
-  const filename = crypto.randomUUID() + '.webp';
   try {
-    await sharp(req.file.buffer)
-      .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 82 })
-      .toFile(path.join(UPLOAD_DIR, filename));
-  } catch {
-    return res.status(400).json({ error: 'Could not process image.' });
+    const { name, email, portfolio, work_title, notes } = req.body || {};
+    console.log('[submit] received:', { name, email, portfolio, work_title, hasFile: !!req.file });
+
+    if (!name?.trim() || !email?.trim())            return res.status(400).json({ error: 'Name and email are required.' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address.' });
+    if (!req.file)                                  return res.status(400).json({ error: 'No image uploaded.' });
+
+    const filename = crypto.randomUUID() + '.webp';
+    try {
+      await sharp(req.file.buffer)
+        .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(path.join(UPLOAD_DIR, filename));
+    } catch (e) {
+      console.error('[submit] sharp error:', e.message);
+      return res.status(400).json({ error: 'Could not process image.' });
+    }
+
+    const imagePath = '/uploads/' + filename;
+    db.prepare('INSERT INTO submissions (artist_name,email,portfolio,work_title,notes,image_path) VALUES (?,?,?,?,?,?)')
+      .run(name.trim(), email.trim(), portfolio?.trim() || '#', work_title?.trim() || '', notes?.trim() || '', imagePath);
+
+    console.log('[submit] saved:', name, email);
+
+    await Promise.all([
+      sendEmail({
+        to:      ADMIN_EMAIL,
+        subject: `New submission: "${work_title || '(no title)'}" by ${name}`,
+        html:    `<p>${name} (${email}) submitted a work.<br>Portfolio: ${portfolio || '—'}<br>Title: ${work_title || '—'}<br><br>Review: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
+      }),
+      sendEmail({
+        to:      email,
+        subject: 'We received your work — Get Inspired Society',
+        html:    `<p>Hi ${name},</p><p>We received your submission. We'll review it and be in touch.</p><p>In the meantime, share On View with others:<br><a href="${SITE_URL}/on-view">${SITE_URL}/on-view</a></p>`,
+      }),
+    ]);
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[submit] unexpected error:', e.message, e.stack);
+    res.status(500).json({ error: 'Server error. Please try again.' });
   }
-
-  const imagePath = '/uploads/' + filename;
-  db.prepare('INSERT INTO submissions (artist_name,email,portfolio,work_title,notes,image_path) VALUES (?,?,?,?,?,?)')
-    .run(name.trim(), email.trim(), portfolio?.trim() || '#', work_title?.trim() || '', notes?.trim() || '', imagePath);
-
-  await Promise.all([
-    sendEmail({
-      to:      ADMIN_EMAIL,
-      subject: `New submission: "${work_title || '(no title)'}" by ${name}`,
-      html:    `<p>${name} (${email}) submitted a work.<br>Portfolio: ${portfolio || '—'}<br>Title: ${work_title || '—'}<br><br>Review: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
-    }),
-    sendEmail({
-      to:      email,
-      subject: 'We received your work — Get Inspired Society',
-      html:    `<p>Hi ${name},</p><p>We received your submission. We'll review it and be in touch.</p><p>In the meantime, share On View with others:<br><a href="${SITE_URL}/on-view">${SITE_URL}/on-view</a></p>`,
-    }),
-  ]);
-
-  res.json({ ok: true });
 });
 
 // ── Admin auth ────────────────────────────────────────────────────────────────
