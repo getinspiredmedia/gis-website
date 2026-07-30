@@ -18,9 +18,8 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
 .sub{font-size:16px;color:var(--muted);margin-bottom:40px;line-height:1.55;max-width:38ch}
 .field{display:block;margin-bottom:22px}
 .field span{display:block;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-.field input,.field textarea{width:100%;background:var(--paper);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:16px;padding:16px 18px;border-radius:2px;transition:border-color .2s}
-.field input:focus,.field textarea:focus{outline:0;border-color:var(--ink)}
-.field textarea{min-height:100px;resize:vertical;line-height:1.55}
+.field input{width:100%;background:var(--paper);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:16px;padding:16px 18px;border-radius:2px;transition:border-color .2s}
+.field input:focus{outline:0;border-color:var(--ink)}
 .drop{border:1px dashed var(--line);border-radius:2px;padding:40px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative}
 .drop:hover,.drop.over{border-color:var(--ink);background:#fafafa}
 .drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
@@ -28,8 +27,10 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
 .drop .drop-label{font-size:14px;color:var(--muted)}
 .drop .drop-label b{color:var(--ink)}
 .drop .drop-hint{margin-top:5px;font-size:12px;color:#aaa}
-.preview{margin-top:14px;display:none}
-.preview img{max-width:100%;max-height:220px;object-fit:contain;border-radius:2px}
+.preview{display:none;position:relative}
+.preview img{max-width:100%;max-height:260px;width:100%;object-fit:contain;border-radius:2px;display:block;background:#fafafa}
+.reset-btn{margin-top:10px;background:none;border:1px solid var(--line);border-radius:2px;padding:8px 14px;font:inherit;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:border-color .2s,color .2s}
+.reset-btn:hover{border-color:var(--ink);color:var(--ink)}
 .btn{display:inline-flex;align-items:center;gap:10px;background:var(--blue);color:#fff;border:0;border-radius:999px;padding:16px 32px;font:inherit;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:background .25s,gap .25s;margin-top:8px}
 .btn:hover{background:#1038d8;gap:16px}
 .btn:disabled{opacity:.45;cursor:default;pointer-events:none}
@@ -45,7 +46,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
   <div id="state-form">
     <span class="eyebrow">Get Inspired Society &nbsp;<span style="font-weight:400;opacity:.55">On View</span></span>
     <h1>Put your work forward.</h1>
-    <p class="sub">One image, one title. We review everything ourselves.</p>
+    <p class="sub">One image. One week on the wall.</p>
 
     <form id="form" novalidate>
       <label class="field">
@@ -55,6 +56,10 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
       <label class="field">
         <span>Your email</span>
         <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+      </label>
+      <label class="field">
+        <span>Portfolio (optional)</span>
+        <input id="portfolio" type="url" placeholder="https://yourwebsite.com">
       </label>
       <label class="field">
         <span>Title of the work</span>
@@ -68,7 +73,10 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
           <p class="drop-label"><b>Click to choose</b> or drag and drop</p>
           <p class="drop-hint">JPEG, PNG or WebP · max 20 MB</p>
         </div>
-        <div class="preview" id="preview"><img id="preview-img" src="" alt="Preview"></div>
+        <div class="preview" id="preview">
+          <img id="preview-img" src="" alt="Preview">
+          <button type="button" class="reset-btn" id="reset-btn">Choose a different image</button>
+        </div>
       </div>
       <button class="btn" type="submit" id="submit-btn">Submit →</button>
       <p class="msg" id="msg"></p>
@@ -93,13 +101,26 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
   var drop      = document.getElementById('drop');
   var preview   = document.getElementById('preview');
   var previewImg= document.getElementById('preview-img');
+  var resetBtn  = document.getElementById('reset-btn');
+
+  function showPreview(file) {
+    previewImg.src = URL.createObjectURL(file);
+    drop.style.display = 'none';
+    preview.style.display = 'block';
+  }
+
+  function clearPreview() {
+    previewImg.src = '';
+    fileInput.value = '';
+    preview.style.display = 'none';
+    drop.style.display = '';
+  }
 
   fileInput.addEventListener('change', function () {
-    var file = fileInput.files[0];
-    if (!file) { preview.style.display = 'none'; return; }
-    previewImg.src = URL.createObjectURL(file);
-    preview.style.display = 'block';
+    if (fileInput.files[0]) showPreview(fileInput.files[0]);
   });
+
+  resetBtn.addEventListener('click', clearPreview);
 
   drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
   drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
@@ -111,8 +132,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
       var dt = new DataTransfer();
       dt.items.add(file);
       fileInput.files = dt.files;
-      previewImg.src = URL.createObjectURL(file);
-      preview.style.display = '';
+      showPreview(file);
     }
   });
 
@@ -120,6 +140,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
     e.preventDefault();
     var name       = document.getElementById('name').value.trim();
     var email      = document.getElementById('email').value.trim();
+    var portfolio  = document.getElementById('portfolio').value.trim();
     var work_title = document.getElementById('work_title').value.trim();
     var file       = fileInput.files[0];
     msg.style.display = 'none';
@@ -131,6 +152,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
     var fd = new FormData();
     fd.append('name', name);
     fd.append('email', email);
+    fd.append('portfolio', portfolio);
     fd.append('work_title', work_title);
     fd.append('image', file);
 
@@ -159,7 +181,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
   function showMsg(text) {
     msg.textContent = text;
     msg.className = 'msg err';
-    msg.style.display = '';
+    msg.style.display = 'block';
   }
 }());
 </script>

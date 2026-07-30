@@ -45,6 +45,7 @@ db.exec(`
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     artist_name TEXT NOT NULL,
     email       TEXT NOT NULL,
+    portfolio   TEXT NOT NULL DEFAULT '#',
     work_title  TEXT NOT NULL,
     notes       TEXT,
     image_path  TEXT NOT NULL,
@@ -129,7 +130,7 @@ app.post('/api/contact', async (req, res) => {
 // ── Submit ────────────────────────────────────────────────────────────────────
 
 app.post('/api/submit', upload.single('image'), async (req, res) => {
-  const { name, email, work_title, notes } = req.body || {};
+  const { name, email, portfolio, work_title, notes } = req.body || {};
   if (!name?.trim() || !email?.trim())            return res.status(400).json({ error: 'Name and email are required.' });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address.' });
   if (!work_title?.trim())                        return res.status(400).json({ error: 'Work title is required.' });
@@ -146,8 +147,8 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
   }
 
   const imagePath = '/uploads/' + filename;
-  db.prepare('INSERT INTO submissions (artist_name,email,work_title,notes,image_path) VALUES (?,?,?,?,?)')
-    .run(name.trim(), email.trim(), work_title.trim(), notes?.trim() || '', imagePath);
+  db.prepare('INSERT INTO submissions (artist_name,email,portfolio,work_title,notes,image_path) VALUES (?,?,?,?,?,?)')
+    .run(name.trim(), email.trim(), portfolio?.trim() || '#', work_title.trim(), notes?.trim() || '', imagePath);
 
   await sendEmail({
     to:      ADMIN_EMAIL,
@@ -213,7 +214,7 @@ app.patch('/api/admin/submissions/:id', requireAdmin, (req, res) => {
   try {
     db.transaction(() => {
       db.prepare('INSERT INTO works (slug,title,artist,portfolio,image_url,status) VALUES (?,?,?,?,?,?)').run(
-        slug, sub.work_title, sub.artist_name, '#', sub.image_path, 'previous'
+        slug, sub.work_title, sub.artist_name, sub.portfolio || '#', sub.image_path, 'previous'
       );
       db.prepare("UPDATE submissions SET status='approved' WHERE id=?").run(req.params.id);
     })();
