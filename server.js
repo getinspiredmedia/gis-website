@@ -40,26 +40,16 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
-  CREATE TABLE IF NOT EXISTS tokens (
+  CREATE TABLE IF NOT EXISTS submissions (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    token       TEXT UNIQUE NOT NULL,
     artist_name TEXT NOT NULL,
     email       TEXT NOT NULL,
+    work_title  TEXT NOT NULL,
+    notes       TEXT,
+    image_path  TEXT NOT NULL,
     status      TEXT NOT NULL DEFAULT 'pending'
-                     CHECK(status IN ('pending','used','expired')),
-    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-    used_at     TEXT
-  );
-
-  CREATE TABLE IF NOT EXISTS submissions (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    token_id   INTEGER NOT NULL REFERENCES tokens(id),
-    work_title TEXT NOT NULL,
-    notes      TEXT,
-    image_path TEXT NOT NULL,
-    status     TEXT NOT NULL DEFAULT 'pending'
                     CHECK(status IN ('pending','approved','rejected')),
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
 
@@ -131,23 +121,14 @@ app.post('/api/contact', async (req, res) => {
   res.json({ ok: true });
 });
 
-// Token info (hand-in page fetches artist name from here)
-app.get('/api/tokens/:token', (req, res) => {
-  const row = db.prepare("SELECT artist_name, status FROM tokens WHERE token = ?").get(req.params.token);
-  if (!row)                    return res.status(404).json({ error: 'Token not found.' });
-  if (row.status !== 'pending') return res.status(410).json({ error: 'This link has already been used.' });
-  res.json({ artist_name: row.artist_name });
-});
+// ── Submit ────────────────────────────────────────────────────────────────────
 
-// ── Hand-in ───────────────────────────────────────────────────────────────────
-
-app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
-  const row = db.prepare("SELECT id,artist_name,email FROM tokens WHERE token = ? AND status = 'pending'").get(req.params.token);
-  if (!row)        return res.status(410).json({ error: 'Token is invalid or already used.' });
-  if (!req.file)   return res.status(400).json({ error: 'No image uploaded.' });
-
-  const { work_title, notes } = req.body;
-  if (!work_title?.trim()) return res.status(400).json({ error: 'Work title is required.' });
+app.post('/api/submit', upload.single('image'), async (req, res) => {
+  const { name, email, work_title, notes } = req.body || {};
+  if (!name?.trim() || !email?.trim())            return res.status(400).json({ error: 'Name and email are required.' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address.' });
+  if (!work_title?.trim())                        return res.status(400).json({ error: 'Work title is required.' });
+  if (!req.file)                                  return res.status(400).json({ error: 'No image uploaded.' });
 
   const filename = crypto.randomUUID() + '.webp';
   try {
@@ -160,43 +141,14 @@ app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
   }
 
   const imagePath = '/uploads/' + filename;
-  db.transaction(() => {
-    db.prepare('INSERT INTO submissions (token_id,work_title,notes,image_path) VALUES (?,?,?,?)').run(row.id, work_title.trim(), notes?.trim() || '', imagePath);
-    db.prepare("UPDATE tokens SET status='used', used_at=datetime('now') WHERE id=?").run(row.id);
-  })();
+  db.prepare('INSERT INTO submissions (artist_name,email,work_title,notes,image_path) VALUES (?,?,?,?,?)')
+    .run(name.trim(), email.trim(), work_title.trim(), notes?.trim() || '', imagePath);
 
   await sendEmail({
     to:      ADMIN_EMAIL,
-    subject: `New hand-in: "${work_title}" by ${row.artist_name}`,
-    html:    `<p>${row.artist_name} submitted <b>${work_title}</b>.<br>Review: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
+    subject: `New submission: "${work_title}" by ${name}`,
+    html:    `<p>${name} (${email}) submitted <b>${work_title}</b>.<br>Review: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
   });
-
-  res.json({ ok: true });
-});
-
-// ── Submit (artist requests a hand-in token) ──────────────────────────────────
-
-app.post('/api/submit', async (req, res) => {
-  const { name, email, note } = req.body || {};
-  if (!name?.trim() || !email?.trim())          return res.status(400).json({ error: 'Name and email are required.' });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address.' });
-
-  const token = crypto.randomUUID();
-  db.prepare('INSERT INTO tokens (token,artist_name,email) VALUES (?,?,?)').run(token, name.trim(), email.trim());
-
-  const link = `${SITE_URL}/hand-in/${token}`;
-  await Promise.all([
-    sendEmail({
-      to:      email,
-      subject: 'Your hand-in link — Get Inspired Society',
-      html:    `<p>Hi ${name},</p><p>Use this link to submit your work:</p><p><a href="${link}">${link}</a></p><p>The link can be used once.</p>`,
-    }),
-    sendEmail({
-      to:      ADMIN_EMAIL,
-      subject: `New submission request from ${name}`,
-      html:    `<p>${name} (${email}) requested a hand-in link.<br>Note: ${note || '—'}</p>`,
-    }),
-  ]);
 
   res.json({ ok: true });
 });
@@ -234,32 +186,10 @@ app.patch('/api/admin/works/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// ── Admin: tokens ─────────────────────────────────────────────────────────────
-
-app.get('/api/admin/tokens', requireAdmin, (req, res) => {
-  res.json(db.prepare('SELECT * FROM tokens ORDER BY created_at DESC').all());
-});
-
-app.post('/api/admin/tokens', requireAdmin, async (req, res) => {
-  const { artist_name, email } = req.body || {};
-  if (!artist_name || !email) return res.status(400).json({ error: 'Missing fields.' });
-  const token = crypto.randomUUID();
-  db.prepare('INSERT INTO tokens (token,artist_name,email) VALUES (?,?,?)').run(token, artist_name, email);
-  const link = `${SITE_URL}/hand-in/${token}`;
-  await sendEmail({
-    to:      email,
-    subject: 'Your hand-in link — Get Inspired Society',
-    html:    `<p>Hi ${artist_name},</p><p>Submit your work here:<br><a href="${link}">${link}</a></p><p>The link can be used once.</p>`,
-  });
-  res.json({ ok: true, token, link });
-});
-
 // ── Admin: submissions ────────────────────────────────────────────────────────
 
 app.get('/api/admin/submissions', requireAdmin, (req, res) => {
-  res.json(db.prepare(
-    'SELECT s.*,t.artist_name,t.email FROM submissions s JOIN tokens t ON s.token_id=t.id ORDER BY s.created_at DESC'
-  ).all());
+  res.json(db.prepare('SELECT * FROM submissions ORDER BY created_at DESC').all());
 });
 
 app.patch('/api/admin/submissions/:id', requireAdmin, (req, res) => {
@@ -271,9 +201,7 @@ app.patch('/api/admin/submissions/:id', requireAdmin, (req, res) => {
     return res.json({ ok: true });
   }
 
-  const sub = db.prepare(
-    'SELECT s.*,t.artist_name FROM submissions s JOIN tokens t ON s.token_id=t.id WHERE s.id=?'
-  ).get(req.params.id);
+  const sub = db.prepare('SELECT * FROM submissions WHERE id=?').get(req.params.id);
   if (!sub) return res.status(404).json({ error: 'Not found.' });
 
   const slug = sub.work_title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/, '');
@@ -289,12 +217,6 @@ app.patch('/api/admin/submissions/:id', requireAdmin, (req, res) => {
 });
 
 // ── Page routes ───────────────────────────────────────────────────────────────
-
-// express.static serves public/hand-in/index.html for /hand-in
-// For /hand-in/:token static finds nothing → falls through to here
-app.get('/hand-in/:token', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'hand-in', 'index.html'));
-});
 
 app.get('/work/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'work', 'index.html'));

@@ -20,13 +20,20 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
 .field span{display:block;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 .field input,.field textarea{width:100%;background:var(--paper);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:16px;padding:16px 18px;border-radius:2px;transition:border-color .2s}
 .field input:focus,.field textarea:focus{outline:0;border-color:var(--ink)}
-.field textarea{min-height:120px;resize:vertical;line-height:1.55}
+.field textarea{min-height:100px;resize:vertical;line-height:1.55}
+.drop{border:1px dashed var(--line);border-radius:2px;padding:40px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative}
+.drop:hover,.drop.over{border-color:var(--ink);background:#fafafa}
+.drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop .drop-icon{font-size:28px;line-height:1;margin-bottom:10px}
+.drop .drop-label{font-size:14px;color:var(--muted)}
+.drop .drop-label b{color:var(--ink)}
+.drop .drop-hint{margin-top:5px;font-size:12px;color:#aaa}
+.preview{margin-top:14px;display:none}
+.preview img{max-width:100%;max-height:220px;object-fit:contain;border-radius:2px}
 .btn{display:inline-flex;align-items:center;gap:10px;background:var(--blue);color:#fff;border:0;border-radius:999px;padding:16px 32px;font:inherit;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:background .25s,gap .25s;margin-top:8px}
 .btn:hover{background:#1038d8;gap:16px}
 .btn:disabled{opacity:.45;cursor:default;pointer-events:none}
-.note{margin-top:18px;font-size:13px;color:var(--muted);line-height:1.6}
-.msg{margin-top:22px;font-size:14px;line-height:1.55;display:none}
-.msg.ok{color:#065f46}
+.msg{margin-top:18px;font-size:14px;line-height:1.55;display:none}
 .msg.err{color:#991b1b}
 #state-done{display:none;text-align:center;padding:80px 0}
 #state-done h2{font-size:clamp(2rem,4.4vw,3rem);font-weight:700;letter-spacing:-.02em;font-variation-settings:'wdth' 114;line-height:1.04}
@@ -38,7 +45,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
   <div id="state-form">
     <span class="eyebrow">Get Inspired Society</span>
     <h1>Put your work forward.</h1>
-    <p class="sub">Leave your details and we send you a private link to hand in one image. We review everything ourselves.</p>
+    <p class="sub">One image, one title. We review everything ourselves.</p>
 
     <form id="form" novalidate>
       <label class="field">
@@ -50,18 +57,31 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
         <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
       </label>
       <label class="field">
-        <span>Tell us about your work (optional)</span>
-        <textarea id="note" placeholder="Medium, approach, what you would submit…"></textarea>
+        <span>Title of the work</span>
+        <input id="work_title" type="text" placeholder="Untitled" required>
       </label>
-      <button class="btn" type="submit" id="submit-btn">Request a link →</button>
-      <p class="note">We'll send you the link within a few days. One image per request.</p>
+      <div class="field">
+        <span>The image</span>
+        <div class="drop" id="drop">
+          <input type="file" id="file" accept="image/jpeg,image/png,image/webp" required>
+          <div class="drop-icon">⬆</div>
+          <p class="drop-label"><b>Click to choose</b> or drag and drop</p>
+          <p class="drop-hint">JPEG, PNG or WebP · max 20 MB</p>
+        </div>
+        <div class="preview" id="preview"><img id="preview-img" src="" alt="Preview"></div>
+      </div>
+      <label class="field">
+        <span>Notes (optional)</span>
+        <textarea id="notes" placeholder="Anything you want us to know about this work."></textarea>
+      </label>
+      <button class="btn" type="submit" id="submit-btn">Submit →</button>
       <p class="msg" id="msg"></p>
     </form>
   </div>
 
   <div id="state-done">
-    <h2>Request received.</h2>
-    <p>We'll send the link to your email within a few days.</p>
+    <h2>Thank you.</h2>
+    <p>We have received your work.<br>We'll be in touch.</p>
   </div>
 </div>
 
@@ -73,45 +93,78 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
   var msg       = document.getElementById('msg');
   var stateDone = document.getElementById('state-done');
   var stateForm = document.getElementById('state-form');
+  var fileInput = document.getElementById('file');
+  var drop      = document.getElementById('drop');
+  var preview   = document.getElementById('preview');
+  var previewImg= document.getElementById('preview-img');
+
+  fileInput.addEventListener('change', function () {
+    var file = fileInput.files[0];
+    if (!file) { preview.style.display = 'none'; return; }
+    previewImg.src = URL.createObjectURL(file);
+    preview.style.display = '';
+  });
+
+  drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
+  drop.addEventListener('drop', function (e) {
+    e.preventDefault();
+    drop.classList.remove('over');
+    var file = e.dataTransfer.files[0];
+    if (file && /^image\/(jpeg|png|webp)$/.test(file.type)) {
+      var dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      previewImg.src = URL.createObjectURL(file);
+      preview.style.display = '';
+    }
+  });
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    var name  = document.getElementById('name').value.trim();
-    var email = document.getElementById('email').value.trim();
-    var note  = document.getElementById('note').value.trim();
+    var name       = document.getElementById('name').value.trim();
+    var email      = document.getElementById('email').value.trim();
+    var work_title = document.getElementById('work_title').value.trim();
+    var notes      = document.getElementById('notes').value.trim();
+    var file       = fileInput.files[0];
     msg.style.display = 'none';
-    if (!name)  { showMsg('Please enter your name.', false); return; }
-    if (!email) { showMsg('Please enter your email.', false); return; }
+    if (!name)       { showMsg('Please enter your name.'); return; }
+    if (!email)      { showMsg('Please enter your email.'); return; }
+    if (!work_title) { showMsg('Please enter a title.'); return; }
+    if (!file)       { showMsg('Please select an image.'); return; }
 
-    submitBtn.disabled    = true;
+    var fd = new FormData();
+    fd.append('name', name);
+    fd.append('email', email);
+    fd.append('work_title', work_title);
+    fd.append('notes', notes);
+    fd.append('image', file);
+
+    submitBtn.disabled = true;
     submitBtn.textContent = 'Sending…';
 
-    fetch('/api/submit', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ name: name, email: email, note: note }),
-    })
+    fetch('/api/submit', { method: 'POST', body: fd })
       .then(function (r) { return r.json(); })
       .then(function (data) {
         if (data.ok) {
           stateForm.style.display = 'none';
           stateDone.style.display = '';
         } else {
-          showMsg(data.error || 'Something went wrong.', false);
-          submitBtn.disabled    = false;
-          submitBtn.textContent = 'Request a link →';
+          showMsg(data.error || 'Something went wrong.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit →';
         }
       })
       .catch(function () {
-        showMsg('Could not reach the server. Please try again.', false);
-        submitBtn.disabled    = false;
-        submitBtn.textContent = 'Request a link →';
+        showMsg('Could not reach the server. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit →';
       });
   });
 
-  function showMsg(text, ok) {
-    msg.textContent   = text;
-    msg.className     = 'msg ' + (ok ? 'ok' : 'err');
+  function showMsg(text) {
+    msg.textContent = text;
+    msg.className = 'msg err';
     msg.style.display = '';
   }
 }());

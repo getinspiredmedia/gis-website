@@ -102,7 +102,6 @@ button{font:inherit;cursor:pointer}
   <div class="tabs">
     <button class="tab active" data-tab="works">Works</button>
     <button class="tab" data-tab="submissions">Submissions</button>
-    <button class="tab" data-tab="tokens">Tokens</button>
   </div>
 
   <!-- Works -->
@@ -129,20 +128,6 @@ button{font:inherit;cursor:pointer}
   <div class="panel" id="panel-submissions">
     <div class="section-head"><h2>Submissions</h2></div>
     <div class="cards" id="submissions-cards"></div>
-  </div>
-
-  <!-- Tokens -->
-  <div class="panel" id="panel-tokens">
-    <div class="section-head"><h2>Hand-in tokens</h2></div>
-    <div class="form-row">
-      <input id="t-name"  placeholder="Artist name">
-      <input id="t-email" type="email" placeholder="artist@example.com">
-      <button class="btn-sm primary" id="create-token-btn">Create &amp; send link</button>
-    </div>
-    <table class="tbl" id="tokens-tbl">
-      <thead><tr><th>Artist</th><th>Email</th><th>Status</th><th>Created</th><th>Link</th></tr></thead>
-      <tbody id="tokens-body"></tbody>
-    </table>
   </div>
 </div>
 
@@ -257,37 +242,11 @@ window.reviewSub=function(id,action){
   });
 };
 
-// ── Tokens ────────────────────────────────────────────────────────────────────
-function loadTokens(){
-  api('GET','/api/admin/tokens').then(function(rows){
-    var tbody=document.getElementById('tokens-body');
-    var siteUrl=location.origin;
-    if(!rows.length){tbody.innerHTML='<tr><td colspan="5" class="empty">No tokens yet.</td></tr>';return;}
-    tbody.innerHTML=rows.map(function(t){
-      var link=siteUrl+'/hand-in/'+t.token;
-      return '<tr><td>'+esc(t.artist_name)+'</td><td>'+esc(t.email)+'</td>'+
-        '<td><span class="badge badge-'+t.status+'">'+t.status+'</span></td>'+
-        '<td>'+esc(t.created_at.slice(0,10))+'</td>'+
-        '<td>'+(t.status==='pending'?'<a href="'+esc(link)+'" target="_blank" style="color:var(--blue);word-break:break-all;font-size:12px">'+esc(link)+'</a>':'—')+'</td></tr>';
-    }).join('');
-  });
-}
-
-document.getElementById('create-token-btn').addEventListener('click',function(){
-  var name=document.getElementById('t-name').value.trim();
-  var email=document.getElementById('t-email').value.trim();
-  if(!name||!email){alert('Name and email are required.');return;}
-  api('POST','/api/admin/tokens',{artist_name:name,email:email}).then(function(d){
-    if(d.ok){document.getElementById('t-name').value='';document.getElementById('t-email').value='';loadTokens();alert('Token created and email sent.\n\n'+d.link);}
-    else alert(d.error||'Error');
-  });
-});
-
 function esc(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function loadAll(){loadWorks();loadSubmissions();loadTokens();}
+function loadAll(){loadWorks();loadSubmissions();}
 if(session) loadAll();
 }());
 </script>
