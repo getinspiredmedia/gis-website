@@ -21,7 +21,7 @@ a{color:inherit;text-decoration:none}
 /* cold open */
 .open{position:relative;height:100svh;min-height:560px;background:var(--ink);overflow:hidden;display:flex;align-items:flex-end}
 .open figure{position:absolute;inset:0}
-.open .plate{width:100%;height:100%;background:linear-gradient(180deg,rgba(11,12,16,.30) 0%,rgba(11,12,16,.05) 40%,rgba(11,12,16,.82) 100%),url('https://picsum.photos/seed/gis-onview-31/1800/1150?grayscale') center/cover no-repeat,radial-gradient(120% 90% at 62% 34%,#2a3550 0%,#14161f 55%,#0b0c10 100%);transform:scale(1.06);opacity:0;animation:plateIn 2600ms var(--ease) forwards}
+.open .plate{width:100%;height:100%;background:radial-gradient(120% 90% at 62% 34%,#2a3550 0%,#14161f 55%,#0b0c10 100%);transform:scale(1.06);opacity:0;animation:plateIn 2600ms var(--ease) forwards}
 @keyframes plateIn{to{transform:scale(1);opacity:1}}
 .open .veil{position:absolute;inset:0;background:var(--ink);transform-origin:top;animation:veil 1200ms var(--ease) 300ms forwards}
 @keyframes veil{to{transform:scaleY(0)}}
@@ -50,11 +50,11 @@ a{color:inherit;text-decoration:none}
 .cell.k-void{background:var(--line)}
 .cell .art{position:absolute;inset:0;opacity:0;transform:scale(1.08);transition:opacity 900ms var(--ease),transform 1400ms var(--ease)}
 .cell.lit .art{opacity:1;transform:none}
-.cell .art.a1{background:url('https://picsum.photos/seed/gis-corvara/1000/1000?grayscale') center/cover no-repeat,radial-gradient(110% 100% at 30% 20%,#7d8aa8,#2b3247 70%,#171a24)}
-.cell .art.a2{background:url('https://picsum.photos/seed/gis-vonk/1000/1000?grayscale') center/cover no-repeat,radial-gradient(100% 120% at 70% 80%,#c8b49a,#6a5a48 65%,#2a241d)}
-.cell .art.a3{background:url('https://picsum.photos/seed/gis-berglund/1000/1000?grayscale') center/cover no-repeat,radial-gradient(120% 90% at 50% 30%,#9fb0bd,#3f5060 60%,#151d25)}
-.cell .art.a4{background:url('https://picsum.photos/seed/gis-furrer/1000/1000?grayscale') center/cover no-repeat,radial-gradient(90% 110% at 20% 70%,#b9a7b8,#4d4152 70%,#1d1922)}
-.cell .art.a5{background:url('https://picsum.photos/seed/gis-genzor/1000/1000?grayscale') center/cover no-repeat,radial-gradient(120% 100% at 80% 25%,#a8b6a0,#42513c 65%,#171d15)}
+.cell .art.a1{background:radial-gradient(110% 100% at 30% 20%,#7d8aa8,#2b3247 70%,#171a24)}
+.cell .art.a2{background:radial-gradient(100% 120% at 70% 80%,#c8b49a,#6a5a48 65%,#2a241d)}
+.cell .art.a3{background:radial-gradient(120% 90% at 50% 30%,#9fb0bd,#3f5060 60%,#151d25)}
+.cell .art.a4{background:radial-gradient(90% 110% at 20% 70%,#b9a7b8,#4d4152 70%,#1d1922)}
+.cell .art.a5{background:radial-gradient(120% 100% at 80% 25%,#a8b6a0,#42513c 65%,#171d15)}
 .cell .name{position:absolute;left:0;right:0;bottom:0;padding:12px 14px;color:#fff;font-size:12px;letter-spacing:.04em;background:linear-gradient(transparent,rgba(0,0,0,.62));opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s}
 .cell:hover .name,.cell:focus-visible .name{opacity:1;transform:none}
 .s-2x2{grid-column:span 2;grid-row:span 2}
@@ -79,10 +79,12 @@ a{color:inherit;text-decoration:none}
 .issue .cover span{position:absolute;left:16px;right:16px;bottom:16px;color:#fff;font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.8}
 .issue h3{margin-top:14px;font-size:15px;font-weight:600}
 .issue small{display:block;margin-top:4px;color:var(--muted);font-size:12px}
+.issue.upcoming .cover{background:var(--line)}
+.issue.upcoming .cover span{color:var(--muted)}
 
 /* room */
 .room{position:relative;background:var(--ink);color:#fff;min-height:78svh;display:flex;align-items:center;justify-content:center;text-align:center;padding:clamp(70px,12vh,140px) 28px;overflow:hidden}
-.room .field{position:absolute;inset:0;background:linear-gradient(rgba(11,12,16,.55),rgba(11,12,16,.8)),url('https://picsum.photos/seed/gis-room-3/1800/1100?grayscale') center/cover no-repeat,radial-gradient(120% 100% at 50% 45%,#39405c 0%,#171a26 55%,#0b0c10 100%)}
+.room .field{position:absolute;inset:0;background:radial-gradient(120% 100% at 50% 45%,#39405c 0%,#171a26 55%,#0b0c10 100%)}
 .room .torch{position:absolute;inset:0;pointer-events:none;background:radial-gradient(240px 240px at var(--mx,50%) var(--my,50%),rgba(255,255,255,.16),transparent 70%);transition:opacity .4s}
 .room .inner{position:relative;z-index:2;max-width:620px}
 .room .eyebrow{color:rgba(255,255,255,.6)}
@@ -169,10 +171,10 @@ a{color:inherit;text-decoration:none}
     <p>Five artists. One theme. Four times a year. Free to read.</p>
   </div>
   <div class="rail">
-    <a href="/magazine" class="issue"><div class="cover" style="background-image:linear-gradient(rgba(11,12,16,.15),rgba(11,12,16,.7)),url('https://picsum.photos/seed/gis-cover-origins/700/930?grayscale')"><span>Issue 1 · Origins</span></div><h3>Origins</h3><small>Before mastery. Before style.</small></a>
-    <a href="/magazine" class="issue"><div class="cover" style="background-image:linear-gradient(rgba(11,12,16,.15),rgba(11,12,16,.7)),url('https://picsum.photos/seed/gis-cover-noalgo/700/930?grayscale')"><span>Issue 2 · No Algorithm</span></div><h3>No Algorithm</h3><small>Before the feed. Before the scroll.</small></a>
-    <a href="/magazine" class="issue current"><div class="cover" style="background-image:linear-gradient(rgba(11,12,16,.15),rgba(11,12,16,.7)),url('https://picsum.photos/seed/gis-cover-light/700/930?grayscale')"><span>Issue 3 · Chasing Light</span></div><h3>Chasing Light</h3><small>The same sun. Never the same light.</small></a>
-    <a href="/magazine" class="issue"><div class="cover" style="background:var(--line)"><span style="color:#5b616b">Issue 4 · October</span></div><h3>Untitled</h3><small>Open call runs in August.</small></a>
+    <a href="/magazine" class="issue"><div class="cover"><span>Issue 1 · Origins</span></div><h3>Origins</h3><small>Before mastery. Before style.</small></a>
+    <a href="/magazine" class="issue"><div class="cover"><span>Issue 2 · No Algorithm</span></div><h3>No Algorithm</h3><small>Before the feed. Before the scroll.</small></a>
+    <a href="/magazine" class="issue current"><div class="cover"><span>Issue 3 · Chasing Light</span></div><h3>Chasing Light</h3><small>The same sun. Never the same light.</small></a>
+    <a href="/magazine" class="issue upcoming"><div class="cover"><span>Issue 4 · October</span></div><h3>Untitled</h3><small>Open call runs in August.</small></a>
   </div>
 </section>
 
