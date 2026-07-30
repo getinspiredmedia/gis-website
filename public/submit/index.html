@@ -58,12 +58,12 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
         <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
       </label>
       <label class="field">
-        <span>Portfolio (optional)</span>
-        <input id="portfolio" type="url" placeholder="https://yourwebsite.com">
+        <span>Portfolio</span>
+        <input id="portfolio" type="url" placeholder="https://yourwebsite.com" required>
       </label>
       <label class="field">
-        <span>Title of the work</span>
-        <input id="work_title" type="text" placeholder="Untitled" required>
+        <span>Title of the work (optional)</span>
+        <input id="work_title" type="text" placeholder="Untitled">
       </label>
       <div class="field">
         <span>The image</span>
@@ -144,10 +144,10 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
     var work_title = document.getElementById('work_title').value.trim();
     var file       = fileInput.files[0];
     msg.style.display = 'none';
-    if (!name)       { showMsg('Please enter your name.'); return; }
-    if (!email)      { showMsg('Please enter your email.'); return; }
-    if (!work_title) { showMsg('Please enter a title.'); return; }
-    if (!file)       { showMsg('Please select an image.'); return; }
+    if (!name)      { showMsg('Please enter your name.'); return; }
+    if (!email)     { showMsg('Please enter your email.'); return; }
+    if (!portfolio) { showMsg('Please enter your portfolio URL.'); return; }
+    if (!file)      { showMsg('Please select an image.'); return; }
 
     var fd = new FormData();
     fd.append('name', name);
