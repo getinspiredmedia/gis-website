@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>On View · Get Inspired Society</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#0d2ec4;--ink:#0b0c10;--ease:cubic-bezier(.16,.84,.44,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden}
+body{font-family:'Archivo',-apple-system,sans-serif;background:var(--ink);color:#fff;-webkit-font-smoothing:antialiased}
+.wall{position:absolute;inset:0;background-size:cover;background-position:center;background-color:var(--ink);opacity:0;transition:opacity .45s var(--ease)}
+.wall.visible{opacity:1}
+.wall::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(11,12,16,.65) 0%,transparent 45%);pointer-events:none}
+.arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;background:transparent;border:1px solid rgba(255,255,255,.35);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;cursor:pointer;transition:background .2s,border-color .2s;line-height:1}
+.arrow:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.65)}
+.arrow-prev{left:16px}
+.arrow-next{right:16px}
+.plaque{position:absolute;bottom:20px;left:20px;z-index:10}
+.plaque .pt{font-size:1.1rem;font-weight:600;letter-spacing:-.01em;color:#fff;display:block;text-decoration:none}
+.plaque .pt:hover{text-decoration:underline}
+.plaque .pa{margin-top:4px;font-size:13px;color:rgba(255,255,255,.72)}
+.progress{position:absolute;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,.16);z-index:10}
+.progress-fill{display:block;height:100%;width:0;background:var(--blue)}
+.progress-fill.animate{animation:pf 20s linear forwards}
+@keyframes pf{to{width:100%}}
+@media(prefers-reduced-motion:reduce){.wall{transition:none}.progress-fill.animate{animation:none;width:100%}}
+</style>
+</head>
+<body>
+<div class="wall" id="wall" aria-hidden="true"></div>
+<button class="arrow arrow-prev" id="btn-prev" aria-label="Previous">&#8592;</button>
+<button class="arrow arrow-next" id="btn-next" aria-label="Next">&#8594;</button>
+<div class="plaque" id="plaque">
+  <a class="pt" id="plaque-title" href="#" target="_top">&nbsp;</a>
+  <p class="pa" id="plaque-artist"></p>
+</div>
+<div class="progress" role="progressbar">
+  <span class="progress-fill" id="progress-fill"></span>
+</div>
+<script>
+(function(){
+'use strict';
+var CYCLE=20000,FADE=450;
+var wall=document.getElementById('wall');
+var pt=document.getElementById('plaque-title');
+var pa=document.getElementById('plaque-artist');
+var pf=document.getElementById('progress-fill');
+var prev=document.getElementById('btn-prev');
+var next=document.getElementById('btn-next');
+var works=[],shuffled=[],pos=0,timer=null;
+var rm=window.matchMedia('(prefers-reduced-motion:reduce)');
+
+function shuffle(){
+  shuffled=works.slice();
+  for(var i=shuffled.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=shuffled[i];shuffled[i]=shuffled[j];shuffled[j]=t;}
+  pos=0;
+}
+function cur(){return shuffled[pos];}
+function resetBar(){pf.classList.remove('animate');void pf.offsetWidth;if(!rm.matches)pf.classList.add('animate');}
+function show(w){
+  if(rm.matches){wall.style.backgroundImage='url(\''+w.image+'\')';wall.classList.add('visible');pt.textContent=w.title;pt.href='/work/'+w.slug;pa.textContent=w.artist;resetBar();return;}
+  wall.classList.remove('visible');
+  setTimeout(function(){wall.style.backgroundImage='url(\''+w.image+'\')';wall.classList.add('visible');pt.textContent=w.title;pt.href='/work/'+w.slug;pa.textContent=w.artist;resetBar();},FADE+50);
+}
+function tick(){timer=setTimeout(function(){pos++;if(pos>=shuffled.length)shuffle();show(cur());tick();},CYCLE);}
+function stop(){clearTimeout(timer);timer=null;}
+
+next.addEventListener('click',function(){stop();pos++;if(pos>=shuffled.length)shuffle();show(cur());if(!rm.matches)tick();});
+prev.addEventListener('click',function(){stop();if(pos>0)pos--;show(cur());if(!rm.matches)tick();});
+document.addEventListener('keydown',function(e){if(e.key==='ArrowLeft')prev.click();if(e.key==='ArrowRight')next.click();});
+
+fetch('/api/works').then(function(r){return r.json();}).then(function(data){
+  works=data;shuffle();show(cur());if(!rm.matches)tick();
+}).catch(function(){pt.textContent='Could not load works.';});
+}());
+</script>
+</body>
+</html>

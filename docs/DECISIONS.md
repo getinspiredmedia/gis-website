@@ -25,3 +25,9 @@ Elke beslissing volgt dit formaat:
 - **Reden:** De keuze (restyled rebuild vs. proxied Railway-app) is nog open.
 - **Alternatieven overwogen:** Proxy via Express `http-proxy-middleware`, iframe embed.
 - **Gevolgen:** Keuze moet expliciet gemaakt worden vóór invulling van `/on-view`.
+
+### 2026-07-30 — On View herbouwen in deze repo (Option A)
+- **Beslissing:** On View wordt volledig herbouwd in `getinspiredmedia/gis-website`. Geen proxy naar de aparte `getinspiredmedia/on-view` app.
+- **Reden:** Één repo, één Railway deployment, één stack. Contact form via Resend vereist al een draaiende server — de backend-laag (SQLite, Sharp, Resend) wordt dan in diezelfde app ondergebracht.
+- **Alternatieven overwogen:** Option B — proxy via `http-proxy-middleware` naar de bestaande On View Railway app.
+- **Gevolgen:** SQLite (werken/inzendingen), Sharp (beeldverwerking), Resend (contact + hand-in notificaties), en de routes `/embed`, `/hand-in/:token`, `/submit`, `/admin` worden hier geïmplementeerd. De bestaande `getinspiredmedia/on-view` app blijft onaangeroerd en wordt niet gemigreerd of verwijderd.

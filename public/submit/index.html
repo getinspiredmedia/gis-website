@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Submit your work · Get Inspired Society</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Archivo',-apple-system,sans-serif;background:var(--paper);color:var(--ink);min-height:100svh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:640px;margin:0 auto;padding:clamp(80px,14vh,140px) 24px 80px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:14px}
+h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-spacing:-.02em;font-variation-settings:'wdth' 116;margin-bottom:14px}
+.sub{font-size:16px;color:var(--muted);margin-bottom:40px;line-height:1.55;max-width:38ch}
+.field{display:block;margin-bottom:22px}
+.field span{display:block;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.field input,.field textarea{width:100%;background:var(--paper);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:16px;padding:16px 18px;border-radius:2px;transition:border-color .2s}
+.field input:focus,.field textarea:focus{outline:0;border-color:var(--ink)}
+.field textarea{min-height:120px;resize:vertical;line-height:1.55}
+.btn{display:inline-flex;align-items:center;gap:10px;background:var(--blue);color:#fff;border:0;border-radius:999px;padding:16px 32px;font:inherit;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:background .25s,gap .25s;margin-top:8px}
+.btn:hover{background:#1038d8;gap:16px}
+.btn:disabled{opacity:.45;cursor:default;pointer-events:none}
+.note{margin-top:18px;font-size:13px;color:var(--muted);line-height:1.6}
+.msg{margin-top:22px;font-size:14px;line-height:1.55;display:none}
+.msg.ok{color:#065f46}
+.msg.err{color:#991b1b}
+#state-done{display:none;text-align:center;padding:80px 0}
+#state-done h2{font-size:clamp(2rem,4.4vw,3rem);font-weight:700;letter-spacing:-.02em;font-variation-settings:'wdth' 114;line-height:1.04}
+#state-done p{margin-top:16px;color:var(--muted);font-size:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="state-form">
+    <span class="eyebrow">Get Inspired Society</span>
+    <h1>Put your work forward.</h1>
+    <p class="sub">Leave your details and we send you a private link to hand in one image. We review everything ourselves.</p>
+
+    <form id="form" novalidate>
+      <label class="field">
+        <span>Your name</span>
+        <input id="name" type="text" placeholder="First and last name" autocomplete="name" required>
+      </label>
+      <label class="field">
+        <span>Your email</span>
+        <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+      </label>
+      <label class="field">
+        <span>Tell us about your work (optional)</span>
+        <textarea id="note" placeholder="Medium, approach, what you would submit…"></textarea>
+      </label>
+      <button class="btn" type="submit" id="submit-btn">Request a link →</button>
+      <p class="note">We'll send you the link within a few days. One image per request.</p>
+      <p class="msg" id="msg"></p>
+    </form>
+  </div>
+
+  <div id="state-done">
+    <h2>Request received.</h2>
+    <p>We'll send the link to your email within a few days.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var form      = document.getElementById('form');
+  var submitBtn = document.getElementById('submit-btn');
+  var msg       = document.getElementById('msg');
+  var stateDone = document.getElementById('state-done');
+  var stateForm = document.getElementById('state-form');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name  = document.getElementById('name').value.trim();
+    var email = document.getElementById('email').value.trim();
+    var note  = document.getElementById('note').value.trim();
+    msg.style.display = 'none';
+    if (!name)  { showMsg('Please enter your name.', false); return; }
+    if (!email) { showMsg('Please enter your email.', false); return; }
+
+    submitBtn.disabled    = true;
+    submitBtn.textContent = 'Sending…';
+
+    fetch('/api/submit', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ name: name, email: email, note: note }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.ok) {
+          stateForm.style.display = 'none';
+          stateDone.style.display = '';
+        } else {
+          showMsg(data.error || 'Something went wrong.', false);
+          submitBtn.disabled    = false;
+          submitBtn.textContent = 'Request a link →';
+        }
+      })
+      .catch(function () {
+        showMsg('Could not reach the server. Please try again.', false);
+        submitBtn.disabled    = false;
+        submitBtn.textContent = 'Request a link →';
+      });
+  });
+
+  function showMsg(text, ok) {
+    msg.textContent   = text;
+    msg.className     = 'msg ' + (ok ? 'ok' : 'err');
+    msg.style.display = '';
+  }
+}());
+</script>
+</body>
+</html>

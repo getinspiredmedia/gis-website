@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hand in your work · Get Inspired Society</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Archivo',-apple-system,sans-serif;background:var(--ink);color:#fff;min-height:100svh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:640px;margin:0 auto;padding:clamp(64px,12vh,120px) 24px 80px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.5);display:block;margin-bottom:14px}
+h1{font-weight:700;font-size:clamp(2rem,5vw,3.4rem);line-height:.96;letter-spacing:-.02em;font-variation-settings:'wdth' 116;margin-bottom:10px}
+.sub{font-size:16px;color:rgba(255,255,255,.6);margin-bottom:40px;line-height:1.5}
+.field{display:block;margin-bottom:22px}
+.field span{display:block;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:10px}
+.field input,.field textarea{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);color:#fff;font:inherit;font-size:16px;padding:16px 18px;border-radius:2px;transition:border-color .2s}
+.field input::placeholder,.field textarea::placeholder{color:rgba(255,255,255,.3)}
+.field input:focus,.field textarea:focus{outline:0;border-color:rgba(255,255,255,.5)}
+.field textarea{min-height:120px;resize:vertical;line-height:1.55}
+.drop{border:1px dashed rgba(255,255,255,.28);border-radius:2px;padding:40px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative}
+.drop:hover,.drop.over{border-color:rgba(255,255,255,.6);background:rgba(255,255,255,.04)}
+.drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop .drop-icon{font-size:32px;line-height:1;margin-bottom:12px}
+.drop .drop-label{font-size:14px;color:rgba(255,255,255,.55)}
+.drop .drop-label b{color:#fff}
+.drop .drop-hint{margin-top:6px;font-size:12px;color:rgba(255,255,255,.35)}
+.preview{margin-top:14px;display:none}
+.preview img{max-width:100%;max-height:240px;object-fit:contain;border-radius:2px}
+.btn{display:inline-flex;align-items:center;gap:10px;background:var(--blue);color:#fff;border:0;border-radius:999px;padding:16px 32px;font:inherit;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:background .25s,gap .25s;margin-top:32px}
+.btn:hover{background:#1038d8;gap:16px}
+.btn:disabled{opacity:.45;cursor:default;pointer-events:none}
+.msg{margin-top:24px;font-size:14px;line-height:1.55;display:none}
+.msg.ok{color:#6ee7b7}
+.msg.err{color:#fca5a5}
+#state-loading{display:flex;align-items:center;justify-content:center;min-height:60vh;font-size:14px;color:rgba(255,255,255,.45)}
+#state-invalid{display:none;text-align:center;padding:80px 24px}
+#state-invalid p{margin-top:16px;color:rgba(255,255,255,.55);font-size:15px}
+#state-form{display:none}
+#state-done{display:none;text-align:center;padding:80px 24px}
+#state-done h2{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:700;line-height:1.04;letter-spacing:-.02em;font-variation-settings:'wdth' 114}
+#state-done p{margin-top:16px;color:rgba(255,255,255,.6);font-size:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="state-loading">Loading…</div>
+
+  <div id="state-invalid">
+    <h1>This link is not valid.</h1>
+    <p>It may have already been used, or it never existed.<br>If you think this is a mistake, reply to the email you received.</p>
+  </div>
+
+  <div id="state-form">
+    <span class="eyebrow">Get Inspired Society · Hand in</span>
+    <h1 id="greeting">Hand in your work.</h1>
+    <p class="sub">One image, one title. That is all we need from you here.</p>
+
+    <form id="form" novalidate>
+      <label class="field">
+        <span>Title of the work</span>
+        <input id="work_title" type="text" placeholder="Untitled" required>
+      </label>
+      <div class="field">
+        <span>The image</span>
+        <div class="drop" id="drop">
+          <input type="file" id="file" accept="image/jpeg,image/png,image/webp" required>
+          <div class="drop-icon">⬆</div>
+          <p class="drop-label"><b>Click to choose</b> or drag and drop</p>
+          <p class="drop-hint">JPEG, PNG or WebP · max 20 MB</p>
+        </div>
+        <div class="preview" id="preview"><img id="preview-img" src="" alt="Preview"></div>
+      </div>
+      <label class="field">
+        <span>Notes for us (optional)</span>
+        <textarea id="notes" placeholder="Anything you want us to know about this work."></textarea>
+      </label>
+      <button class="btn" type="submit" id="submit-btn">Send it →</button>
+      <p class="msg" id="msg"></p>
+    </form>
+  </div>
+
+  <div id="state-done">
+    <h2>Thank you.</h2>
+    <p>We have received your work.<br>We'll be in touch.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var parts = location.pathname.split('/').filter(Boolean);
+  var token = parts[1] || '';
+
+  var stLoading = document.getElementById('state-loading');
+  var stInvalid = document.getElementById('state-invalid');
+  var stForm    = document.getElementById('state-form');
+  var stDone    = document.getElementById('state-done');
+  var greeting  = document.getElementById('greeting');
+  var form      = document.getElementById('form');
+  var fileInput = document.getElementById('file');
+  var drop      = document.getElementById('drop');
+  var preview   = document.getElementById('preview');
+  var previewImg= document.getElementById('preview-img');
+  var msg       = document.getElementById('msg');
+  var submitBtn = document.getElementById('submit-btn');
+
+  function show(el) {
+    [stLoading, stInvalid, stForm, stDone].forEach(function (e) { e.style.display = 'none'; });
+    el.style.display = '';
+  }
+
+  if (!token) { show(stInvalid); return; }
+
+  fetch('/api/tokens/' + token)
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function (data) {
+      greeting.textContent = 'Hand in your work, ' + data.artist_name + '.';
+      show(stForm);
+    })
+    .catch(function () { show(stInvalid); });
+
+  // File preview
+  fileInput.addEventListener('change', function () {
+    var file = fileInput.files[0];
+    if (!file) { preview.style.display = 'none'; return; }
+    previewImg.src = URL.createObjectURL(file);
+    preview.style.display = '';
+  });
+
+  // Drag and drop
+  drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
+  drop.addEventListener('drop', function (e) {
+    e.preventDefault();
+    drop.classList.remove('over');
+    var file = e.dataTransfer.files[0];
+    if (file && /^image\/(jpeg|png|webp)$/.test(file.type)) {
+      var dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      previewImg.src = URL.createObjectURL(file);
+      preview.style.display = '';
+    }
+  });
+
+  // Submit
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var title = document.getElementById('work_title').value.trim();
+    var notes = document.getElementById('notes').value.trim();
+    var file  = fileInput.files[0];
+    msg.style.display = 'none';
+    if (!title)  { showMsg('Please enter a title.', false); return; }
+    if (!file)   { showMsg('Please select an image.', false); return; }
+
+    var fd = new FormData();
+    fd.append('work_title', title);
+    fd.append('notes', notes);
+    fd.append('image', file);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+
+    fetch('/hand-in/' + token, { method: 'POST', body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.ok) { show(stDone); }
+        else         { showMsg(data.error || 'Something went wrong.', false); submitBtn.disabled = false; submitBtn.textContent = 'Send it →'; }
+      })
+      .catch(function () { showMsg('Could not reach the server. Please try again.', false); submitBtn.disabled = false; submitBtn.textContent = 'Send it →'; });
+  });
+
+  function showMsg(text, ok) {
+    msg.textContent = text;
+    msg.className   = 'msg ' + (ok ? 'ok' : 'err');
+    msg.style.display = '';
+  }
+}());
+</script>
+</body>
+</html>

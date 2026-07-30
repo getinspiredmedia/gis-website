@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin · Get Inspired Society</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Archivo',-apple-system,sans-serif;background:#f5f6f8;color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer}
+
+/* Login */
+#login{display:flex;align-items:center;justify-content:center;min-height:100svh;padding:24px}
+.login-box{background:#fff;border:1px solid var(--line);padding:40px;width:100%;max-width:360px}
+.login-box h1{font-size:1.4rem;font-weight:700;letter-spacing:-.01em;margin-bottom:24px}
+.login-box input{width:100%;border:1px solid var(--line);padding:12px 14px;font:inherit;font-size:15px;margin-bottom:14px;border-radius:2px}
+.login-box input:focus{outline:0;border-color:var(--ink)}
+.login-box button{width:100%;background:var(--blue);color:#fff;border:0;border-radius:2px;padding:13px;font-size:14px;font-weight:700;letter-spacing:.04em}
+.login-box button:hover{background:#1038d8}
+.login-err{color:#991b1b;font-size:13px;margin-top:10px;display:none}
+
+/* App shell */
+#app{display:none}
+.topbar{background:var(--ink);color:#fff;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50}
+.topbar .mark{font-size:13px;font-weight:700;letter-spacing:.04em}
+.topbar .logout{font-size:12px;color:rgba(255,255,255,.55);background:0;border:0;cursor:pointer;padding:6px 0}
+.topbar .logout:hover{color:#fff}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--line);background:#fff;padding:0 24px}
+.tab{padding:14px 20px;font-size:13px;font-weight:600;letter-spacing:.04em;border:0;background:0;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;transition:color .2s,border-color .2s}
+.tab.active{color:var(--ink);border-bottom-color:var(--ink)}
+.panel{display:none;padding:28px 24px;max-width:1100px}
+.panel.active{display:block}
+
+/* Section headings */
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.section-head h2{font-size:16px;font-weight:700}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line)}
+.tbl th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line)}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr:hover td{background:#fafafa}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.badge-current{background:#dbeafe;color:#1d4ed8}
+.badge-previous{background:#f3f4f6;color:var(--muted)}
+.badge-archived{background:#fee2e2;color:#991b1b}
+.badge-pending{background:#fef3c7;color:#92400e}
+.badge-used{background:#d1fae5;color:#065f46}
+.badge-approved{background:#d1fae5;color:#065f46}
+.badge-rejected{background:#fee2e2;color:#991b1b}
+
+/* Buttons */
+.btn-sm{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
+.btn-sm:hover{background:#f5f6f8;border-color:var(--ink)}
+.btn-sm.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-sm.primary:hover{background:#1038d8;border-color:#1038d8}
+.btn-sm.danger{color:#991b1b;border-color:#fca5a5}
+.btn-sm.danger:hover{background:#fee2e2}
+.btn-sm:disabled{opacity:.4;cursor:default;pointer-events:none}
+
+/* Form rows */
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.form-row input,.form-row select{border:1px solid var(--line);padding:9px 12px;font:inherit;font-size:13px;border-radius:2px;flex:1;min-width:140px}
+.form-row input:focus,.form-row select:focus{outline:0;border-color:var(--ink)}
+
+/* Submission cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:#fff;border:1px solid var(--line);overflow:hidden}
+.card img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--line)}
+.card-body{padding:14px}
+.card-body h3{font-size:14px;font-weight:700;margin-bottom:4px}
+.card-body .meta{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5}
+.card-body .notes{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;font-style:italic}
+.card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.empty{color:var(--muted);font-size:14px;padding:32px 0}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login">
+  <div class="login-box">
+    <h1>Admin</h1>
+    <input type="password" id="pwd" placeholder="Password" autofocus>
+    <button id="login-btn">Sign in</button>
+    <p class="login-err" id="login-err">Wrong password.</p>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div class="topbar">
+    <span class="mark">GIS Admin</span>
+    <button class="logout" id="logout-btn">Sign out</button>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="works">Works</button>
+    <button class="tab" data-tab="submissions">Submissions</button>
+    <button class="tab" data-tab="tokens">Tokens</button>
+  </div>
+
+  <!-- Works -->
+  <div class="panel active" id="panel-works">
+    <div class="section-head">
+      <h2>Works on the wall</h2>
+    </div>
+    <div class="form-row" id="add-work-form">
+      <input id="w-slug"      placeholder="slug (url-safe)">
+      <input id="w-title"     placeholder="Title">
+      <input id="w-artist"    placeholder="Artist">
+      <input id="w-portfolio" placeholder="Portfolio URL (optional)">
+      <input id="w-image"     placeholder="Image URL">
+      <select id="w-status"><option value="previous">Previous</option><option value="current">Current</option></select>
+      <button class="btn-sm primary" id="add-work-btn">Add work</button>
+    </div>
+    <table class="tbl" id="works-tbl">
+      <thead><tr><th>Title</th><th>Artist</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="works-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Submissions -->
+  <div class="panel" id="panel-submissions">
+    <div class="section-head"><h2>Submissions</h2></div>
+    <div class="cards" id="submissions-cards"></div>
+  </div>
+
+  <!-- Tokens -->
+  <div class="panel" id="panel-tokens">
+    <div class="section-head"><h2>Hand-in tokens</h2></div>
+    <div class="form-row">
+      <input id="t-name"  placeholder="Artist name">
+      <input id="t-email" type="email" placeholder="artist@example.com">
+      <button class="btn-sm primary" id="create-token-btn">Create &amp; send link</button>
+    </div>
+    <table class="tbl" id="tokens-tbl">
+      <thead><tr><th>Artist</th><th>Email</th><th>Status</th><th>Created</th><th>Link</th></tr></thead>
+      <tbody id="tokens-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var session = sessionStorage.getItem('gis_admin');
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+function showApp(){document.getElementById('login').style.display='none';document.getElementById('app').style.display='';}
+if(session) showApp();
+
+document.getElementById('login-btn').addEventListener('click', doLogin);
+document.getElementById('pwd').addEventListener('keydown', function(e){if(e.key==='Enter')doLogin();});
+
+function doLogin(){
+  var pwd=document.getElementById('pwd').value;
+  fetch('/api/admin/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.token){sessionStorage.setItem('gis_admin',d.token);session=d.token;showApp();loadAll();}
+      else{document.getElementById('login-err').style.display='';}
+    }).catch(function(){document.getElementById('login-err').style.display='';});
+}
+
+document.getElementById('logout-btn').addEventListener('click',function(){
+  sessionStorage.removeItem('gis_admin');location.reload();
+});
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(function(tab){
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+function api(method, url, body){
+  return fetch(url,{
+    method:method,
+    headers:Object.assign({'Authorization':'Bearer '+session},body?{'Content-Type':'application/json'}:{}),
+    body:body?JSON.stringify(body):undefined
+  }).then(function(r){return r.json();});
+}
+
+// ── Works ─────────────────────────────────────────────────────────────────────
+function loadWorks(){
+  api('GET','/api/admin/works').then(function(rows){
+    var tbody=document.getElementById('works-body');
+    if(!rows.length){tbody.innerHTML='<tr><td colspan="4" class="empty">No works yet.</td></tr>';return;}
+    tbody.innerHTML=rows.map(function(w){
+      return '<tr><td><b>'+esc(w.title)+'</b><br><small style="color:var(--muted)">'+esc(w.slug)+'</small></td>'+
+        '<td>'+esc(w.artist)+'</td>'+
+        '<td><span class="badge badge-'+w.status+'">'+w.status+'</span></td>'+
+        '<td><div style="display:flex;gap:6px;flex-wrap:wrap">'+
+        (w.status!=='current'?'<button class="btn-sm" onclick="setStatus('+w.id+',\'current\')">Set current</button>':'')+
+        (w.status!=='previous'?'<button class="btn-sm" onclick="setStatus('+w.id+',\'previous\')">Set previous</button>':'')+
+        (w.status!=='archived'?'<button class="btn-sm danger" onclick="setStatus('+w.id+',\'archived\')">Archive</button>':'')+
+        '</div></td></tr>';
+    }).join('');
+  });
+}
+
+window.setStatus=function(id,status){
+  api('PATCH','/api/admin/works/'+id,{status:status}).then(loadWorks);
+};
+
+document.getElementById('add-work-btn').addEventListener('click',function(){
+  var slug=document.getElementById('w-slug').value.trim();
+  var title=document.getElementById('w-title').value.trim();
+  var artist=document.getElementById('w-artist').value.trim();
+  var portfolio=document.getElementById('w-portfolio').value.trim();
+  var image_url=document.getElementById('w-image').value.trim();
+  var status=document.getElementById('w-status').value;
+  if(!slug||!title||!artist||!image_url){alert('Slug, title, artist and image URL are required.');return;}
+  api('POST','/api/admin/works',{slug:slug,title:title,artist:artist,portfolio:portfolio,image_url:image_url,status:status})
+    .then(function(d){
+      if(d.id){['w-slug','w-title','w-artist','w-portfolio','w-image'].forEach(function(id){document.getElementById(id).value='';});loadWorks();}
+      else alert(d.error||'Error');
+    });
+});
+
+// ── Submissions ───────────────────────────────────────────────────────────────
+function loadSubmissions(){
+  api('GET','/api/admin/submissions').then(function(rows){
+    var cards=document.getElementById('submissions-cards');
+    if(!rows.length){cards.innerHTML='<p class="empty">No submissions yet.</p>';return;}
+    cards.innerHTML=rows.map(function(s){
+      return '<div class="card">'+
+        '<img src="'+esc(s.image_path)+'" alt="'+esc(s.work_title)+'">'+
+        '<div class="card-body">'+
+        '<h3>'+esc(s.work_title)+'</h3>'+
+        '<p class="meta">'+esc(s.artist_name)+' · '+esc(s.email)+'<br>'+esc(s.created_at.slice(0,10))+'</p>'+
+        (s.notes?'<p class="notes">'+esc(s.notes)+'</p>':'')+
+        '<span class="badge badge-'+s.status+'">'+s.status+'</span>'+
+        (s.status==='pending'?
+          '<div class="card-actions" style="margin-top:10px">'+
+          '<button class="btn-sm primary" onclick="reviewSub('+s.id+',\'approve\')">Approve</button>'+
+          '<button class="btn-sm danger" onclick="reviewSub('+s.id+',\'reject\')">Reject</button>'+
+          '</div>':'')+'</div></div>';
+    }).join('');
+  });
+}
+
+window.reviewSub=function(id,action){
+  api('PATCH','/api/admin/submissions/'+id,{action:action}).then(function(d){
+    if(d.ok){loadSubmissions();if(action==='approve')loadWorks();}
+    else alert(d.error||'Error');
+  });
+};
+
+// ── Tokens ────────────────────────────────────────────────────────────────────
+function loadTokens(){
+  api('GET','/api/admin/tokens').then(function(rows){
+    var tbody=document.getElementById('tokens-body');
+    var siteUrl=location.origin;
+    if(!rows.length){tbody.innerHTML='<tr><td colspan="5" class="empty">No tokens yet.</td></tr>';return;}
+    tbody.innerHTML=rows.map(function(t){
+      var link=siteUrl+'/hand-in/'+t.token;
+      return '<tr><td>'+esc(t.artist_name)+'</td><td>'+esc(t.email)+'</td>'+
+        '<td><span class="badge badge-'+t.status+'">'+t.status+'</span></td>'+
+        '<td>'+esc(t.created_at.slice(0,10))+'</td>'+
+        '<td>'+(t.status==='pending'?'<a href="'+esc(link)+'" target="_blank" style="color:var(--blue);word-break:break-all;font-size:12px">'+esc(link)+'</a>':'—')+'</td></tr>';
+    }).join('');
+  });
+}
+
+document.getElementById('create-token-btn').addEventListener('click',function(){
+  var name=document.getElementById('t-name').value.trim();
+  var email=document.getElementById('t-email').value.trim();
+  if(!name||!email){alert('Name and email are required.');return;}
+  api('POST','/api/admin/tokens',{artist_name:name,email:email}).then(function(d){
+    if(d.ok){document.getElementById('t-name').value='';document.getElementById('t-email').value='';loadTokens();alert('Token created and email sent.\n\n'+d.link);}
+    else alert(d.error||'Error');
+  });
+});
+
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function loadAll(){loadWorks();loadSubmissions();loadTokens();}
+if(session) loadAll();
+}());
+</script>
+</body>
+</html>

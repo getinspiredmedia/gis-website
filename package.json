@@ -1,7 +1,7 @@
 {
   "name": "gis-website",
   "version": "0.1.0",
-  "description": "Get Inspired Society — website scaffold",
+  "description": "Get Inspired Society — website",
   "main": "server.js",
   "scripts": {
     "build": "node build/build.js",
@@ -11,6 +11,14 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "better-sqlite3": "^13.0.2",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "resend": "^3.2.0",
+    "sharp": "^0.33.4"
+  },
+  "allowScripts": {
+    "sharp@0.33.5": true,
+    "better-sqlite3@13.0.2": true
   }
 }
