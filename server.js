@@ -69,7 +69,7 @@ try { db.exec("ALTER TABLE submissions ADD COLUMN portfolio TEXT NOT NULL DEFAUL
 
 // ── Admin session (reset on restart — acceptable for internal tool) ────────────
 
-const ADMIN_SESSION = crypto.randomUUID();
+const ADMIN_SESSION = crypto.createHash('sha256').update('gis-admin:' + ADMIN_PWD).digest('hex');
 
 function requireAdmin(req, res, next) {
   const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
