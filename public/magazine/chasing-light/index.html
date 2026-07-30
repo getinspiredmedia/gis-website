@@ -229,7 +229,7 @@ const ISSUE = {
   title: "Chasing Light",
   cover: "/magazine/chasing-light/assets/covers/chasing-light.webp",
   coverAlt: "Cover of Get Inspired Society, Issue 3, Chasing Light.",
-  pdf: null,
+  pdf: "/assets/pdf/chasing-light.pdf",
   spreads: [
     { src: "/magazine/chasing-light/assets/spreads/01.webp", alt: "Editorial opening for Chasing Light: a note on the theme beside the colophon." },
     { src: "/magazine/chasing-light/assets/spreads/02.webp", alt: "Introduction to Will Corvara, beside a warm interior where light falls across a hand and drapery." },
@@ -350,7 +350,7 @@ dl.addEventListener("click", (e) => { if(!ISSUE.pdf) e.preventDefault(); });
     el.appendChild(img);
     img.alt = "The printed edition of Chasing Light, held in hand.";
   };
-  img.src = "/magazine/chasing-light/assets/print/holding.webp";
+  img.src = "/assets/print/holding-chasing-light.webp";
 })();
 
 const hint = document.getElementById("hint");
