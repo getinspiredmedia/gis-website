@@ -8,17 +8,13 @@
     "start": "node server.js"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.2",
+    "better-sqlite3": "^9.6.0",
     "express": "^4.18.2",
     "multer": "^1.4.5-lts.1",
     "resend": "^3.2.0",
     "sharp": "^0.33.4"
-  },
-  "allowScripts": {
-    "sharp@0.33.5": true,
-    "better-sqlite3@13.0.2": true
   }
 }
