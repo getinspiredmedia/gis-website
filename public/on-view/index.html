@@ -208,8 +208,8 @@ footer {
 
 <div class="wall" id="wall" aria-hidden="true"></div>
 
-<button class="arrow arrow-prev" id="btn-prev" aria-label="Previous work">&#8592;</button>
-<button class="arrow arrow-next" id="btn-next" aria-label="Next work">&#8594;</button>
+<button class="arrow arrow-prev" id="btn-prev" aria-label="Previous work" style="display:none">&#8592;</button>
+<button class="arrow arrow-next" id="btn-next" aria-label="Next work" style="display:none">&#8594;</button>
 
 <div class="plaque" id="plaque">
   <a class="pt" id="plaque-title" href="#">&nbsp;</a>
@@ -334,6 +334,13 @@ footer {
     timer = null;
   }
 
+  /* ── Arrow visibility ── */
+  function updateArrows() {
+    var show = works.length >= 2;
+    btnPrev.style.display = show ? '' : 'none';
+    btnNext.style.display = show ? '' : 'none';
+  }
+
   /* ── Controls ── */
   btnNext.addEventListener('click', function () {
     stopTimer();
@@ -385,6 +392,7 @@ footer {
         // Put fallback into works so prev/next/timer still function (loop of 1)
         works = [work];
         buildShuffled();
+        updateArrows();
         showWork(currentWork());
         if (!reduceMotion.matches) startTimer();
       })
@@ -401,6 +409,7 @@ footer {
       if (!data || !data.length) { showFallback(); return; }
       works = data;
       buildShuffled();
+      updateArrows();
       // Move the "current" work to the front so it always shows first on load
       var curIdx = shuffled.findIndex(function (w) { return w.current; });
       if (curIdx > 0) { shuffled.unshift(shuffled.splice(curIdx, 1)[0]); pos = 0; }

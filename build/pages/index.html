@@ -130,16 +130,14 @@ a{color:inherit;text-decoration:none}
 <!-- @include: nav -->
 
 <section class="open">
-  <figure><div class="plate"></div></figure>
+  <figure><div class="plate" id="hero-plate"></div></figure>
   <div class="veil"></div>
   <div class="caption">
     <div>
-      <span class="eyebrow">On view · Week 31</span>
-      <h1>Will Corvara</h1>
+      <span class="eyebrow" id="hero-label">On view</span>
+      <h1 id="hero-artist">&nbsp;</h1>
     </div>
-    <div class="meta">
-      One work<br>Changes in 3 days
-    </div>
+    <div class="meta" id="hero-meta"></div>
   </div>
 </section>
 
@@ -149,19 +147,12 @@ a{color:inherit;text-decoration:none}
   </div>
 </section>
 
-<section class="wall" id="wall">
+<section class="wall" id="wall" style="display:none">
   <header>
     <span class="eyebrow">Previously on view</span>
     <a class="eyebrow more" href="/on-view">See all &rarr;</a>
   </header>
-  <div class="grid">
-    <a href="#" class="cell s-3x2"><span class="art a1"></span><span class="name">Will Corvara · Chasing Light</span></a>
-    <a href="#" class="cell k-black s-1x1"><span class="art a2"></span><span class="name">Jeff Vonk</span></a>
-    <a href="#" class="cell s-2x2"><span class="art a3"></span><span class="name">Ulf Berglund</span></a>
-    <a href="#" class="cell k-void s-1x1" aria-hidden="true" tabindex="-1"></a>
-    <a href="#" class="cell s-2x1"><span class="art a4"></span><span class="name">Janusz Furrer</span></a>
-    <a href="#" class="cell k-black s-4x1"><span class="art a5"></span><span class="name">Joaquin Pastor Genzor</span></a>
-  </div>
+  <div class="grid" id="prev-grid"></div>
 </section>
 
 <section class="shelf" id="shelf">
@@ -221,7 +212,6 @@ const cells = new IntersectionObserver((entries)=>{
     }
   });
 },{threshold:.2});
-document.querySelectorAll('.cell').forEach(el=>cells.observe(el));
 
 const room = document.querySelector('.room');
 if(room && !reduce){
@@ -231,6 +221,78 @@ if(room && !reduce){
     room.style.setProperty('--my', ((ev.clientY-r.top)/r.height*100)+'%');
   });
 }
+
+// Dynamic hero + previous grid
+(function(){
+  var heroLabel   = document.getElementById('hero-label');
+  var heroArtist  = document.getElementById('hero-artist');
+  var heroMeta    = document.getElementById('hero-meta');
+  var heroPlate   = document.getElementById('hero-plate');
+  var wallSection = document.getElementById('wall');
+  var grid        = document.getElementById('prev-grid');
+
+  function renderHero(w) {
+    if (!w) return;
+    if (heroLabel)  heroLabel.textContent  = 'On view';
+    if (heroArtist) heroArtist.textContent = w.artist || '';
+    if (heroMeta)   heroMeta.textContent   = (w.title && w.title !== w.artist) ? w.title : '';
+    if (heroPlate && w.image) {
+      heroPlate.style.backgroundImage    = "url('" + w.image.replace(/'/g,'%27') + "')";
+      heroPlate.style.backgroundSize     = 'contain';
+      heroPlate.style.backgroundRepeat   = 'no-repeat';
+      heroPlate.style.backgroundPosition = 'center';
+    }
+    try { sessionStorage.setItem('gis_hero', JSON.stringify({artist:w.artist,title:w.title,image:w.image,slug:w.slug})); } catch(e){}
+  }
+
+  try {
+    var cached = sessionStorage.getItem('gis_hero');
+    if (cached) renderHero(JSON.parse(cached));
+  } catch(e){}
+
+  var spanPat = ['s-3x2','s-1x1 k-black','s-2x2','s-1x1','s-2x1','s-4x1 k-black'];
+
+  function renderPrevGrid(prev) {
+    if (!prev || prev.length < 2) {
+      if (wallSection) wallSection.style.display = 'none';
+      return;
+    }
+    if (!grid) return;
+    grid.innerHTML = '';
+    prev.slice(0,6).forEach(function(w, i) {
+      var a = document.createElement('a');
+      a.href = '/work/' + w.slug;
+      a.className = 'cell ' + (spanPat[i] || 's-2x2');
+      var art = document.createElement('span');
+      art.className = 'art';
+      if (w.image) {
+        art.style.backgroundImage    = "url('" + w.image.replace(/'/g,'%27') + "')";
+        art.style.backgroundSize     = 'cover';
+        art.style.backgroundPosition = 'center';
+      }
+      var name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = w.artist + (w.title && w.title !== w.artist ? ' · ' + w.title : '');
+      a.appendChild(art);
+      a.appendChild(name);
+      grid.appendChild(a);
+      cells.observe(a);
+    });
+    wallSection.style.display = '';
+  }
+
+  fetch('/api/works')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var cur  = data.find(function(w){ return w.current; });
+      var prev = data.filter(function(w){ return !w.current; });
+      if (cur) renderHero(cur);
+      renderPrevGrid(prev);
+    })
+    .catch(function(){
+      if (wallSection) wallSection.style.display = 'none';
+    });
+})();
 </script>
 </body>
 </html>
