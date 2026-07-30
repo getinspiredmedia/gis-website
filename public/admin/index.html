@@ -112,12 +112,9 @@ button{font:inherit;cursor:pointer}
       <button class="btn-sm primary" id="add-work-btn">Add work</button>
     </div>
     <table class="tbl" id="works-tbl">
-      <thead><tr><th>Title</th><th>Artist</th><th>Status</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Title</th><th>Artist</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody id="works-body"></tbody>
     </table>
-
-    <div class="section-head" style="margin-top:40px"><h2>Submissions</h2></div>
-    <div class="cards" id="submissions-cards"></div>
   </div>
 </div>
 
@@ -138,7 +135,7 @@ function doLogin(){
   fetch('/api/admin/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})})
     .then(function(r){return r.json();})
     .then(function(d){
-      if(d.token){sessionStorage.setItem('gis_admin',d.token);session=d.token;showApp();loadAll();}
+      if(d.token){sessionStorage.setItem('gis_admin',d.token);session=d.token;showApp();loadWorks();}
       else{document.getElementById('login-err').style.display='';}
     }).catch(function(){document.getElementById('login-err').style.display='';});
 }
@@ -160,10 +157,11 @@ function api(method, url, body){
 function loadWorks(){
   api('GET','/api/admin/works').then(function(rows){
     var tbody=document.getElementById('works-body');
-    if(!rows.length){tbody.innerHTML='<tr><td colspan="4" class="empty">No works yet.</td></tr>';return;}
+    if(!rows.length){tbody.innerHTML='<tr><td colspan="5" class="empty">No works yet.</td></tr>';return;}
     tbody.innerHTML=rows.map(function(w){
       return '<tr><td><b>'+esc(w.title)+'</b><br><small style="color:var(--muted)">'+esc(w.slug)+'</small></td>'+
         '<td>'+esc(w.artist)+'</td>'+
+        '<td><small style="color:var(--muted)">'+esc(w.email||'')+'</small></td>'+
         '<td><span class="badge badge-'+w.status+'">'+w.status+'</span></td>'+
         '<td><div style="display:flex;gap:6px;flex-wrap:wrap">'+
         (w.status!=='current'?'<button class="btn-sm" onclick="setStatus('+w.id+',\'current\')">Set current</button>':'')+
@@ -198,30 +196,11 @@ document.getElementById('add-work-btn').addEventListener('click',function(){
     });
 });
 
-// ── Submissions ───────────────────────────────────────────────────────────────
-function loadSubmissions(){
-  api('GET','/api/admin/submissions').then(function(rows){
-    var cards=document.getElementById('submissions-cards');
-    if(!rows.length){cards.innerHTML='<p class="empty">No submissions yet.</p>';return;}
-    cards.innerHTML=rows.map(function(s){
-      var port=s.portfolio&&s.portfolio!=='#'?'<a href="'+esc(s.portfolio)+'" target="_blank" style="color:var(--blue);font-size:12px">'+esc(s.portfolio)+'</a>':'';
-      return '<div class="card">'+
-        '<img src="'+esc(s.image_path)+'" alt="'+esc(s.work_title)+'">'+
-        '<div class="card-body">'+
-        '<h3>'+(s.work_title?esc(s.work_title):'<span style="color:var(--muted)">No title</span>')+'</h3>'+
-        '<p class="meta">'+esc(s.artist_name)+' · '+esc(s.email)+'<br>'+esc(s.created_at.slice(0,10))+'</p>'+
-        (port?'<p style="margin-top:6px">'+port+'</p>':'')+
-        '</div></div>';
-    }).join('');
-  });
-};
-
 function esc(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function loadAll(){loadWorks();loadSubmissions();}
-if(session) loadAll();
+if(session) loadWorks();
 }());
 </script>
 </body>

@@ -34,24 +34,12 @@ db.exec(`
     slug       TEXT UNIQUE NOT NULL,
     title      TEXT NOT NULL,
     artist     TEXT NOT NULL,
+    email      TEXT NOT NULL DEFAULT '',
     portfolio  TEXT NOT NULL DEFAULT '#',
     image_url  TEXT NOT NULL,
     status     TEXT NOT NULL DEFAULT 'previous'
                    CHECK(status IN ('current','previous','archived')),
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS submissions (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    artist_name TEXT NOT NULL,
-    email       TEXT NOT NULL,
-    portfolio   TEXT NOT NULL DEFAULT '#',
-    work_title  TEXT NOT NULL,
-    notes       TEXT,
-    image_path  TEXT NOT NULL,
-    status      TEXT NOT NULL DEFAULT 'pending'
-                    CHECK(status IN ('pending','approved','rejected')),
-    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
 
@@ -64,8 +52,20 @@ if (db.prepare('SELECT COUNT(*) as n FROM works').get().n === 0) {
   ))(seed);
 }
 
-// Migration: add portfolio column to submissions if absent (schema added after initial deploy)
-try { db.exec("ALTER TABLE submissions ADD COLUMN portfolio TEXT NOT NULL DEFAULT '#'"); } catch {}
+// Migrations for existing databases
+try { db.exec("ALTER TABLE works ADD COLUMN email TEXT NOT NULL DEFAULT ''"); } catch {}
+
+// ── Auto-archive ──────────────────────────────────────────────────────────────
+
+function archiveOldWorks() {
+  const n = db.prepare(
+    "UPDATE works SET status='archived' WHERE status='previous' AND datetime(created_at, '+7 days') <= datetime('now')"
+  ).run().changes;
+  if (n > 0) console.log(`[archive] archived ${n} work(s)`);
+}
+
+archiveOldWorks();
+setInterval(archiveOldWorks, 60 * 60 * 1000);
 
 // ── Admin session (reset on restart — acceptable for internal tool) ────────────
 
@@ -134,12 +134,16 @@ app.post('/api/contact', async (req, res) => {
 
 app.post('/api/submit', upload.single('image'), async (req, res) => {
   try {
-    const { name, email, portfolio, work_title, notes } = req.body || {};
-    console.log('[submit] received:', { name, email, portfolio, work_title, hasFile: !!req.file });
+    const { name, email, portfolio, work_title } = req.body || {};
 
     if (!name?.trim() || !email?.trim())            return res.status(400).json({ error: 'Name and email are required.' });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address.' });
+    if (!portfolio?.trim())                          return res.status(400).json({ error: 'Portfolio URL is required.' });
     if (!req.file)                                  return res.status(400).json({ error: 'No image uploaded.' });
+
+    // Duplicate check: active (non-archived) work for this email
+    const existing = db.prepare("SELECT id FROM works WHERE email=? AND status!='archived'").get(email.trim());
+    if (existing) return res.status(409).json({ error: 'You already have a work on the wall. It will be archived after 7 days, then you can submit again.' });
 
     const filename = crypto.randomUUID() + '.webp';
     try {
@@ -152,22 +156,30 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
       return res.status(400).json({ error: 'Could not process image.' });
     }
 
-    const imagePath = '/uploads/' + filename;
-    db.prepare('INSERT INTO submissions (artist_name,email,portfolio,work_title,notes,image_path) VALUES (?,?,?,?,?,?)')
-      .run(name.trim(), email.trim(), portfolio?.trim() || '#', work_title?.trim() || '', notes?.trim() || '', imagePath);
+    const title     = work_title?.trim() || name.trim();
+    const baseSlug  = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'work';
+    let slug = baseSlug;
+    let suffix = 1;
+    while (db.prepare('SELECT id FROM works WHERE slug=?').get(slug)) {
+      slug = baseSlug + '-' + (suffix++);
+    }
 
-    console.log('[submit] saved:', name, email);
+    const imagePath = '/uploads/' + filename;
+    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status) VALUES (?,?,?,?,?,?,?)')
+      .run(slug, title, name.trim(), email.trim(), portfolio.trim(), imagePath, 'previous');
+
+    console.log('[submit] added work:', name, email, slug);
 
     await Promise.all([
       sendEmail({
         to:      ADMIN_EMAIL,
-        subject: `New submission: "${work_title || '(no title)'}" by ${name}`,
-        html:    `<p>${name} (${email}) submitted a work.<br>Portfolio: ${portfolio || '—'}<br>Title: ${work_title || '—'}<br><br>Review: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
+        subject: `New work on the wall: "${title}" by ${name}`,
+        html:    `<p>${name} (${email}) submitted a work.<br>Portfolio: ${portfolio}<br>Title: ${title}<br><br>View: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
       }),
       sendEmail({
-        to:      email,
-        subject: 'We received your work — Get Inspired Society',
-        html:    `<p>Hi ${name},</p><p>We received your submission. We'll review it and be in touch.</p><p>In the meantime, share On View with others:<br><a href="${SITE_URL}/on-view">${SITE_URL}/on-view</a></p>`,
+        to:      email.trim(),
+        subject: 'Your work is on the wall — Get Inspired Society',
+        html:    `<p>Hi ${name},</p><p>Your work is now visible on On View.<br><a href="${SITE_URL}/on-view">${SITE_URL}/on-view</a></p><p>Share it with others!</p>`,
       }),
     ]);
 
@@ -214,36 +226,6 @@ app.patch('/api/admin/works/:id', requireAdmin, (req, res) => {
 app.delete('/api/admin/works/:id', requireAdmin, (req, res) => {
   db.prepare('DELETE FROM works WHERE id=?').run(req.params.id);
   res.json({ ok: true });
-});
-
-// ── Admin: submissions ────────────────────────────────────────────────────────
-
-app.get('/api/admin/submissions', requireAdmin, (req, res) => {
-  res.json(db.prepare('SELECT * FROM submissions ORDER BY created_at DESC').all());
-});
-
-app.patch('/api/admin/submissions/:id', requireAdmin, (req, res) => {
-  const { action } = req.body || {};
-  if (!['approve','reject'].includes(action)) return res.status(400).json({ error: 'Invalid action.' });
-
-  if (action === 'reject') {
-    db.prepare("UPDATE submissions SET status='rejected' WHERE id=?").run(req.params.id);
-    return res.json({ ok: true });
-  }
-
-  const sub = db.prepare('SELECT * FROM submissions WHERE id=?').get(req.params.id);
-  if (!sub) return res.status(404).json({ error: 'Not found.' });
-
-  const slug = sub.work_title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/, '');
-  try {
-    db.transaction(() => {
-      db.prepare('INSERT INTO works (slug,title,artist,portfolio,image_url,status) VALUES (?,?,?,?,?,?)').run(
-        slug, sub.work_title, sub.artist_name, sub.portfolio || '#', sub.image_path, 'previous'
-      );
-      db.prepare("UPDATE submissions SET status='approved' WHERE id=?").run(req.params.id);
-    })();
-    res.json({ ok: true, slug });
-  } catch { res.status(409).json({ error: 'Could not create work — slug conflict.' }); }
 });
 
 // ── Page routes ───────────────────────────────────────────────────────────────
