@@ -146,7 +146,7 @@ build/pages/support.html  → public/support/index.html
 ### API-routes (server.js)
 - `GET  /api/works` — alle niet-gearchiveerde werken
 - `GET  /api/works/:slug` — enkel werk op slug
-- `POST /api/contact` — contactformulier; honeypot (`hp`-veld), rate-limit 5 req/15 min per IP
+- `POST /api/contact` — contactformulier; volgorde: honeypot (`hp`-veld) → hCaptcha server-side verificatie → rate-limit 5 req/15 min per IP → Resend mail
 - `GET  /api/tokens/:token` — valideert hand-in token, geeft `artist_name` terug
 - `POST /hand-in/:token` — hand-in upload (multer/sharp), markeert token als used, stuurt bevestigingsmail naar artiest + notificatie naar admin
 - `POST /api/submit` — publiek submit-formulier (SUBMIT_TOKEN vereist)
