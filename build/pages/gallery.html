@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <style>
 :root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -25,7 +27,7 @@ a{color:inherit;text-decoration:none}
 .hall .head .side{font-size:13px;color:rgba(255,255,255,.6);line-height:1.7;text-align:right}
 
 .frame{max-width:1180px;margin:0 auto;position:relative;aspect-ratio:16/9;max-height:78vh;background:#15171f;overflow:hidden}
-.poster{position:absolute;inset:0;background:radial-gradient(120% 90% at 55% 40%,#252c44 0%,#141720 60%,#0b0c10 100%);display:flex;align-items:center;justify-content:center;transition:opacity .5s,transform 6s var(--ease)}
+.poster{position:absolute;inset:0;background-image:radial-gradient(120% 90% at 55% 40%,rgba(37,44,68,.6) 0%,rgba(20,23,32,.65) 60%,rgba(11,12,16,.72) 100%),url('/assets/gallery-poster.webp');background-size:auto,cover;background-position:center;display:flex;align-items:center;justify-content:center;transition:opacity .5s,transform 6s var(--ease)}
 .poster:hover{transform:scale(1.02)}
 .enter-room{background:transparent;border:1px solid #fff;color:#fff;border-radius:999px;padding:16px 30px;font:inherit;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .3s,color .3s,gap .3s;display:inline-flex;align-items:center;gap:12px}
 .enter-room:hover{background:#fff;color:var(--ink);gap:18px}

@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <style>
 :root {
   --blue: #0d2ec4;
@@ -47,40 +49,22 @@ body {
   pointer-events: none;
 }
 
-/* ── Masthead ── */
-.masthead {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 100;
-  height: 56px;
-  background: var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-}
-.masthead-wordmark {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-decoration: none;
-  color: #fff;
-}
-.masthead-nav { display: flex; align-items: center; gap: 4px; }
-.menuitem {
-  display: inline-flex;
-  border-radius: 999px;
-  padding: 9px 13px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: #fff;
-  transition: background .25s;
-}
-.menuitem:hover { background: rgba(255,255,255,.16); }
-.menuitem:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+/* ── Nav ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid transparent;transition:transform .45s var(--ease),background .35s,border-color .35s,padding .35s var(--ease)}
+nav.solid{background:var(--ink);border-bottom-color:rgba(255,255,255,.14);padding:8px 22px}
+nav.hide{transform:translateY(-102%)}
+nav .mark{height:clamp(52px,9vw,88px);transition:height .4s var(--ease),width .4s var(--ease)}
+nav.solid .mark{height:clamp(30px,4vw,40px);width:auto}
+.menu{display:flex;gap:4px;align-items:center}
+.menu a{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding:9px 13px;border-radius:999px;line-height:1;transition:background .25s,color .25s}
+.menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:rgba(255,255,255,.16)}
+.menu .enter{background:var(--blue);padding:10px 18px;margin-left:12px}
+.menu .enter:hover,.menu .enter:focus-visible{background:#fff;color:var(--blue)}
+@media(max-width:860px){.menu{gap:16px}.menu a{font-size:11px}}
+/* ── Wipe ── */
+#wipe{position:fixed;inset:0;background:var(--blue);z-index:200;transform:scaleY(0);transform-origin:bottom;pointer-events:none}
+#wipe.go{animation:wipe 900ms var(--ease) forwards}
+@keyframes wipe{0%{transform:scaleY(0);transform-origin:bottom}45%{transform:scaleY(1);transform-origin:bottom}55%{transform:scaleY(1);transform-origin:top}100%{transform:scaleY(0);transform-origin:top}}
 
 /* ── Arrows ── */
 .arrow {
@@ -196,13 +180,14 @@ footer {
 </head>
 <body>
 
-<nav class="masthead">
-  <a class="masthead-wordmark" href="/">Get Inspired Society</a>
-  <div class="masthead-nav">
-    <a class="menuitem" href="/on-view">On View</a>
-    <a class="menuitem" href="/magazine">Magazine</a>
-    <a class="menuitem" href="/gallery">Gallery</a>
-    <a class="menuitem" href="/society">Society</a>
+<div id="wipe"></div>
+<nav>
+  <a href="/" aria-label="Get Inspired Society, home"><img class="mark" src="/assets/mark.png" alt="Get Inspired Society" width="110" height="88"></a>
+  <div class="menu">
+    <a data-nav="magazine" href="/magazine">Magazine</a>
+    <a data-nav="gallery" href="/gallery">Gallery</a>
+    <a data-nav="society" href="/society">Society</a>
+    <a class="enter" href="https://society.getinspiredsociety.com">Log in</a>
   </div>
 </nav>
 
@@ -418,6 +403,37 @@ footer {
     })
     .catch(showFallback);
 }());
+</script>
+
+<script>
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var wipeEl = document.getElementById('wipe');
+  document.addEventListener('DOMContentLoaded', function(){
+    var navEl = document.querySelector('nav');
+    if(navEl){
+      var lastY = scrollY;
+      function onScroll(){
+        var y = scrollY;
+        navEl.classList.toggle('solid', y > 40);
+        navEl.classList.toggle('hide', y > innerHeight*0.7 && y > lastY);
+        lastY = y;
+      }
+      onScroll();
+      addEventListener('scroll', onScroll, {passive:true});
+    }
+    if(wipeEl){
+      document.querySelectorAll('a[href^="/"]').forEach(function(a){
+        a.addEventListener('click', function(ev){
+          if(reduce) return;
+          ev.preventDefault();
+          wipeEl.classList.add('go');
+          setTimeout(function(){ location.href = a.getAttribute('href'); }, 430);
+        });
+      });
+    }
+  });
+})();
 </script>
 
 </body>
