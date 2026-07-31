@@ -102,15 +102,6 @@ button{font:inherit;cursor:pointer}
   <!-- Works -->
   <div style="padding:28px 24px;max-width:1100px">
     <div class="section-head"><h2>Works on the wall</h2></div>
-    <div class="form-row">
-      <input id="w-slug"      placeholder="slug (url-safe)">
-      <input id="w-title"     placeholder="Title">
-      <input id="w-artist"    placeholder="Artist">
-      <input id="w-portfolio" placeholder="Portfolio URL (optional)">
-      <input id="w-image"     placeholder="Image URL">
-      <select id="w-status"><option value="previous">Previous</option><option value="current">Current</option></select>
-      <button class="btn-sm primary" id="add-work-btn">Add work</button>
-    </div>
     <table class="tbl" id="works-tbl">
       <thead><tr><th style="width:60px"></th><th>Title</th><th>Artist</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody id="works-body"></tbody>
@@ -168,6 +159,7 @@ function loadWorks(){
         (w.status!=='current'?'<button class="btn-sm" onclick="setStatus('+w.id+',\'current\')">Set current</button>':'')+
         (w.status!=='previous'?'<button class="btn-sm" onclick="setStatus('+w.id+',\'previous\')">Set previous</button>':'')+
         '<button class="btn-sm danger" onclick="deleteWork('+w.id+')">Delete</button>'+
+        '<a class="btn-sm" href="/work/'+esc(w.slug)+'" target="_blank" rel="noopener">View</a>'+
         '</div></td></tr>';
     }).join('');
   });
@@ -181,21 +173,6 @@ window.deleteWork=function(id){
   if(!confirm('Delete this work?'))return;
   api('DELETE','/api/admin/works/'+id).then(loadWorks);
 };
-
-document.getElementById('add-work-btn').addEventListener('click',function(){
-  var slug=document.getElementById('w-slug').value.trim();
-  var title=document.getElementById('w-title').value.trim();
-  var artist=document.getElementById('w-artist').value.trim();
-  var portfolio=document.getElementById('w-portfolio').value.trim();
-  var image_url=document.getElementById('w-image').value.trim();
-  var status=document.getElementById('w-status').value;
-  if(!slug||!title||!artist||!image_url){alert('Slug, title, artist and image URL are required.');return;}
-  api('POST','/api/admin/works',{slug:slug,title:title,artist:artist,portfolio:portfolio,image_url:image_url,status:status})
-    .then(function(d){
-      if(d.id){['w-slug','w-title','w-artist','w-portfolio','w-image'].forEach(function(id){document.getElementById(id).value='';});loadWorks();}
-      else alert(d.error||'Error');
-    });
-});
 
 function esc(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
