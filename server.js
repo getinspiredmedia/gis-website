@@ -19,7 +19,7 @@ const ADMIN_PWD    = process.env.ADMIN_PASSWORD || 'admin';
 const SUBMIT_TOKEN = process.env.SUBMIT_TOKEN  || '';
 const RESEND_KEY   = process.env.RESEND_API_KEY;
 const FROM_EMAIL   = process.env.RESEND_FROM   || 'noreply@getinspiredsociety.com';
-const ADMIN_EMAIL  = process.env.ADMIN_EMAIL   || 'andrekreft@gmail.com';
+const ADMIN_EMAIL  = process.env.ADMIN_EMAIL   || 'info@getinspiredsociety.com';
 const SITE_URL     = process.env.SITE_URL      || 'https://gis-website-production.up.railway.app';
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
