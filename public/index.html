@@ -77,7 +77,7 @@ a{color:inherit;text-decoration:none}
 .issue.current{width:210px}
 .issue .cover{aspect-ratio:3/4;background:var(--ink);position:relative;overflow:hidden;background-size:cover;background-position:center;transition:transform .5s var(--ease)}
 .issue:hover .cover{transform:translateY(-8px)}
-.issue.current .cover{background:var(--ink)}
+.issue.current .cover{background-color:var(--ink)}
 .issue .cover span{position:absolute;left:16px;right:16px;bottom:16px;color:#fff;font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.8}
 .issue h3{margin-top:14px;font-size:15px;font-weight:600}
 .issue small{display:block;margin-top:4px;color:var(--muted);font-size:12px}
@@ -137,27 +137,31 @@ a{color:inherit;text-decoration:none}
 <script>
 (function(){
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const navEl = document.querySelector('nav');
-  if(navEl){
-    let lastY = 0;
-    addEventListener('scroll', ()=>{
-      const y = scrollY;
-      navEl.classList.toggle('solid', y > 40);
-      navEl.classList.toggle('hide', y > innerHeight*0.7 && y > lastY);
-      lastY = y;
-    }, {passive:true});
-  }
   const wipeEl = document.getElementById('wipe');
-  if(wipeEl){
-    document.querySelectorAll('a[href^="/"]').forEach(a=>{
-      a.addEventListener('click', ev=>{
-        if(reduce) return;
-        ev.preventDefault();
-        wipeEl.classList.add('go');
-        setTimeout(()=>{ location.href = a.getAttribute('href'); }, 430);
+  document.addEventListener('DOMContentLoaded', function(){
+    var navEl = document.querySelector('nav');
+    if(navEl){
+      var lastY = scrollY;
+      function onScroll(){
+        var y = scrollY;
+        navEl.classList.toggle('solid', y > 40);
+        navEl.classList.toggle('hide', y > innerHeight*0.7 && y > lastY);
+        lastY = y;
+      }
+      onScroll();
+      addEventListener('scroll', onScroll, {passive:true});
+    }
+    if(wipeEl){
+      document.querySelectorAll('a[href^="/"]').forEach(function(a){
+        a.addEventListener('click', function(ev){
+          if(reduce) return;
+          ev.preventDefault();
+          wipeEl.classList.add('go');
+          setTimeout(function(){ location.href = a.getAttribute('href'); }, 430);
+        });
       });
-    });
-  }
+    }
+  });
 })();
 </script>
 
