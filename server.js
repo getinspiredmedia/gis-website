@@ -12,7 +12,9 @@ const app  = express();
 const PORT = process.env.PORT || 3000;
 
 const DB_PATH      = process.env.DB_PATH       || path.join(__dirname, 'data', 'gis.db');
-const UPLOAD_DIR   = path.join(__dirname, 'public', 'uploads');
+// Uploads live next to the database so they persist on the Railway volume.
+// Locally: data/uploads/  |  Railway: /data/uploads/
+const UPLOAD_DIR   = process.env.UPLOAD_DIR    || path.join(path.dirname(DB_PATH), 'uploads');
 const ADMIN_PWD    = process.env.ADMIN_PASSWORD || 'admin';
 const SUBMIT_TOKEN = process.env.SUBMIT_TOKEN  || '';
 const RESEND_KEY   = process.env.RESEND_API_KEY;
@@ -103,6 +105,9 @@ app.use(express.json());
 
 // Block /submit without token — must go before static so /submit/index.html isn't served directly
 app.get('/submit', (req, res) => res.status(404).send('Not found'));
+
+// Serve uploads from volume path (works regardless of where UPLOAD_DIR is)
+app.use('/uploads', express.static(UPLOAD_DIR));
 
 app.use(express.static(path.join(__dirname, 'public')));
 

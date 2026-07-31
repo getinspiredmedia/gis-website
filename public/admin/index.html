@@ -112,7 +112,7 @@ button{font:inherit;cursor:pointer}
       <button class="btn-sm primary" id="add-work-btn">Add work</button>
     </div>
     <table class="tbl" id="works-tbl">
-      <thead><tr><th>Title</th><th>Artist</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
+      <thead><tr><th style="width:60px"></th><th>Title</th><th>Artist</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody id="works-body"></tbody>
     </table>
   </div>
@@ -157,9 +157,10 @@ function api(method, url, body){
 function loadWorks(){
   api('GET','/api/admin/works').then(function(rows){
     var tbody=document.getElementById('works-body');
-    if(!rows.length){tbody.innerHTML='<tr><td colspan="5" class="empty">No works yet.</td></tr>';return;}
+    if(!rows.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No works yet.</td></tr>';return;}
     tbody.innerHTML=rows.map(function(w){
-      return '<tr><td><b>'+esc(w.title)+'</b><br><small style="color:var(--muted)">'+esc(w.slug)+'</small></td>'+
+      var thumb=w.image_url?'<img src="'+esc(w.image_url)+'" style="width:48px;height:48px;object-fit:cover;border-radius:2px;display:block;background:var(--line)" loading="lazy" onerror="this.style.opacity=\'0\'">':'';
+      return '<tr><td>'+thumb+'</td><td><b>'+esc(w.title)+'</b><br><small style="color:var(--muted)">'+esc(w.slug)+'</small></td>'+
         '<td>'+esc(w.artist)+'</td>'+
         '<td><small style="color:var(--muted)">'+esc(w.email||'')+'</small></td>'+
         '<td><span class="badge badge-'+w.status+'">'+w.status+'</span></td>'+
