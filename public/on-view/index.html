@@ -55,6 +55,7 @@ nav.solid{background:var(--ink);border-bottom-color:rgba(255,255,255,.14);paddin
 nav.hide{transform:translateY(-102%)}
 nav .mark{height:clamp(52px,9vw,88px);transition:height .4s var(--ease),width .4s var(--ease)}
 nav.solid .mark{height:clamp(30px,4vw,40px);width:auto}
+nav:not(.solid) .mark-dark{filter:invert(1)}
 .menu{display:flex;gap:4px;align-items:center}
 .menu a{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding:9px 13px;border-radius:999px;line-height:1;transition:background .25s,color .25s}
 .menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:rgba(255,255,255,.16)}
@@ -267,6 +268,35 @@ footer {
     }
   }
 
+  /* ── Nav mark colour adaptation ── */
+  function adaptNavMark(imgEl) {
+    try {
+      var mark = document.querySelector('nav .mark');
+      if (!mark) return;
+      var vw = innerWidth, vh = innerHeight;
+      var sw = 160, sh = 120;
+      var iw = imgEl.naturalWidth, ih = imgEl.naturalHeight;
+      if (!iw || !ih) return;
+      var scale = Math.max(vw / iw, vh / ih);
+      var c = document.createElement('canvas');
+      c.width = sw; c.height = sh;
+      var ctx = c.getContext('2d');
+      ctx.drawImage(imgEl, (vw - iw * scale) / 2, (vh - ih * scale) / 2, iw * scale, ih * scale);
+      var d = ctx.getImageData(0, 0, sw, sh).data;
+      var lum = 0, n = d.length / 4;
+      for (var i = 0; i < d.length; i += 4) lum += 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+      mark.classList.toggle('mark-dark', (lum / n) > 128);
+    } catch(e) { /* CORS of andere fout — behoud wit standaard */ }
+  }
+
+  function sampleImage(url) {
+    try {
+      var img = new Image();
+      img.onload = function() { adaptNavMark(img); };
+      img.src = url;
+    } catch(e) {}
+  }
+
   /* ── Preload next image ── */
   function preload(work) {
     if (!work) return;
@@ -283,6 +313,7 @@ footer {
       resetProgress();
       var next = shuffled[pos + 1] || shuffled[0];
       preload(next);
+      sampleImage(work.image);
       return;
     }
 
@@ -294,6 +325,7 @@ footer {
       resetProgress();
       var next = shuffled[(pos) % shuffled.length];
       preload(next);
+      sampleImage(work.image);
     }, FADE_MS + 50);
   }
 
