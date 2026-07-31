@@ -60,6 +60,8 @@ Nine components. Every component is demonstrated live in `docs/design-system.htm
 **Masthead**
 Navigation bar. Ink background, white text. On scroll: wordmark drops from 88 to 40 px and the black bar arrives (`400ms`). Bar retreats upward on scroll down, returns on scroll up (`450ms`). Navigation items are outlined pills (`.menuitem`); the log-in action is a filled blue pill (`.pill`).
 
+Below `860px` (the same breakpoint the tile grid and doors collapse at) the row is replaced by a hamburger toggle to the right of the wordmark. The wordmark drops to a fixed 40 px — it no longer scales with viewport width. The toggle opens a fullscreen ink panel, always white-on-ink regardless of the desktop nav's colour variant (`data-variant="light"` included): Magazine / Gallery / Society are stacked in page-title-weight type (`wdth 116`, `700`), Log in stays the filled blue pill at the foot of the stack. Opening moves focus to the first item; `Esc` or a link click closes it and returns focus to the toggle. The animation collapses under `prefers-reduced-motion: reduce`. Shared markup, styles and script live in `build/partials/nav.html` and are injected into every build-system page; `public/on-view/index.html` carries an identical hand-maintained copy since it sits outside the build system.
+
 **Button**
 Outlined pill in the current text colour, one shape, three grounds (paper / ink / blue). On hover: fills with its opposite and the gap between label and arrow widens. There is no filled primary button anywhere except the log-in pill.
 

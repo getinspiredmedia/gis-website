@@ -122,17 +122,125 @@ nav[data-variant="light"] .menu a:hover,nav[data-variant="light"] .menu a:focus-
 nav[data-variant="light"].solid .menu a:hover,nav[data-variant="light"].solid .menu a:focus-visible,nav[data-variant="light"].solid .menu a[aria-current]{background:rgba(255,255,255,.16)}
 nav[data-variant="light"] .menu .enter,nav[data-variant="light"].solid .menu .enter{background:var(--blue);color:#fff}
 nav[data-variant="light"] .menu .enter:hover{background:var(--ink)}
-@media(max-width:860px){.menu{gap:16px}.menu a{font-size:11px}}
+
+/* ── Mobile nav toggle ── */
+.nav-toggle{display:none;position:relative;z-index:2;width:40px;height:40px;flex-shrink:0;border:0;background:transparent;color:#fff;cursor:pointer;align-items:center;justify-content:center}
+.nav-toggle span{position:relative;display:block;width:22px;height:2px;background:currentColor;transition:background .2s var(--ease)}
+.nav-toggle span::before,.nav-toggle span::after{content:'';position:absolute;left:0;width:22px;height:2px;background:currentColor;transition:transform .3s var(--ease)}
+.nav-toggle span::before{top:-7px}
+.nav-toggle span::after{top:7px}
+.nav-toggle:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+nav[data-variant="light"] .nav-toggle{color:var(--ink)}
+nav[data-variant="light"].solid .nav-toggle{color:#fff}
+
+@media(max-width:860px){
+  .nav-toggle{display:flex}
+  nav .mark{height:40px!important;width:auto!important}
+  .menu{
+    position:fixed;inset:0;z-index:1;
+    display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+    gap:6px;padding:32px;
+    background:var(--ink);
+    transform:translateY(-100%);
+    opacity:0;
+    transition:transform .4s var(--ease),opacity .35s var(--ease);
+    pointer-events:none;
+  }
+  nav.nav-open{background:var(--ink);border-bottom-color:transparent}
+  nav.nav-open.hide{transform:none}
+  nav.nav-open .menu{transform:translateY(0);opacity:1;pointer-events:auto}
+  .menu a{
+    color:#fff;
+    background:none;
+    font-size:clamp(1.7rem,8vw,2.6rem);
+    font-weight:700;
+    letter-spacing:-.02em;
+    font-variation-settings:'wdth' 116;
+    text-transform:none;
+    padding:9px 0;
+    border-radius:0;
+    line-height:1.15;
+  }
+  .menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:none;color:rgba(255,255,255,.6)}
+  nav[data-variant="light"] .menu a{color:#fff}
+  nav[data-variant="light"] .menu a:hover,nav[data-variant="light"] .menu a:focus-visible,nav[data-variant="light"] .menu a[aria-current]{background:none;color:rgba(255,255,255,.6)}
+  .menu .enter{
+    display:inline-flex;
+    margin:22px 0 0;
+    background:var(--blue);
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    padding:13px 26px;
+    border-radius:999px;
+  }
+  .menu .enter:hover,.menu .enter:focus-visible{background:#fff;color:var(--blue)}
+  nav.nav-open .mark{filter:none}
+  nav.nav-open .nav-toggle{color:#fff}
+}
+@media(prefers-reduced-motion:reduce){
+  .menu{transition:none}
+  .nav-toggle span::before,.nav-toggle span::after{transition:none}
+}
 </style>
 <nav>
   <a href="/" aria-label="Get Inspired Society, home"><img class="mark" src="/assets/mark.png" alt="Get Inspired Society" width="110" height="88"></a>
-  <div class="menu">
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="Open menu">
+    <span></span>
+  </button>
+  <div class="menu" id="site-menu">
     <a href="/magazine">Magazine</a>
     <a href="/gallery">Gallery</a>
     <a href="/society">Society</a>
     <a class="enter" href="https://society.getinspiredsociety.com">Log in</a>
   </div>
 </nav>
+<script>
+(function () {
+  'use strict';
+  var nav    = document.querySelector('nav');
+  var toggle = nav && nav.querySelector('.nav-toggle');
+  var menu   = document.getElementById('site-menu');
+  if (!nav || !toggle || !menu) return;
+
+  function isOpen() { return nav.classList.contains('nav-open'); }
+
+  function open() {
+    nav.classList.add('nav-open');
+    toggle.setAttribute('aria-expanded', 'true');
+    toggle.setAttribute('aria-label', 'Close menu');
+    document.body.style.overflow = 'hidden';
+    var first = menu.querySelector('a');
+    if (first) first.focus();
+  }
+
+  function close(returnFocus) {
+    nav.classList.remove('nav-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open menu');
+    document.body.style.overflow = '';
+    if (returnFocus) toggle.focus();
+  }
+
+  toggle.addEventListener('click', function () {
+    if (isOpen()) close(true); else open();
+  });
+
+  menu.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A') close(false);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen()) close(true);
+  });
+
+  addEventListener('resize', function () {
+    if (innerWidth > 860 && isOpen()) close(false);
+  });
+}());
+</script>
 
 
 <section class="hero">

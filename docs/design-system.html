@@ -191,6 +191,50 @@ footer{background:var(--ink);color:rgba(255,255,255,.5);padding:50px 24px;margin
 </section>
 
 <section>
+  <div class="sechead"><h2>Masthead — mobile</h2><span>Below 860px, same breakpoint as the tile grid and doors</span></div>
+  <p class="note">The nav row is replaced by a hamburger toggle to the right of the wordmark, which stays at a fixed 40&nbsp;px — it no longer scales with viewport width like the desktop mark does. The toggle opens a fullscreen ink panel: Magazine / Gallery / Society stacked in page-title weight, Log in as the blue pill at the foot. Always white-on-ink, even on pages whose desktop nav runs the light variant. Click the toggle below.</p>
+  <div class="mob-frame">
+    <nav class="mob-nav" id="mobNav">
+      <span class="mob-mark">Get Inspired Society</span>
+      <button class="nav-toggle" type="button" id="mobToggle" aria-expanded="false" aria-controls="mobMenu" aria-label="Open menu"><span></span></button>
+      <div class="menu" id="mobMenu">
+        <a href="#">Magazine</a>
+        <a href="#">Gallery</a>
+        <a href="#">Society</a>
+        <a class="enter" href="#">Log in</a>
+      </div>
+    </nav>
+    <p class="mob-frame-caption">375px frame</p>
+  </div>
+  <style>
+    .mob-frame{width:375px;max-width:100%;height:520px;position:relative;overflow:hidden;background:var(--wall,#111319);border:1px solid var(--line);margin-top:20px}
+    .mob-frame .mob-nav{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:16px}
+    .mob-frame .mob-mark{color:#fff;font-weight:700;font-size:13px;letter-spacing:-.01em}
+    .mob-frame .nav-toggle{display:flex;position:relative;z-index:2;width:36px;height:36px;border:0;background:transparent;color:#fff;cursor:pointer;align-items:center;justify-content:center}
+    .mob-frame .nav-toggle span{position:relative;display:block;width:20px;height:2px;background:currentColor;transition:background .2s}
+    .mob-frame .nav-toggle span::before,.mob-frame .nav-toggle span::after{content:'';position:absolute;left:0;width:20px;height:2px;background:currentColor;transition:transform .3s var(--ease)}
+    .mob-frame .nav-toggle span::before{top:-6px}
+    .mob-frame .nav-toggle span::after{top:6px}
+    .mob-frame .menu{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px;padding:28px;background:#0b0c10;transform:translateY(-100%);opacity:0;transition:transform .4s var(--ease),opacity .35s var(--ease);pointer-events:none}
+    .mob-frame .mob-nav.is-open .menu{transform:translateY(0);opacity:1;pointer-events:auto}
+    .mob-frame .mob-nav.is-open .nav-toggle span{background:transparent}
+    .mob-frame .mob-nav.is-open .nav-toggle span::before{transform:translateY(6px) rotate(45deg)}
+    .mob-frame .mob-nav.is-open .nav-toggle span::after{transform:translateY(-6px) rotate(-45deg)}
+    .mob-frame .menu a{color:#fff;font-weight:700;font-size:1.6rem;letter-spacing:-.02em;padding:6px 0;text-decoration:none}
+    .mob-frame .menu a:hover,.mob-frame .menu a:focus-visible{color:rgba(255,255,255,.6)}
+    .mob-frame .menu .enter{display:inline-flex;margin-top:16px;background:var(--blue);color:#fff;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:11px 22px;border-radius:999px}
+    .mob-frame-caption{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4);z-index:0}
+  </style>
+  <script>
+    document.getElementById('mobToggle').addEventListener('click', function () {
+      var nav = document.getElementById('mobNav');
+      var open = nav.classList.toggle('is-open');
+      this.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  </script>
+</section>
+
+<section>
   <div class="sechead"><h2>Statement panel</h2><span>Exactly one per page</span></div>
   <p class="note">A blue field with one line on it, and nothing else competing. The line rises from below the fold of its own container when it enters view. Never two on a page, never a paragraph next to it.</p>
   <div class="demo blue"><div class="stmt"><p>Not everything belongs.<br>The right work does.</p><small>Members shortlist. One of the three gets the top.</small></div></div>
