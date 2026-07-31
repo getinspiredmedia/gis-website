@@ -17,10 +17,11 @@ const DB_PATH      = process.env.DB_PATH       || path.join(__dirname, 'data', '
 const UPLOAD_DIR   = process.env.UPLOAD_DIR    || path.join(path.dirname(DB_PATH), 'uploads');
 const ADMIN_PWD    = process.env.ADMIN_PASSWORD || 'admin';
 const SUBMIT_TOKEN = process.env.SUBMIT_TOKEN  || '';
-const RESEND_KEY   = process.env.RESEND_API_KEY;
-const FROM_EMAIL   = process.env.RESEND_FROM   || 'noreply@getinspiredsociety.com';
-const ADMIN_EMAIL  = process.env.ADMIN_EMAIL   || 'info@getinspiredsociety.com';
-const SITE_URL     = process.env.SITE_URL      || 'https://gis-website-production.up.railway.app';
+const RESEND_KEY      = process.env.RESEND_API_KEY;
+const FROM_EMAIL      = process.env.RESEND_FROM        || 'noreply@getinspiredsociety.com';
+const ADMIN_EMAIL     = process.env.ADMIN_EMAIL        || 'info@getinspiredsociety.com';
+const SITE_URL        = process.env.SITE_URL           || 'https://gis-website-production.up.railway.app';
+const HCAPTCHA_SECRET = process.env.HCAPTCHA_SECRET;
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -94,6 +95,24 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// ── hCaptcha ──────────────────────────────────────────────────────────────────
+
+async function verifyHcaptcha(token) {
+  if (!HCAPTCHA_SECRET) { console.warn('[captcha] HCAPTCHA_SECRET not set — skipping verification'); return true; }
+  try {
+    const r = await fetch('https://api.hcaptcha.com/siteverify', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body:    `secret=${encodeURIComponent(HCAPTCHA_SECRET)}&response=${encodeURIComponent(token)}`,
+    });
+    const data = await r.json();
+    return data.success === true;
+  } catch (e) {
+    console.error('[captcha] verification error:', e.message);
+    return false;
+  }
+}
+
 // ── Rate-limiting ─────────────────────────────────────────────────────────────
 
 const contactRequests = new Map();
@@ -162,8 +181,11 @@ app.get('/api/works/:slug', (req, res) => {
 });
 
 app.post('/api/contact', async (req, res) => {
-  const { message, email, hp } = req.body || {};
-  if (hp) return res.json({ ok: true }); // honeypot — silent, no rate-limit slot consumed
+  const { message, email, hp, captcha } = req.body || {};
+  if (hp) return res.json({ ok: true }); // honeypot — silent, no captcha/rate-limit slot consumed
+  if (!captcha) return res.status(400).json({ error: 'Please complete the captcha.' });
+  const captchaOk = await verifyHcaptcha(captcha);
+  if (!captchaOk) return res.status(400).json({ error: 'Captcha verification failed. Please try again.' });
   const ip = req.ip || req.socket.remoteAddress || '';
   if (!allowContact(ip)) return res.status(429).json({ error: 'Too many messages. Please wait a few minutes.' });
   if (!message?.trim() || !email?.trim())             return res.status(400).json({ error: 'Required fields missing.' });
