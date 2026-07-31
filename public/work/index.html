@@ -262,15 +262,13 @@ footer {
 
   if (!slug) { renderNotFound(); return; }
 
-  fetch('/data/works.json')
-    .then(function (r) { return r.json(); })
-    .then(function (works) {
-      var work = null;
-      for (var i = 0; i < works.length; i++) {
-        if (works[i].slug === slug) { work = works[i]; break; }
-      }
-      if (work) { renderWork(work); }
-      else      { renderNotFound(); }
+  fetch('/api/works/' + encodeURIComponent(slug))
+    .then(function (r) {
+      if (!r.ok) throw new Error('not found');
+      return r.json();
+    })
+    .then(function (work) {
+      renderWork(work);
     })
     .catch(function () {
       renderNotFound();
