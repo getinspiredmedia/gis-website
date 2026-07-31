@@ -150,6 +150,7 @@ const upload = multer({
 
 // ── App middleware ────────────────────────────────────────────────────────────
 
+app.set('trust proxy', 1); // Railway sits behind a proxy; needed for correct req.ip
 app.use(express.json());
 
 // Block /submit without token — must go before static so /submit/index.html isn't served directly
