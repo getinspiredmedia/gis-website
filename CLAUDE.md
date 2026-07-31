@@ -77,7 +77,7 @@ GIS-website/
 │   └── DECISIONS.md
 └── public/
     ├── index.html          # /
-    ├── on-view/index.html  # /on-view  ← roterende wand + plaque + progress
+    ├── on-view/index.html  # /on-view  ← roterende wand + plaque + progress + standaard nav
     ├── magazine/index.html # /magazine
     ├── gallery/index.html  # /gallery
     ├── society/index.html  # /society
@@ -85,7 +85,13 @@ GIS-website/
     ├── contact/index.html  # /contact
     ├── support/index.html  # /support
     ├── work/index.html     # /work/:slug  ← shell, slug gelezen via JS
-    └── data/works.json     # mockdata (10 werken)
+    ├── assets/
+    │   ├── mark.png               # logo (640×528, wit op zwart)
+    │   ├── favicon-32.png         # 32×32 favicon (witte letters, transparant)
+    │   ├── apple-touch-icon.png   # 180×180 apple touch icon (wit op blauw)
+    │   └── gallery-poster.webp    # posterafbeelding voor /gallery
+    ├── favicon.ico                # = favicon-32.png (PNG-formaat)
+    └── data/works.json            # mockdata (10 werken)
 ```
 
 ### Buildsysteem — KRITISCH
@@ -111,6 +117,8 @@ build/pages/support.html  → public/support/index.html
 - `public/admin/index.html`
 - `public/submit/index.html`
 - `public/work/index.html`
+- `public/embed/index.html`
+- `public/hand-in/index.html`
 
 ### Buildcommando's
 - `npm install` — dependencies installeren
@@ -129,13 +137,13 @@ build/pages/support.html  → public/support/index.html
 ### Architectuur
 - Node/Express: `express.static` voor alle statische paden, daarna `/work/:slug` route.
 - Elk hoofdpad heeft een eigen submap met `index.html` in `public/`.
-- `/on-view` toont roterende wand (shuffle-bag, 20s) met Plaque en progress-bar.
+- `/on-view` toont roterende wand (shuffle-bag, 20s) met Plaque en progress-bar. Gebruikt de standaard nav (mark-logo + Magazine/Gallery/Society/Log in) inclusief scroll-shrink en wipe-transitie.
 - `/work/:slug` is een client-side shell: slug wordt gelezen uit de URL, werk opgezocht in `data/works.json`.
 - Geen database, geen server-side rendering. Railway auto-deploy op push naar `master`.
 - **Route-volgorde in server.js:** `express.static` eerst, daarna `/work/:slug`, geen catch-all.
 
 ### Belangrijke regels
 - Raak `getinspiredmedia/on-view` of diens Railway project **nooit** aan vanuit dit project.
-- De `/on-view` pagina is een skelet — de keuze "restyled rebuild vs. proxy" is nog niet gemaakt.
+- `/on-view` is volledig uitgebouwd: standaard nav, roterende wand, plaque, progress-bar en wipe-transitie zijn aanwezig.
 - Geen DNS-configuratie voor `getinspiredsociety.com` tot dit expliciet gevraagd wordt.
 - Update deze sectie actief bij elke nieuwe architectuurbeslissing of configuratiewijziging.
