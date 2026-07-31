@@ -87,13 +87,14 @@ a{color:inherit;text-decoration:none}
 .issue.upcoming .cover span{color:var(--muted)}
 
 /* room */
-.room{position:relative;background:var(--ink);color:#fff;min-height:78svh;display:flex;align-items:center;justify-content:center;text-align:center;padding:clamp(70px,12vh,140px) 28px;overflow:hidden}
-.room .field{position:absolute;inset:0;background:radial-gradient(120% 100% at 50% 45%,#39405c 0%,#171a26 55%,#0b0c10 100%)}
+.room{position:relative;background:var(--ink);background-image:url('/assets/gallery-poster.webp');background-size:cover;background-position:center;color:#fff;min-height:78svh;display:flex;align-items:center;justify-content:center;text-align:center;padding:clamp(70px,12vh,140px) 28px;overflow:hidden}
+.room .field{position:absolute;inset:0;background:radial-gradient(120% 100% at 50% 45%,rgba(57,64,92,.72) 0%,rgba(23,26,38,.80) 55%,rgba(11,12,16,.88) 100%)}
 .room .torch{position:absolute;inset:0;pointer-events:none;background:radial-gradient(240px 240px at var(--mx,50%) var(--my,50%),rgba(255,255,255,.16),transparent 70%);transition:opacity .4s}
 .room .inner{position:relative;z-index:2;max-width:620px}
 .room .eyebrow{color:rgba(255,255,255,.6)}
 .room h2{margin:18px 0 20px;font-size:clamp(1.8rem,4vw,3rem);font-weight:700;line-height:1.05;letter-spacing:-.02em;font-variation-settings:'wdth' 112}
 .room p{color:rgba(255,255,255,.66);font-size:15px;line-height:1.6}
+.room .btn:hover{background:#fff;color:var(--ink);gap:16px}
 
 /* doors */
 .doors{display:grid;grid-template-columns:1fr 1fr}
@@ -181,6 +182,7 @@ a{color:inherit;text-decoration:none}
     <span class="eyebrow">Exhibition #3</span>
     <h2>Walk through<br>the current issue.</h2>
     <p>The same work, hung in a room you can move through.</p>
+    <a class="btn" href="/gallery">Enter the room &rarr;</a>
   </div>
 </section>
 
