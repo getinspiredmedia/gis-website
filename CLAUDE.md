@@ -135,12 +135,27 @@ build/pages/support.html  → public/support/index.html
 - Niet van toepassing (plain JavaScript, geen TypeScript).
 
 ### Architectuur
-- Node/Express: `express.static` voor alle statische paden, daarna `/work/:slug` route.
+- Node/Express: `express.static` voor alle statische paden, daarna specifieke page-routes.
 - Elk hoofdpad heeft een eigen submap met `index.html` in `public/`.
 - `/on-view` toont roterende wand (shuffle-bag, 20s) met Plaque en progress-bar. Gebruikt de standaard nav (mark-logo + Magazine/Gallery/Society/Log in) inclusief scroll-shrink en wipe-transitie.
 - `/work/:slug` is een client-side shell: slug wordt gelezen uit de URL, werk opgezocht in `data/works.json`.
-- Geen database, geen server-side rendering. Railway auto-deploy op push naar `master`.
-- **Route-volgorde in server.js:** `express.static` eerst, daarna `/work/:slug`, geen catch-all.
+- **Route-volgorde in server.js:** `express.static` eerst, daarna page-routes (`/work/:slug`, `/submit/:token`, `/hand-in/:token`), geen catch-all.
+- Database: better-sqlite3 in WAL-modus op Railway volume (`DB_PATH`). Tabellen: `works`, `tokens`.
+- E-mail: Resend via `RESEND_API_KEY` env var. Alleen server-side, nooit in client-code.
+
+### API-routes (server.js)
+- `GET  /api/works` — alle niet-gearchiveerde werken
+- `GET  /api/works/:slug` — enkel werk op slug
+- `POST /api/contact` — contactformulier; honeypot (`hp`-veld), rate-limit 5 req/15 min per IP
+- `GET  /api/tokens/:token` — valideert hand-in token, geeft `artist_name` terug
+- `POST /hand-in/:token` — hand-in upload (multer/sharp), markeert token als used, stuurt bevestigingsmail naar artiest + notificatie naar admin
+- `POST /api/submit` — publiek submit-formulier (SUBMIT_TOKEN vereist)
+- `POST /api/admin/auth` — admin login, geeft sessie-token terug
+- `GET  /api/admin/works` — alle werken (admin)
+- `POST /api/admin/works` — werk toevoegen (admin)
+- `PATCH /api/admin/works/:id` — status wijzigen (admin)
+- `DELETE /api/admin/works/:id` — werk verwijderen (admin)
+- `POST /api/admin/tokens` — hand-in token aanmaken voor artiest (admin); geeft `{ token, url }` terug
 
 ### Belangrijke regels
 - Raak `getinspiredmedia/on-view` of diens Railway project **nooit** aan vanuit dit project.
