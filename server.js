@@ -56,6 +56,21 @@ if (db.prepare('SELECT COUNT(*) as n FROM works').get().n === 0) {
 
 // Migrations for existing databases
 try { db.exec("ALTER TABLE works ADD COLUMN email TEXT NOT NULL DEFAULT ''"); } catch {}
+try { db.exec("ALTER TABLE tokens ADD COLUMN artist_name  TEXT NOT NULL DEFAULT ''"); } catch {}
+try { db.exec("ALTER TABLE tokens ADD COLUMN artist_email TEXT NOT NULL DEFAULT ''"); } catch {}
+try { db.exec("ALTER TABLE tokens ADD COLUMN used INTEGER NOT NULL DEFAULT 0"); } catch {}
+try { db.exec("ALTER TABLE tokens ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))"); } catch {}
+
+// Tokens table for hand-in links
+db.exec(`
+  CREATE TABLE IF NOT EXISTS tokens (
+    token        TEXT PRIMARY KEY,
+    artist_name  TEXT NOT NULL,
+    artist_email TEXT NOT NULL,
+    used         INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
 
 // ── Auto-archive ──────────────────────────────────────────────────────────────
 
@@ -77,6 +92,21 @@ function requireAdmin(req, res, next) {
   const token = (req.headers.authorization || '').replace('Bearer ', '').trim();
   if (token !== ADMIN_SESSION) return res.status(401).json({ error: 'Unauthorized' });
   next();
+}
+
+// ── Rate-limiting ─────────────────────────────────────────────────────────────
+
+const contactRequests = new Map();
+
+function allowContact(ip) {
+  const now    = Date.now();
+  const window = 15 * 60 * 1000;
+  const limit  = 5;
+  const hits   = (contactRequests.get(ip) || []).filter(t => now - t < window);
+  if (hits.length >= limit) return false;
+  hits.push(now);
+  contactRequests.set(ip, hits);
+  return true;
 }
 
 // ── Email ─────────────────────────────────────────────────────────────────────
@@ -133,7 +163,9 @@ app.get('/api/works/:slug', (req, res) => {
 
 app.post('/api/contact', async (req, res) => {
   const { message, email, hp } = req.body || {};
-  if (hp)                                             return res.json({ ok: true }); // honeypot
+  if (hp) return res.json({ ok: true }); // honeypot — silent, no rate-limit slot consumed
+  const ip = req.ip || req.socket.remoteAddress || '';
+  if (!allowContact(ip)) return res.status(429).json({ error: 'Too many messages. Please wait a few minutes.' });
   if (!message?.trim() || !email?.trim())             return res.status(400).json({ error: 'Required fields missing.' });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))     return res.status(400).json({ error: 'Invalid email address.' });
   await sendEmail({
@@ -142,6 +174,71 @@ app.post('/api/contact', async (req, res) => {
     html:    `<p><b>From:</b> ${email}</p><p>${message.replace(/\n/g, '<br>')}`,
   });
   res.json({ ok: true });
+});
+
+app.get('/api/tokens/:token', (req, res) => {
+  const row = db.prepare('SELECT artist_name, used FROM tokens WHERE token=?').get(req.params.token);
+  if (!row || row.used) return res.status(404).json({ error: 'Invalid or already used.' });
+  res.json({ artist_name: row.artist_name });
+});
+
+// ── Hand-in ───────────────────────────────────────────────────────────────────
+
+app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
+  try {
+    const tokenRow = db.prepare('SELECT * FROM tokens WHERE token=?').get(req.params.token);
+    if (!tokenRow || tokenRow.used) return res.status(404).json({ error: 'Invalid or already used link.' });
+
+    const { work_title } = req.body || {};
+    if (!work_title?.trim()) return res.status(400).json({ error: 'Please enter a title.' });
+    if (!req.file)           return res.status(400).json({ error: 'No image uploaded.' });
+
+    const filename = crypto.randomUUID() + '.webp';
+    try {
+      await sharp(req.file.buffer)
+        .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(path.join(UPLOAD_DIR, filename));
+    } catch (e) {
+      console.error('[hand-in] sharp error:', e.message);
+      return res.status(400).json({ error: 'Could not process image.' });
+    }
+
+    const title    = work_title.trim();
+    const name     = tokenRow.artist_name;
+    const email    = tokenRow.artist_email;
+    const baseSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'work';
+    let slug = baseSlug;
+    let suffix = 1;
+    while (db.prepare('SELECT id FROM works WHERE slug=?').get(slug)) {
+      slug = baseSlug + '-' + (suffix++);
+    }
+
+    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status) VALUES (?,?,?,?,?,?,?)')
+      .run(slug, title, name, email, '#', '/uploads/' + filename, 'previous');
+
+    db.prepare('UPDATE tokens SET used=1 WHERE token=?').run(req.params.token);
+
+    console.log('[hand-in] received:', name, email, slug);
+
+    await Promise.all([
+      sendEmail({
+        to:      ADMIN_EMAIL,
+        subject: `Hand-in received: "${title}" by ${name}`,
+        html:    `<p>${name} (${email}) handed in a work.<br>Title: ${title}<br><br>View: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
+      }),
+      sendEmail({
+        to:      email,
+        subject: 'Your work is in — Get Inspired Society',
+        html:    `<p>${name},</p><p>We have received your work "<b>${title}</b>".</p><p>We will let you know when it goes on the wall.</p><p>— Get Inspired Society</p>`,
+      }),
+    ]);
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[hand-in] unexpected error:', e.message);
+    res.status(500).json({ error: 'Server error. Please try again.' });
+  }
 });
 
 // ── Submit ────────────────────────────────────────────────────────────────────
@@ -242,6 +339,15 @@ app.delete('/api/admin/works/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/admin/tokens', requireAdmin, (req, res) => {
+  const { artist_name, artist_email } = req.body || {};
+  if (!artist_name?.trim() || !artist_email?.trim()) return res.status(400).json({ error: 'Name and email required.' });
+  const token = crypto.randomUUID();
+  db.prepare('INSERT INTO tokens (token, artist_name, artist_email) VALUES (?,?,?)')
+    .run(token, artist_name.trim(), artist_email.trim());
+  res.json({ token, url: `${SITE_URL}/hand-in/${token}` });
+});
+
 // ── Page routes ───────────────────────────────────────────────────────────────
 
 app.get('/submit/:token', (req, res) => {
@@ -251,6 +357,12 @@ app.get('/submit/:token', (req, res) => {
 
 app.get('/work/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'work', 'index.html'));
+});
+
+app.get('/hand-in', (req, res) => res.status(404).send('Not found'));
+
+app.get('/hand-in/:token', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'hand-in', 'index.html'));
 });
 
 app.listen(PORT, () => console.log(`GIS server on port ${PORT}`));

@@ -46,6 +46,8 @@ img{display:block;max-width:100%}
 .send button{background:var(--ink);color:#fff;border:0;border-radius:999px;padding:16px 30px;font:inherit;font-size:14px;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:background .3s}
 .send button:hover{background:var(--blue)}
 .send small{font-size:13px;color:var(--muted);line-height:1.6;max-width:34ch}
+.cs-ok{margin-top:16px;font-size:14px;color:#16a34a;line-height:1.5;display:none}
+.cs-err{margin-top:16px;font-size:14px;color:#dc2626;line-height:1.5;display:none}
 
 .rv{opacity:0;transform:translateY(20px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
 .rv.is-in{opacity:1;transform:none}
@@ -105,6 +107,7 @@ nav.solid{background:var(--ink);border-bottom-color:rgba(255,255,255,.14);paddin
 nav.hide{transform:translateY(-102%)}
 nav .mark{height:clamp(52px,9vw,88px);transition:height .4s var(--ease),width .4s var(--ease)}
 nav.solid .mark{height:clamp(30px,4vw,40px);width:auto}
+nav:not(.solid) .mark-dark{filter:invert(1)}
 .menu{display:flex;gap:4px;align-items:center}
 .menu a{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding:9px 13px;border-radius:999px;line-height:1;transition:background .25s,color .25s}
 .menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:rgba(255,255,255,.16)}
@@ -165,20 +168,22 @@ nav[data-variant="light"] .menu .enter:hover{background:var(--ink)}
 <section class="write">
   <div class="wrap rv">
     <span class="eyebrow">Write</span>
-    <form onsubmit="return false" novalidate>
+    <form id="contact-form" novalidate>
       <label class="field">
         <span>Your message</span>
-        <textarea placeholder="Write here." required></textarea>
+        <textarea id="contact-message" placeholder="Write here." required></textarea>
       </label>
       <label class="field">
         <span>Where I can reach you</span>
-        <input type="email" placeholder="you@example.com" autocomplete="email" required>
+        <input id="contact-email" type="email" placeholder="you@example.com" autocomplete="email" required>
       </label>
-      <input class="hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" placeholder="Leave empty">
+      <input class="hp" id="contact-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" placeholder="Leave empty">
       <div class="send">
-        <button type="submit">Send it</button>
+        <button id="contact-btn" type="submit">Send it</button>
         <small>I read and answer these myself. It takes a few days, and it does get an answer.</small>
       </div>
+      <p id="contact-status-ok" class="cs-ok"></p>
+      <p id="contact-status-err" class="cs-err"></p>
     </form>
   </div>
 </section>
@@ -204,6 +209,46 @@ footer .stamp{margin-top:26px;font-size:11px;color:rgba(255,255,255,.35);letter-
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const io = new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}})},{threshold:.15});
 document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+(function () {
+  var form = document.getElementById('contact-form');
+  var okEl  = document.getElementById('contact-status-ok');
+  var errEl = document.getElementById('contact-status-err');
+  var btn   = document.getElementById('contact-btn');
+  function showOk(t)  { okEl.textContent = t;  okEl.style.display = '';  errEl.style.display = 'none'; }
+  function showErr(t) { errEl.textContent = t; errEl.style.display = ''; okEl.style.display = 'none'; }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var message = document.getElementById('contact-message').value.trim();
+    var email   = document.getElementById('contact-email').value.trim();
+    var hp      = document.getElementById('contact-hp').value;
+    if (!message || !email) { showErr('Please fill in all fields.'); return; }
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: message, email: email, hp: hp }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.ok) {
+          form.reset();
+          btn.style.display = 'none';
+          showOk('Sent. I will get back to you.');
+        } else {
+          showErr(d.error || 'Something went wrong.');
+          btn.disabled = false;
+          btn.textContent = 'Send it';
+        }
+      })
+      .catch(function () {
+        showErr('Could not reach the server. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Send it';
+      });
+  });
+}());
 </script>
 </body>
 </html>

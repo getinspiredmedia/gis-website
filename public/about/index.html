@@ -120,6 +120,7 @@ nav.solid{background:var(--ink);border-bottom-color:rgba(255,255,255,.14);paddin
 nav.hide{transform:translateY(-102%)}
 nav .mark{height:clamp(52px,9vw,88px);transition:height .4s var(--ease),width .4s var(--ease)}
 nav.solid .mark{height:clamp(30px,4vw,40px);width:auto}
+nav:not(.solid) .mark-dark{filter:invert(1)}
 .menu{display:flex;gap:4px;align-items:center}
 .menu a{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding:9px 13px;border-radius:999px;line-height:1;transition:background .25s,color .25s}
 .menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:rgba(255,255,255,.16)}
