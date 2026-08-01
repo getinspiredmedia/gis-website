@@ -8,6 +8,7 @@
     "check:nav-drift": "node build/check-nav-drift.js",
     "test:nav-drift-aria": "node build/check-nav-drift.test.js",
     "test:og-tags": "node test/og-tags.test.js",
+    "test:plausible-proxy": "node test/plausible-proxy.test.js",
     "start": "node server.js"
   },
   "engines": {
