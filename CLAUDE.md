@@ -158,7 +158,7 @@ build/pages/support.html  → public/support/index.html
 - `POST /api/admin/tokens` — hand-in token aanmaken voor artiest (admin); geeft `{ token, url }` terug
 
 ### Belangrijke regels
-- Raak `getinspiredmedia/on-view` of diens Railway project **nooit** aan vanuit dit project.
+- `getinspiredmedia/on-view` (de oude losstaande app) en diens Railway project zijn gedecommissioned door de gebruiker (DNS, data, keys en repo verwijderd). Er zijn geen actieve verwijzingen naar die omgeving meer in deze codebase (bevestigd via repo-brede inventarisatie).
 - `/on-view` is volledig uitgebouwd: standaard nav, roterende wand, plaque, progress-bar en wipe-transitie zijn aanwezig.
 - Geen DNS-configuratie voor `getinspiredsociety.com` tot dit expliciet gevraagd wordt.
 - Update deze sectie actief bij elke nieuwe architectuurbeslissing of configuratiewijziging.

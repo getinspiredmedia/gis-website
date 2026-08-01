@@ -2,7 +2,7 @@
 
 Greenfield herbouw van de Get Inspired Society website.
 
-Dit project is volledig losstaand van [`getinspiredmedia/on-view`](https://github.com/getinspiredmedia/on-view). Er zijn geen gedeelde dependencies, databases of configuraties.
+Dit project was oorspronkelijk volledig losstaand van `getinspiredmedia/on-view`, een eerdere aparte app. Die is inmiddels gedecommissioned; er zijn geen gedeelde dependencies, databases of configuraties (geweest).
 
 ## Starten
 
