@@ -124,6 +124,7 @@ build/pages/support.html  → public/support/index.html
 - `npm install` — dependencies installeren
 - `npm run build` — regenereer `public/` uit `build/pages/` (altijd uitvoeren na aanpassing build-bronnen)
 - `npm start` — server starten via `exec node server.js`. De `exec` is bewust: zonder die vervangt npm's scriptrunner zichzelf niet door het node-proces, waardoor een `SIGTERM` (die Railway bij élke herdeploy stuurt, niet alleen bij een echte crash) de tussenliggende shell doodt zónder hem door te geven aan de node-child — die blijft dan verweesd draaien terwijl npm een non-zero exit logt (`npm error signal SIGTERM`), wat Railway als "Deploy Crashed" rapporteert. Met `exec` ontvangt `server.js` het signaal zelf en sluit netjes af via de graceful-shutdown-handler (SIGTERM/SIGINT → `server.close()` laat lopende requests afronden → `db.close()` → `process.exit(0)`, met een 10s force-exit-timeout als fallback).
+  - Verificatie-deploy: 2026-08-01, controle-deploy getriggerd om te bevestigen dat een nieuwe container-swap met deze fix schoon verloopt (geen `npm error signal SIGTERM`, wel `Graceful shutdown gestart` in de logs). Zie André's handmatige bevestiging in Railway voor het definitieve resultaat.
 
 ### Testcommando's
 - Nog geen geautomatiseerde tests. Handmatige verificatie via curl of browser.
