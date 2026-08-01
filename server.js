@@ -515,12 +515,36 @@ function renderWorkPage(work, slug) {
     .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)} — Get Inspired Society</title>`);
 }
 
+// Known link-preview/OG-scraper user-agent substrings, checked case-insensitively.
+// Excluded from the view count only — they still get the page and its OG tags
+// normally, that's the whole point of them visiting. Fail-open: an unknown or
+// missing User-Agent still counts as a view.
+const SCRAPER_USER_AGENTS = [
+  'facebookexternalhit', // Facebook / Instagram
+  'twitterbot',          // X / Twitter (also matches Telegram's "TelegramBot (like TwitterBot)", which is fine — both should be excluded)
+  'whatsapp',            // WhatsApp
+  'linkedinbot',         // LinkedIn
+  'slackbot',            // Slack
+  'discordbot',          // Discord
+  'telegrambot',         // Telegram
+];
+
+function isScraperUserAgent(userAgent) {
+  if (!userAgent) return false;
+  const ua = userAgent.toLowerCase();
+  return SCRAPER_USER_AGENTS.some(s => ua.includes(s));
+}
+
 app.get('/work/:slug', (req, res) => {
   const row = db.prepare(
     'SELECT slug,title,artist,portfolio,image_url AS image,status FROM works WHERE slug=?'
   ).get(req.params.slug);
   // Raw hit counter — no dedup by IP/session/time, deliberately kept simple.
-  if (row) db.prepare('UPDATE works SET view_count = view_count + 1 WHERE slug=?').run(req.params.slug);
+  // Known OG-preview scrapers are excluded so a shared link doesn't inflate
+  // the count before a single human has opened it.
+  if (row && !isScraperUserAgent(req.headers['user-agent'])) {
+    db.prepare('UPDATE works SET view_count = view_count + 1 WHERE slug=?').run(req.params.slug);
+  }
   res.send(renderWorkPage(row, req.params.slug));
 });
 

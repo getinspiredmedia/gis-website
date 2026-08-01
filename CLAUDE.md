@@ -138,7 +138,7 @@ build/pages/support.html  → public/support/index.html
 - Node/Express: `express.static` voor alle statische paden, daarna specifieke page-routes.
 - Elk hoofdpad heeft een eigen submap met `index.html` in `public/`.
 - `/on-view` toont roterende wand (shuffle-bag, 20s) met Plaque en progress-bar. Gebruikt de standaard nav (mark-logo + Magazine/Gallery/Society/Log in) inclusief scroll-shrink en wipe-transitie.
-- `/work/:slug` rendert server-side (DB-lookup op slug, incl. OG/Twitter-tags, zie hieronder) en hoogt bij elk bezoek voor een bestaande slug `works.view_count` met 1 op — ruwe hit-teller, geen dedup op IP/sessie/tijd. Een onbekende slug hoogt niets op en maakt geen rij aan.
+- `/work/:slug` rendert server-side (DB-lookup op slug, incl. OG/Twitter-tags, zie hieronder) en hoogt bij elk bezoek voor een bestaande slug `works.view_count` met 1 op — ruwe hit-teller, geen dedup op IP/sessie/tijd. Een onbekende slug hoogt niets op en maakt geen rij aan. Bekende OG-preview-scrapers (`SCRAPER_USER_AGENTS` in `server.js`: Facebook, Twitter/X, WhatsApp, LinkedIn, Slack, Discord, Telegram, case-insensitieve substring-match) tellen niet mee — pagina en OG-tags blijven voor hen wel normaal renderen. Onbekende/ontbrekende user-agent telt wél mee (fail-open).
 - **Route-volgorde in server.js:** `express.static` eerst, daarna page-routes (`/work/:slug`, `/submit/:token`, `/hand-in/:token`), geen catch-all.
 - Database: better-sqlite3 in WAL-modus op Railway volume (`DB_PATH`). Tabellen: `works` (incl. `view_count INTEGER DEFAULT 0`, getoond in het admin panel), `tokens`.
 - E-mail: Resend via `RESEND_API_KEY` env var. Alleen server-side, nooit in client-code.
