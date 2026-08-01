@@ -36,38 +36,83 @@ body {
   line-height: 1.6;
 }
 
-/* ── Masthead ── */
-.masthead {
-  height: 56px;
-  background: var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
+/* ── Wipe page-transition overlay ── */
+#wipe{position:fixed;inset:0;background:var(--blue);z-index:200;transform:scaleY(0);transform-origin:bottom;pointer-events:none}
+#wipe.go{animation:wipe 900ms var(--ease) forwards}
+@keyframes wipe{0%{transform:scaleY(0);transform-origin:bottom}45%{transform:scaleY(1);transform-origin:bottom}55%{transform:scaleY(1);transform-origin:top}100%{transform:scaleY(0);transform-origin:top}}
+
+/* ── Masthead (shared across the site — see build/partials/nav.html) ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid transparent;transition:transform .45s var(--ease),background .35s,border-color .35s,padding .35s var(--ease)}
+nav.solid{background:var(--ink);border-bottom-color:rgba(255,255,255,.14);padding:8px 22px}
+nav.hide{transform:translateY(-102%)}
+nav .mark{height:clamp(52px,9vw,88px);transition:height .4s var(--ease),width .4s var(--ease)}
+nav.solid .mark{height:clamp(30px,4vw,40px);width:auto}
+nav:not(.solid) .mark-dark{filter:invert(1)}
+.menu{display:flex;gap:4px;align-items:center}
+.menu a{text-decoration:none;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding:9px 13px;border-radius:999px;line-height:1;transition:background .25s,color .25s}
+.menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:rgba(255,255,255,.16)}
+.menu .enter{background:var(--blue);padding:10px 18px;margin-left:12px}
+.menu .enter:hover,.menu .enter:focus-visible{background:#fff;color:var(--blue)}
+
+/* ── Mobile nav toggle ── */
+.nav-toggle{display:none;position:relative;z-index:2;width:40px;height:40px;flex-shrink:0;border:0;background:transparent;color:#fff;cursor:pointer;align-items:center;justify-content:center}
+.nav-toggle span{position:relative;display:block;width:22px;height:2px;background:currentColor;transition:background .2s var(--ease)}
+.nav-toggle span::before,.nav-toggle span::after{content:'';position:absolute;left:0;width:22px;height:2px;background:currentColor;transition:transform .3s var(--ease)}
+.nav-toggle span::before{top:-7px}
+.nav-toggle span::after{top:7px}
+.nav-toggle:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+@media(max-width:860px){
+  .nav-toggle{display:flex}
+  nav .mark{height:40px!important;width:auto!important}
+  /* Not covered by build/check-nav-drift.js — keep this in sync by hand with the matching rule in build/partials/nav.html */
+  nav>a{position:relative;z-index:2}
+  .menu{
+    position:fixed;inset:0;z-index:1;
+    display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+    gap:6px;padding:32px;
+    background:var(--ink);
+    transform:translateY(-100%);
+    opacity:0;
+    transition:transform .4s var(--ease),opacity .35s var(--ease);
+    pointer-events:none;
+  }
+  nav.nav-open{background:var(--ink);border-bottom-color:transparent}
+  nav.nav-open.hide{transform:none}
+  nav.nav-open .menu{transform:translateY(0);opacity:1;pointer-events:auto}
+  .menu a{
+    color:#fff;
+    background:none;
+    font-size:clamp(1.7rem,8vw,2.6rem);
+    font-weight:700;
+    letter-spacing:-.02em;
+    font-variation-settings:'wdth' 116;
+    text-transform:none;
+    padding:9px 0;
+    border-radius:0;
+    line-height:1.15;
+  }
+  .menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:none;color:rgba(255,255,255,.6)}
+  .menu .enter{
+    display:inline-flex;
+    margin:22px 0 0;
+    background:var(--blue);
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    padding:13px 26px;
+    border-radius:999px;
+  }
+  .menu .enter:hover,.menu .enter:focus-visible{background:#fff;color:var(--blue)}
+  nav.nav-open .mark{filter:none}
+  nav.nav-open .nav-toggle{color:#fff}
 }
-.masthead-wordmark {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-decoration: none;
-  color: #fff;
+@media(prefers-reduced-motion:reduce){
+  .menu{transition:none}
+  .nav-toggle span::before,.nav-toggle span::after{transition:none}
 }
-.masthead-nav { display: flex; align-items: center; gap: 4px; }
-.menuitem {
-  display: inline-flex;
-  border-radius: 999px;
-  padding: 9px 13px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: #fff;
-  transition: background .25s;
-}
-.menuitem:hover { background: rgba(255,255,255,.16); }
-.menuitem:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 
 /* ── Main layout ── */
 main {
@@ -190,13 +235,17 @@ footer {
 </head>
 <body>
 
-<nav class="masthead">
-  <a class="masthead-wordmark" href="/">Get Inspired Society</a>
-  <div class="masthead-nav">
-    <a class="menuitem" href="/on-view">On View</a>
-    <a class="menuitem" href="/magazine">Magazine</a>
-    <a class="menuitem" href="/gallery">Gallery</a>
-    <a class="menuitem" href="/society">Society</a>
+<div id="wipe"></div>
+<nav>
+  <a href="/" aria-label="Get Inspired Society, home"><img class="mark" src="/assets/mark.png" alt="Get Inspired Society" width="110" height="88"></a>
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="Open menu">
+    <span></span>
+  </button>
+  <div class="menu" id="site-menu">
+    <a data-nav="magazine" href="/magazine">Magazine</a>
+    <a data-nav="gallery" href="/gallery">Gallery</a>
+    <a data-nav="society" href="/society">Society</a>
+    <a class="enter" href="https://society.getinspiredsociety.com">Log in</a>
   </div>
 </nav>
 
@@ -280,6 +329,82 @@ footer {
     .catch(function () {
       renderNotFound();
     });
+}());
+</script>
+
+<script>
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var wipeEl = document.getElementById('wipe');
+  document.addEventListener('DOMContentLoaded', function(){
+    var navEl = document.querySelector('nav');
+    if(navEl){
+      var lastY = scrollY;
+      function onScroll(){
+        var y = scrollY;
+        navEl.classList.toggle('solid', y > 40);
+        navEl.classList.toggle('hide', y > innerHeight*0.7 && y > lastY);
+        lastY = y;
+      }
+      onScroll();
+      addEventListener('scroll', onScroll, {passive:true});
+    }
+    if(wipeEl){
+      document.querySelectorAll('a[href^="/"]').forEach(function(a){
+        a.addEventListener('click', function(ev){
+          if(reduce) return;
+          ev.preventDefault();
+          wipeEl.classList.add('go');
+          setTimeout(function(){ location.href = a.getAttribute('href'); }, 430);
+        });
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+  var nav    = document.querySelector('nav');
+  var toggle = nav && nav.querySelector('.nav-toggle');
+  var menu   = document.getElementById('site-menu');
+  if (!nav || !toggle || !menu) return;
+
+  function isOpen() { return nav.classList.contains('nav-open'); }
+
+  function open() {
+    nav.classList.add('nav-open');
+    toggle.setAttribute('aria-expanded', 'true');
+    toggle.setAttribute('aria-label', 'Close menu');
+    document.body.style.overflow = 'hidden';
+    var first = menu.querySelector('a');
+    if (first) first.focus();
+  }
+
+  function close(returnFocus) {
+    nav.classList.remove('nav-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open menu');
+    document.body.style.overflow = '';
+    if (returnFocus) toggle.focus();
+  }
+
+  toggle.addEventListener('click', function () {
+    if (isOpen()) close(true); else open();
+  });
+
+  menu.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A') close(false);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen()) close(true);
+  });
+
+  addEventListener('resize', function () {
+    if (innerWidth > 860 && isOpen()) close(false);
+  });
 }());
 </script>
 

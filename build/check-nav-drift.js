@@ -1,9 +1,9 @@
 'use strict';
 /*
- * public/on-view/index.html sits outside the build pipeline (see CLAUDE.md)
- * and carries a hand-maintained copy of the masthead's mobile-nav toggle
- * (markup + script) from build/partials/nav.html. This guards against the
- * two silently drifting apart. It does not compare the rest of either file —
+ * Several pages sit outside the build pipeline (see CLAUDE.md) and carry a
+ * hand-maintained copy of the masthead's mobile-nav toggle (markup + script)
+ * from build/partials/nav.html. This guards against any of them silently
+ * drifting from the partial. It does not compare the rest of each file —
  * only the toggle button/menu markup and the toggle script, which must stay
  * byte-identical (modulo the nav's own opening-tag attributes, which are
  * expected to differ per page).
@@ -12,6 +12,13 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
+
+// Hand-maintained copies of build/partials/nav.html's toggle. Add a page here
+// the moment it gets its own copy of the shared nav.
+const HAND_MAINTAINED_COPIES = [
+  'public/on-view/index.html',
+  'public/work/index.html',
+];
 
 function read(p) {
   return fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -46,41 +53,46 @@ function normalizeNavPartial(html) {
 
 function checkNavDrift() {
   const partial = normalizeNavPartial(read('build/partials/nav.html'));
-  const onView  = read('public/on-view/index.html');
 
-  const partialNav = extractNavBlock(partial);
-  const onViewNav  = extractNavBlock(onView);
+  const partialNav    = extractNavBlock(partial);
   const partialScript = extractToggleScript(partial);
-  const onViewScript  = extractToggleScript(onView);
-  const partialAria = extractToggleButtonAttrs(partial);
-  const onViewAria  = extractToggleButtonAttrs(onView);
+  const partialAria   = extractToggleButtonAttrs(partial);
 
   const errors = [];
   if (!partialNav)    errors.push('Could not find <nav> block in build/partials/nav.html');
-  if (!onViewNav)     errors.push('Could not find <nav> block in public/on-view/index.html');
   if (!partialScript) errors.push('Could not find toggle <script> in build/partials/nav.html');
-  if (!onViewScript)  errors.push('Could not find toggle <script> in public/on-view/index.html');
   if (!partialAria)   errors.push('Could not find <button class="nav-toggle"> in build/partials/nav.html');
-  if (!onViewAria)    errors.push('Could not find <button class="nav-toggle"> in public/on-view/index.html');
 
-  // ARIA attributes get their own explicit check (with a named diff) rather than
-  // relying only on the full-block string compare below, so an ARIA-only change
-  // produces an unambiguous, actionable error instead of a generic "markup drifted".
-  if (partialAria && onViewAria) {
-    ['aria-expanded', 'aria-controls', 'aria-label'].forEach(name => {
-      if (partialAria[name] !== onViewAria[name]) {
-        errors.push(
-          `Toggle ${name} differs — partial="${partialAria[name]}" vs on-view="${onViewAria[name]}"`
-        );
-      }
-    });
-  }
+  for (const copyPath of HAND_MAINTAINED_COPIES) {
+    const copy = read(copyPath);
+    const copyNav    = extractNavBlock(copy);
+    const copyScript = extractToggleScript(copy);
+    const copyAria   = extractToggleButtonAttrs(copy);
 
-  if (partialNav && onViewNav && partialNav !== onViewNav) {
-    errors.push('Nav markup (logo/toggle/menu) in public/on-view/index.html has drifted from build/partials/nav.html');
-  }
-  if (partialScript && onViewScript && partialScript !== onViewScript) {
-    errors.push('Toggle script in public/on-view/index.html has drifted from build/partials/nav.html');
+    if (!copyNav)    errors.push(`Could not find <nav> block in ${copyPath}`);
+    if (!copyScript) errors.push(`Could not find toggle <script> in ${copyPath}`);
+    if (!copyAria)   errors.push(`Could not find <button class="nav-toggle"> in ${copyPath}`);
+
+    // ARIA attributes get their own explicit check (with a named diff) rather
+    // than relying only on the full-block string compare below, so an
+    // ARIA-only change produces an unambiguous, actionable error instead of
+    // a generic "markup drifted".
+    if (partialAria && copyAria) {
+      ['aria-expanded', 'aria-controls', 'aria-label'].forEach(name => {
+        if (partialAria[name] !== copyAria[name]) {
+          errors.push(
+            `Toggle ${name} differs — partial="${partialAria[name]}" vs ${copyPath}="${copyAria[name]}"`
+          );
+        }
+      });
+    }
+
+    if (partialNav && copyNav && partialNav !== copyNav) {
+      errors.push(`Nav markup (logo/toggle/menu) in ${copyPath} has drifted from build/partials/nav.html`);
+    }
+    if (partialScript && copyScript && partialScript !== copyScript) {
+      errors.push(`Toggle script in ${copyPath} has drifted from build/partials/nav.html`);
+    }
   }
 
   return errors;
@@ -91,12 +103,12 @@ if (require.main === module) {
   if (errors.length) {
     console.error('[check-nav-drift] FAILED:');
     errors.forEach(e => console.error('  - ' + e));
-    console.error('\npublic/on-view/index.html is maintained by hand (it is not part of the build pipeline).');
+    console.error('\nThe pages listed in HAND_MAINTAINED_COPIES are maintained by hand (they are not part of the build pipeline).');
     console.error('When you change the mobile nav toggle in build/partials/nav.html, copy the same');
-    console.error('<nav>...</nav> block and toggle <script> into public/on-view/index.html.');
+    console.error('<nav>...</nav> block and toggle <script> into each of them.');
     process.exit(1);
   }
-  console.log('[check-nav-drift] OK — on-view nav matches build/partials/nav.html');
+  console.log(`[check-nav-drift] OK — ${HAND_MAINTAINED_COPIES.length} hand-maintained cop${HAND_MAINTAINED_COPIES.length === 1 ? 'y matches' : 'ies match'} build/partials/nav.html`);
 }
 
 module.exports = { checkNavDrift };
