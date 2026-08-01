@@ -28,6 +28,18 @@ function extractToggleScript(html) {
   return scripts.find(s => s.includes("querySelector('.nav-toggle')")) || null;
 }
 
+function extractToggleButtonAttrs(html) {
+  const match = html.match(/<button class="nav-toggle"[^>]*>/);
+  if (!match) return null;
+  const tag = match[0];
+  const attrs = {};
+  ['aria-expanded', 'aria-controls', 'aria-label'].forEach(name => {
+    const m = tag.match(new RegExp(name + '="([^"]*)"'));
+    attrs[name] = m ? m[1] : null;
+  });
+  return attrs;
+}
+
 function normalizeNavPartial(html) {
   return html.replace('{{NAV_ATTR}}', '');
 }
@@ -40,12 +52,29 @@ function checkNavDrift() {
   const onViewNav  = extractNavBlock(onView);
   const partialScript = extractToggleScript(partial);
   const onViewScript  = extractToggleScript(onView);
+  const partialAria = extractToggleButtonAttrs(partial);
+  const onViewAria  = extractToggleButtonAttrs(onView);
 
   const errors = [];
   if (!partialNav)    errors.push('Could not find <nav> block in build/partials/nav.html');
   if (!onViewNav)     errors.push('Could not find <nav> block in public/on-view/index.html');
   if (!partialScript) errors.push('Could not find toggle <script> in build/partials/nav.html');
   if (!onViewScript)  errors.push('Could not find toggle <script> in public/on-view/index.html');
+  if (!partialAria)   errors.push('Could not find <button class="nav-toggle"> in build/partials/nav.html');
+  if (!onViewAria)    errors.push('Could not find <button class="nav-toggle"> in public/on-view/index.html');
+
+  // ARIA attributes get their own explicit check (with a named diff) rather than
+  // relying only on the full-block string compare below, so an ARIA-only change
+  // produces an unambiguous, actionable error instead of a generic "markup drifted".
+  if (partialAria && onViewAria) {
+    ['aria-expanded', 'aria-controls', 'aria-label'].forEach(name => {
+      if (partialAria[name] !== onViewAria[name]) {
+        errors.push(
+          `Toggle ${name} differs — partial="${partialAria[name]}" vs on-view="${onViewAria[name]}"`
+        );
+      }
+    });
+  }
 
   if (partialNav && onViewNav && partialNav !== onViewNav) {
     errors.push('Nav markup (logo/toggle/menu) in public/on-view/index.html has drifted from build/partials/nav.html');

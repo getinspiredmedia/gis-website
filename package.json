@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node build/build.js",
     "check:nav-drift": "node build/check-nav-drift.js",
+    "test:nav-drift-aria": "node build/check-nav-drift.test.js",
     "start": "node server.js"
   },
   "engines": {
