@@ -42,6 +42,7 @@ db.exec(`
     image_url  TEXT NOT NULL,
     status     TEXT NOT NULL DEFAULT 'previous'
                    CHECK(status IN ('current','previous','archived')),
+    view_count INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
@@ -57,6 +58,7 @@ if (db.prepare('SELECT COUNT(*) as n FROM works').get().n === 0) {
 
 // Migrations for existing databases
 try { db.exec("ALTER TABLE works ADD COLUMN email TEXT NOT NULL DEFAULT ''"); } catch {}
+try { db.exec("ALTER TABLE works ADD COLUMN view_count INTEGER NOT NULL DEFAULT 0"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN artist_name  TEXT NOT NULL DEFAULT ''"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN artist_email TEXT NOT NULL DEFAULT ''"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN used INTEGER NOT NULL DEFAULT 0"); } catch {}
@@ -517,6 +519,8 @@ app.get('/work/:slug', (req, res) => {
   const row = db.prepare(
     'SELECT slug,title,artist,portfolio,image_url AS image,status FROM works WHERE slug=?'
   ).get(req.params.slug);
+  // Raw hit counter — no dedup by IP/session/time, deliberately kept simple.
+  if (row) db.prepare('UPDATE works SET view_count = view_count + 1 WHERE slug=?').run(req.params.slug);
   res.send(renderWorkPage(row, req.params.slug));
 });
 
