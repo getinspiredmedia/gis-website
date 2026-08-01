@@ -54,8 +54,16 @@ function injectAnalytics(html) {
 const { checkNavDrift } = require('./check-nav-drift');
 const navDriftErrors = checkNavDrift();
 if (navDriftErrors.length) {
-  console.error('[build] Aborting — public/on-view/index.html has drifted from build/partials/nav.html:');
+  console.error('[build] Aborting — a hand-maintained nav copy has drifted from build/partials/nav.html:');
   navDriftErrors.forEach(e => console.error('  - ' + e));
+  process.exit(1);
+}
+
+const { checkAnalyticsDrift } = require('./check-analytics-drift');
+const analyticsDriftErrors = checkAnalyticsDrift();
+if (analyticsDriftErrors.length) {
+  console.error('[build] Aborting — a hand-maintained analytics copy has drifted from build/partials/analytics.html:');
+  analyticsDriftErrors.forEach(e => console.error('  - ' + e));
   process.exit(1);
 }
 

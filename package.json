@@ -6,7 +6,9 @@
   "scripts": {
     "build": "node build/build.js",
     "check:nav-drift": "node build/check-nav-drift.js",
+    "check:analytics-drift": "node build/check-analytics-drift.js",
     "test:nav-drift-aria": "node build/check-nav-drift.test.js",
+    "test:analytics-drift": "node build/check-analytics-drift.test.js",
     "test:og-tags": "node test/og-tags.test.js",
     "test:plausible-proxy": "node test/plausible-proxy.test.js",
     "test:view-count": "node test/view-count.test.js",
