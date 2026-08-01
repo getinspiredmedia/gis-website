@@ -378,8 +378,52 @@ app.get('/submit/:token', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'submit', 'index.html'));
 });
 
+// ── Work page — server-rendered Open Graph / Twitter Card tags ────────────────
+// Social crawlers don't execute JS, so the per-work title/image/description
+// have to be in the raw HTML response, not filled in client-side.
+
+const WORK_TEMPLATE   = fs.readFileSync(path.join(__dirname, 'public', 'work', 'index.html'), 'utf8');
+const OG_DESCRIPTION  = 'A weekly work on Get Inspired Society';
+const OG_FALLBACK_IMG = SITE_URL + '/assets/gallery-poster.webp';
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function absoluteUrl(url) {
+  if (!url) return OG_FALLBACK_IMG;
+  return /^https?:\/\//i.test(url) ? url : SITE_URL + url;
+}
+
+function renderWorkPage(work, slug) {
+  const title = work ? `${work.title} by ${work.artist}` : 'Work not found';
+  const image = absoluteUrl(work && work.image);
+  const url   = `${SITE_URL}/work/${slug}`;
+
+  const ogTags = [
+    `<meta property="og:title" content="${escapeHtml(title)}">`,
+    `<meta property="og:description" content="${escapeHtml(OG_DESCRIPTION)}">`,
+    `<meta property="og:image" content="${escapeHtml(image)}">`,
+    `<meta property="og:type" content="article">`,
+    `<meta property="og:url" content="${escapeHtml(url)}">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
+  ].join('\n');
+
+  return WORK_TEMPLATE
+    .replace('<!-- @meta:og -->', ogTags)
+    .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)} — Get Inspired Society</title>`);
+}
+
 app.get('/work/:slug', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'work', 'index.html'));
+  const row = db.prepare(
+    'SELECT slug,title,artist,portfolio,image_url AS image,status FROM works WHERE slug=?'
+  ).get(req.params.slug);
+  res.send(renderWorkPage(row, req.params.slug));
 });
 
 app.get('/hand-in', (req, res) => res.status(404).send('Not found'));
