@@ -327,7 +327,7 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
     <span class="eyebrow">Not in yet</span>
     <h2>Put your work forward.</h2>
     <p>Five to seven images and a line about the work. The next open call opens on 1 August.</p>
-    <a class="btn" href="https://tally.so/r/D44kQZ" target="_blank" rel="noopener">Apply as a creative</a>
+    <a class="btn" id="applyBtn" href="https://tally.so/r/D44kQZ" target="_blank" rel="noopener">Apply as a creative</a>
   </div>
   <div class="door back rv">
     <span class="eyebrow">Already in</span>
@@ -358,6 +358,13 @@ footer .stamp{margin-top:26px;font-size:11px;color:rgba(255,255,255,.35);letter-
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const io = new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}})},{threshold:.2});
 document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+const applyBtn = document.getElementById('applyBtn');
+if(applyBtn){
+  applyBtn.addEventListener('click', () => {
+    if(typeof plausible === 'function') plausible('Application Started');
+  });
+}
 </script>
 </body>
 </html>

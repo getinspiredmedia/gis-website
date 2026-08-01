@@ -10,6 +10,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<!-- Privacy-friendly analytics by Plausible — proxied via own domain so adblockers don't skew the numbers -->
+<script async src="/js/pa-MH-OTeJcc74k86JrwLa7k.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
 <style>
 :root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -192,7 +198,7 @@ nav.solid .mark{height:clamp(30px,4vw,40px)}
       <h2>Origins, in print.</h2>
       <div class="opts">
         <div class="opt">
-          <a class="btn-white" href="https://www.peecho.com/print/en/2140141" target="_blank" rel="noopener">Order a print</a>
+          <a class="btn-white" id="printOrderBtn" href="https://www.peecho.com/print/en/2140141" target="_blank" rel="noopener">Order a print</a>
           <p class="note">A single issue. &euro;25, shipping not included.</p>
         </div>
       </div>
@@ -344,7 +350,17 @@ ISSUE.artists.forEach(a => {
 
 const dl = document.getElementById("downloadBtn");
 if(ISSUE.pdf){ dl.href = ISSUE.pdf; } else { dl.setAttribute("aria-disabled","true"); }
-dl.addEventListener("click", (e) => { if(!ISSUE.pdf) e.preventDefault(); });
+dl.addEventListener("click", (e) => {
+  if(!ISSUE.pdf){ e.preventDefault(); return; }
+  if(typeof plausible === "function") plausible("PDF Downloaded", { props: { issue: ISSUE.title } });
+});
+
+const printBtn = document.getElementById("printOrderBtn");
+if(printBtn){
+  printBtn.addEventListener("click", () => {
+    if(typeof plausible === "function") plausible("Print Order Clicked", { props: { issue: ISSUE.title } });
+  });
+}
 
 (function(){
   const img = new Image();
@@ -370,6 +386,8 @@ window.addEventListener("resize", () => {
 });
 
 render();
+
+if(typeof plausible === "function") plausible("Issue Opened", { props: { issue: ISSUE.title } });
 </script>
 </body>
 </html>
