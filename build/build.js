@@ -46,6 +46,11 @@ function injectWipe(html) {
   return html.replace('<!-- @include: wipe -->', partial);
 }
 
+function injectAnalytics(html) {
+  const partial = read(path.join(PARTIALS, 'analytics.html'));
+  return html.replace('<!-- @include: analytics -->', partial);
+}
+
 const { checkNavDrift } = require('./check-nav-drift');
 const navDriftErrors = checkNavDrift();
 if (navDriftErrors.length) {
@@ -64,6 +69,7 @@ pages.forEach(config => {
   html = injectNav(html, config.nav);
   html = injectFooter(html, config.nav, config.footer);
   html = injectWipe(html);
+  html = injectAnalytics(html);
   const outPath = path.join(ROOT, config.output);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, html, 'utf8');

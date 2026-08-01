@@ -142,8 +142,11 @@ build/pages/support.html  → public/support/index.html
 - **Route-volgorde in server.js:** `express.static` eerst, daarna page-routes (`/work/:slug`, `/submit/:token`, `/hand-in/:token`), geen catch-all.
 - Database: better-sqlite3 in WAL-modus op Railway volume (`DB_PATH`). Tabellen: `works`, `tokens`.
 - E-mail: Resend via `RESEND_API_KEY` env var. Alleen server-side, nooit in client-code.
+- Analytics: Plausible, volledig geproxied via eigen domein (`GET /js/:file`, `POST /api/event`) zodat adblockers die op de `plausible.io`-hostnaam filteren de metingen niet skewen. Scripttag (`build/partials/analytics.html`) wordt via het buildsysteem op alle 7 unified-site-pagina's geïnjecteerd; `/on-view` en de overige losstaande `public/`-pagina's (work, admin, submit, embed, hand-in) hebben nog geen Plausible — open punt.
 
 ### API-routes (server.js)
+- `GET  /js/:file` — proxy naar Plausible's scriptendpoint (`https://plausible.io/js/:file`); alleen `.js`-bestandsnamen toegestaan
+- `POST /api/event` — proxy naar Plausible's event-API; forward't user-agent en het echte client-IP (`X-Forwarded-For`), accepteert elke Content-Type als JSON (Plausible's script stuurt vaak `text/plain` om een CORS-preflight te vermijden)
 - `GET  /api/works` — alle niet-gearchiveerde werken
 - `GET  /api/works/:slug` — enkel werk op slug
 - `POST /api/contact` — contactformulier; volgorde: honeypot (`hp`-veld) → hCaptcha server-side verificatie → rate-limit 5 req/15 min per IP → Resend mail

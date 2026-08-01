@@ -161,6 +161,46 @@ app.use('/uploads', express.static(UPLOAD_DIR));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── Plausible analytics proxy ───────────────────────────────────────────────────
+// Reverse-proxied via the site's own domain so adblockers/tracker-blockers that
+// target the plausible.io hostname don't skew the numbers (brief §4).
+
+app.get('/js/:file', async (req, res) => {
+  if (!/^[\w-]+\.js$/.test(req.params.file)) return res.status(404).end();
+  try {
+    const upstream = await fetch(`https://plausible.io/js/${req.params.file}`);
+    if (!upstream.ok) return res.status(upstream.status).end();
+    res.set('Content-Type', upstream.headers.get('content-type') || 'application/javascript');
+    const cacheControl = upstream.headers.get('cache-control');
+    if (cacheControl) res.set('Cache-Control', cacheControl);
+    res.send(Buffer.from(await upstream.arrayBuffer()));
+  } catch (e) {
+    console.error('[plausible] script proxy error:', e.message);
+    res.status(502).end();
+  }
+});
+
+// Plausible's script sends the event payload as JSON but with a non-standard
+// Content-Type (to avoid a CORS preflight), so the global express.json() above
+// won't parse it — this route-level parser accepts any Content-Type as JSON.
+app.post('/api/event', express.json({ type: () => true }), async (req, res) => {
+  try {
+    const upstream = await fetch('https://plausible.io/api/event', {
+      method:  'POST',
+      headers: {
+        'Content-Type':     'application/json',
+        'User-Agent':       req.headers['user-agent'] || '',
+        'X-Forwarded-For':  req.ip || req.socket.remoteAddress || '',
+      },
+      body: JSON.stringify(req.body),
+    });
+    res.status(upstream.status).end();
+  } catch (e) {
+    console.error('[plausible] event proxy error:', e.message);
+    res.status(502).end();
+  }
+});
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 app.get('/api/works', (req, res) => {
