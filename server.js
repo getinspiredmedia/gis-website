@@ -382,9 +382,8 @@ app.get('/submit/:token', (req, res) => {
 // Social crawlers don't execute JS, so the per-work title/image/description
 // have to be in the raw HTML response, not filled in client-side.
 
-const WORK_TEMPLATE   = fs.readFileSync(path.join(__dirname, 'public', 'work', 'index.html'), 'utf8');
-const OG_DESCRIPTION  = 'A weekly work on Get Inspired Society';
-const OG_FALLBACK_IMG = SITE_URL + '/assets/gallery-poster.webp';
+const WORK_TEMPLATE  = fs.readFileSync(path.join(__dirname, 'public', 'work', 'index.html'), 'utf8');
+const OG_DESCRIPTION = 'A weekly work on Get Inspired Society';
 
 function escapeHtml(str) {
   return String(str)
@@ -395,14 +394,69 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-function absoluteUrl(url) {
-  if (!url) return OG_FALLBACK_IMG;
-  return /^https?:\/\//i.test(url) ? url : SITE_URL + url;
+// ── OG image — on-the-fly JPEG conversion, cached on disk ──────────────────────
+// WhatsApp's link-preview crawler has long-standing, widely reported problems
+// rendering WebP as og:image (the wall's native format), plus its own file-size
+// guidance separate from format. Converting at request time — rather than
+// generating a second variant at upload — covers every work regardless of when
+// or how its image arrived (existing uploads, freshly submitted ones, and the
+// external picsum.photos URLs in the seed data), with no changes to the upload
+// pipeline, EXIF stripping, or the wall's own webp rendering.
+const OG_CACHE_DIR    = path.join(path.dirname(DB_PATH), 'og-cache');
+const OG_IMAGE_WIDTH  = 1200;
+const OG_IMAGE_HEIGHT = 630;
+const OG_MAX_BYTES    = 500 * 1024; // stay safely under WhatsApp's ~600KB guidance
+fs.mkdirSync(OG_CACHE_DIR, { recursive: true });
+
+async function loadSourceImageBuffer(imageUrl) {
+  if (!imageUrl) {
+    return fs.readFileSync(path.join(__dirname, 'public', 'assets', 'gallery-poster.webp'));
+  }
+  if (/^https?:\/\//i.test(imageUrl)) {
+    const r = await fetch(imageUrl);
+    if (!r.ok) throw new Error('source image fetch failed: ' + r.status);
+    return Buffer.from(await r.arrayBuffer());
+  }
+  const localPath = imageUrl.startsWith('/uploads/')
+    ? path.join(UPLOAD_DIR, path.basename(imageUrl))
+    : path.join(__dirname, 'public', imageUrl.replace(/^\//, ''));
+  return fs.readFileSync(localPath);
 }
+
+async function convertToOgJpeg(sourceBuffer) {
+  let quality = 82;
+  let out;
+  do {
+    out = await sharp(sourceBuffer)
+      .resize(OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT, { fit: 'cover' })
+      .jpeg({ quality })
+      .toBuffer();
+    quality -= 12;
+  } while (out.length > OG_MAX_BYTES && quality >= 40);
+  return out;
+}
+
+app.get('/og-image/:slug', async (req, res) => {
+  const row = db.prepare('SELECT image_url FROM works WHERE slug=?').get(req.params.slug);
+  const cacheKey  = row ? req.params.slug : '__fallback__';
+  const cachePath = path.join(OG_CACHE_DIR, cacheKey + '.jpg');
+
+  try {
+    if (!fs.existsSync(cachePath)) {
+      const source = await loadSourceImageBuffer(row && row.image_url);
+      const jpeg = await convertToOgJpeg(source);
+      fs.writeFileSync(cachePath, jpeg);
+    }
+    res.type('image/jpeg').send(fs.readFileSync(cachePath));
+  } catch (e) {
+    console.error('[og-image] failed for slug', req.params.slug, e.message);
+    res.status(500).end();
+  }
+});
 
 function renderWorkPage(work, slug) {
   const title = work ? `${work.title} by ${work.artist}` : 'Work not found';
-  const image = absoluteUrl(work && work.image);
+  const image = `${SITE_URL}/og-image/${slug}`;
   const url   = `${SITE_URL}/work/${slug}`;
 
   const ogTags = [
