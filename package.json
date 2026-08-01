@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "build": "node build/build.js",
+    "check:nav-drift": "node build/check-nav-drift.js",
     "start": "node server.js"
   },
   "engines": {

@@ -46,6 +46,14 @@ function injectWipe(html) {
   return html.replace('<!-- @include: wipe -->', partial);
 }
 
+const { checkNavDrift } = require('./check-nav-drift');
+const navDriftErrors = checkNavDrift();
+if (navDriftErrors.length) {
+  console.error('[build] Aborting — public/on-view/index.html has drifted from build/partials/nav.html:');
+  navDriftErrors.forEach(e => console.error('  - ' + e));
+  process.exit(1);
+}
+
 pages.forEach(config => {
   const inputPath = path.join(ROOT, config.input);
   if (!fs.existsSync(inputPath)) {
