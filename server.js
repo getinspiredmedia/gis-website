@@ -85,7 +85,7 @@ function archiveOldWorks() {
 }
 
 archiveOldWorks();
-setInterval(archiveOldWorks, 60 * 60 * 1000);
+const archiveInterval = setInterval(archiveOldWorks, 60 * 60 * 1000);
 
 // ── Admin session (reset on restart — acceptable for internal tool) ────────────
 
@@ -554,4 +554,38 @@ app.get('/hand-in/:token', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'hand-in', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`GIS server on port ${PORT}`));
+const httpServer = app.listen(PORT, () => console.log(`GIS server on port ${PORT}`));
+
+// ── Graceful shutdown ────────────────────────────────────────────────────────
+// Railway sends SIGTERM on every redeploy, not just real crashes. Without
+// this, npm's script wrapper logs "npm error signal SIGTERM" when the
+// process dies from the signal, and Railway reports it as a crash even
+// though the server was healthy. Stop accepting new connections, let
+// in-flight requests finish, close the DB cleanly, then exit(0).
+
+function shutdown(signal) {
+  console.log(`[shutdown] Graceful shutdown gestart (${signal})`);
+
+  const forceExitTimer = setTimeout(() => {
+    console.error('[shutdown] Timeout bereikt na 10s — forceer afsluiten');
+    process.exit(1);
+  }, 10000);
+
+  clearInterval(archiveInterval);
+
+  httpServer.close((err) => {
+    if (err) console.error('[shutdown] Fout bij sluiten HTTP-server:', err.message);
+    try {
+      db.close();
+      console.log('[shutdown] Database gesloten');
+    } catch (e) {
+      console.error('[shutdown] Fout bij sluiten database:', e.message);
+    }
+    clearTimeout(forceExitTimer);
+    console.log('[shutdown] Klaar, proces sluit af');
+    process.exit(0);
+  });
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
