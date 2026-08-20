@@ -12,6 +12,7 @@
     "test:og-tags": "node test/og-tags.test.js",
     "test:plausible-proxy": "node test/plausible-proxy.test.js",
     "test:view-count": "node test/view-count.test.js",
+    "test:archive-email": "node test/archive-email.test.js",
     "start": "exec node server.js"
   },
   "engines": {

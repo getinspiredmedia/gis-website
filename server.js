@@ -77,15 +77,26 @@ db.exec(`
 
 // ── Auto-archive ──────────────────────────────────────────────────────────────
 
-function archiveOldWorks() {
-  const n = db.prepare(
-    "UPDATE works SET status='archived' WHERE status='previous' AND datetime(created_at, '+7 days') <= datetime('now')"
-  ).run().changes;
-  if (n > 0) console.log(`[archive] archived ${n} work(s)`);
+// The UPDATE only ever matches rows still in status='previous', so a work is
+// archived (and mailed) exactly once — a restart within the same hour just
+// re-runs the query against rows that are already 'archived' and matches none.
+async function archiveOldWorks() {
+  const rows = db.prepare(
+    "UPDATE works SET status='archived' WHERE status='previous' AND datetime(created_at, '+7 days') <= datetime('now') RETURNING slug, title, email"
+  ).all();
+  if (rows.length > 0) console.log(`[archive] archived ${rows.length} work(s)`);
+  for (const row of rows) {
+    if (!row.email) continue;
+    await sendEmail({
+      to:      row.email,
+      subject: 'Your work has come down from On View',
+      html:    `<p>"${row.title}" was on the wall for seven days. It comes down today.</p>`
+             + `<p>The page stays online: <a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
+             + `<p>On View runs every week. Submit again: <a href="${SITE_URL}/submit/${SUBMIT_TOKEN}">${SITE_URL}/submit/${SUBMIT_TOKEN}</a></p>`
+             + `<p>Thank you for showing your work.</p>`,
+    });
+  }
 }
-
-archiveOldWorks();
-const archiveInterval = setInterval(archiveOldWorks, 60 * 60 * 1000);
 
 // ── Admin session (reset on restart — acceptable for internal tool) ────────────
 
@@ -139,6 +150,11 @@ async function sendEmail({ to, subject, html }) {
   try { await resend.emails.send({ from: FROM_EMAIL, to, subject, html }); }
   catch (e) { console.error('[email] send error:', e.message); }
 }
+
+// archiveOldWorks() calls sendEmail(), so it must not run before sendEmail
+// (and the resend client it closes over) is defined above.
+archiveOldWorks();
+const archiveInterval = setInterval(archiveOldWorks, 60 * 60 * 1000);
 
 // ── Upload middleware ─────────────────────────────────────────────────────────
 
