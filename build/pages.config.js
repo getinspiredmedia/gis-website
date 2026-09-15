@@ -43,4 +43,10 @@ module.exports = [
     nav:    { active: 'support', variant: 'dark' },
     footer: {},
   },
+  {
+    input:  'build/pages/privacy.html',
+    output: 'public/privacy/index.html',
+    nav:    { active: null, variant: 'light' },
+    footer: {},
+  },
 ];
