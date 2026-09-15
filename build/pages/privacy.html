@@ -37,9 +37,8 @@ a{color:inherit;text-decoration:none}
 </section>
 
 <section class="body wrap">
-  <p>On every work page, we hash your IP address together with your browser's user agent before we store anything. That hash lets us recognise a repeat view of the same work within a day, so refreshing the page or running a script against it does not inflate the count. The IP address itself is never stored.</p>
-  <p>On the contact form, we use your IP address to limit how many messages can be sent in a short time. This stops spam without requiring an account.</p>
-  <p>Hashes are deleted automatically after 30 days.</p>
+  <p>On every work page, we hash your IP address together with your browser's user agent before we store anything. That hash lets us recognise a repeat view of the same work within a day, so refreshing the page or running a script against it does not inflate the count. The address itself is never stored, only the hash, and hashes are deleted automatically after 30 days.</p>
+  <p>On the contact form, we hold your IP address in memory for a short time, to limit how many messages can be sent in a short period. It is not hashed there and not written to any persistent record. It is only kept long enough to apply that limit, and clears when the server restarts.</p>
 </section>
 
 <!-- @include: footer -->
