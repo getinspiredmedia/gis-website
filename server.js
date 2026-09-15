@@ -75,6 +75,18 @@ db.exec(`
   );
 `);
 
+// One row per (work, visitor) view, used to dedup view_count within 24h.
+// visitor_hash is a salted hash of IP+user-agent — the IP itself is never stored.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS work_views (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    work_id      INTEGER NOT NULL,
+    visitor_hash TEXT NOT NULL,
+    viewed_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+db.exec('CREATE INDEX IF NOT EXISTS idx_work_views_work_hash ON work_views(work_id, visitor_hash)');
+
 // ── Auto-archive ──────────────────────────────────────────────────────────────
 
 // The UPDATE only ever matches rows still in status='previous', so a work is
@@ -141,6 +153,24 @@ function allowContact(ip) {
   return true;
 }
 
+// Caps how many /work/:slug requests from one IP can affect the view count,
+// independent of the 24h visitor-hash dedup (see "View counting" below) —
+// that dedup alone can't stop a script that sends a new User-Agent on every
+// request. Only gates the counting step: an IP over the limit still gets the
+// page normally, so a burst never turns into a blocked visitor.
+const workViewRequests = new Map();
+
+function allowWorkView(ip) {
+  const now    = Date.now();
+  const window = 60 * 1000;
+  const limit  = 20;
+  const hits   = (workViewRequests.get(ip) || []).filter(t => now - t < window);
+  if (hits.length >= limit) return false;
+  hits.push(now);
+  workViewRequests.set(ip, hits);
+  return true;
+}
+
 // ── Email ─────────────────────────────────────────────────────────────────────
 
 const resend = RESEND_KEY ? new Resend(RESEND_KEY) : null;
@@ -155,6 +185,26 @@ async function sendEmail({ to, subject, html }) {
 // (and the resend client it closes over) is defined above.
 archiveOldWorks();
 const archiveInterval = setInterval(archiveOldWorks, 60 * 60 * 1000);
+
+// ── View counting ────────────────────────────────────────────────────────────
+// A view counts once per visitor per work per 24h. "Visitor" is a salted hash
+// of IP + user-agent, checked against work_views — the raw IP is never stored.
+
+const VISITOR_HASH_SALT = process.env.VISITOR_HASH_SALT || '';
+if (!VISITOR_HASH_SALT) console.warn('[views] VISITOR_HASH_SALT not set — falling back to a fixed empty salt');
+
+function hashVisitor(ip, userAgent) {
+  return crypto.createHash('sha256').update(VISITOR_HASH_SALT + '|' + ip + '|' + userAgent).digest('hex');
+}
+
+// Rolling window, not tied to any weekly/round logic — that doesn't exist yet.
+function cleanupOldViews() {
+  const n = db.prepare("DELETE FROM work_views WHERE datetime(viewed_at, '+30 days') <= datetime('now')").run().changes;
+  if (n > 0) console.log(`[views] cleaned up ${n} work_views row(s) older than 30 days`);
+}
+
+cleanupOldViews();
+const viewCleanupInterval = setInterval(cleanupOldViews, 24 * 60 * 60 * 1000);
 
 // ── Upload middleware ─────────────────────────────────────────────────────────
 
@@ -393,7 +443,8 @@ app.post('/api/admin/auth', (req, res) => {
 
 app.get('/api/admin/works', requireAdmin, (req, res) => {
   res.json(db.prepare(
-    "SELECT * FROM works ORDER BY CASE status WHEN 'current' THEN 0 WHEN 'previous' THEN 1 ELSE 2 END, id DESC"
+    "SELECT *, (SELECT COUNT(*) FROM work_views wv WHERE wv.work_id = works.id) AS raw_views FROM works " +
+    "ORDER BY CASE status WHEN 'current' THEN 0 WHEN 'previous' THEN 1 ELSE 2 END, id DESC"
   ).all());
 });
 
@@ -536,7 +587,7 @@ function renderWorkPage(work, slug) {
 // normally, that's the whole point of them visiting. Fail-open: an unknown or
 // missing User-Agent still counts as a view.
 const SCRAPER_USER_AGENTS = [
-  'facebookexternalhit', // Facebook / Instagram
+  'facebookexternalhit', // Facebook / Instagram — Meta's single crawler UA unfurls links for both
   'twitterbot',          // X / Twitter (also matches Telegram's "TelegramBot (like TwitterBot)", which is fine — both should be excluded)
   'whatsapp',            // WhatsApp
   'linkedinbot',         // LinkedIn
@@ -553,13 +604,25 @@ function isScraperUserAgent(userAgent) {
 
 app.get('/work/:slug', (req, res) => {
   const row = db.prepare(
-    'SELECT slug,title,artist,portfolio,image_url AS image,status FROM works WHERE slug=?'
+    'SELECT id,slug,title,artist,portfolio,image_url AS image,status FROM works WHERE slug=?'
   ).get(req.params.slug);
-  // Raw hit counter — no dedup by IP/session/time, deliberately kept simple.
   // Known OG-preview scrapers are excluded so a shared link doesn't inflate
-  // the count before a single human has opened it.
+  // the count before a single human has opened it. Real visits count once
+  // per visitor hash per 24h (see "View counting" above); the per-IP rate
+  // limiter there additionally caps a script that varies its User-Agent to
+  // dodge that dedup. Either way the page itself always renders normally.
   if (row && !isScraperUserAgent(req.headers['user-agent'])) {
-    db.prepare('UPDATE works SET view_count = view_count + 1 WHERE slug=?').run(req.params.slug);
+    const ip = req.ip || req.socket.remoteAddress || '';
+    if (allowWorkView(ip)) {
+      const visitorHash = hashVisitor(ip, req.headers['user-agent'] || '');
+      const alreadyCounted = db.prepare(
+        "SELECT 1 FROM work_views WHERE work_id=? AND visitor_hash=? AND datetime(viewed_at, '+24 hours') > datetime('now') LIMIT 1"
+      ).get(row.id, visitorHash);
+      if (!alreadyCounted) {
+        db.prepare('INSERT INTO work_views (work_id, visitor_hash) VALUES (?,?)').run(row.id, visitorHash);
+        db.prepare('UPDATE works SET view_count = view_count + 1 WHERE id=?').run(row.id);
+      }
+    }
   }
   res.send(renderWorkPage(row, req.params.slug));
 });
@@ -588,6 +651,7 @@ function shutdown(signal) {
   }, 10000);
 
   clearInterval(archiveInterval);
+  clearInterval(viewCleanupInterval);
 
   httpServer.close((err) => {
     if (err) console.error('[shutdown] Fout bij sluiten HTTP-server:', err.message);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Support · Get Inspired Society</title>
+<title>Privacy · Get Inspired Society</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
@@ -22,45 +22,15 @@
 html{scroll-behavior:smooth}
 body{font-family:'Archivo',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
-img{display:block;max-width:100%}
-.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
-.wrap{max-width:940px;margin:0 auto}
-
-.hero{background:var(--ink);color:#fff;padding:clamp(150px,22vh,250px) 22px clamp(70px,11vh,130px)}
-.hero .eyebrow{color:rgba(255,255,255,.55);display:block;margin-bottom:20px}
-.hero h1{font-weight:700;line-height:.94;letter-spacing:-.025em;font-variation-settings:'wdth' 118;font-size:clamp(2.6rem,7vw,5.4rem)}
-.hero p{margin-top:24px;font-size:clamp(1rem,1.7vw,1.3rem);color:rgba(255,255,255,.75);max-width:32ch;line-height:1.45}
-
-.tiers{padding:clamp(70px,10vh,120px) 22px}
-.tiers .eyebrow{color:var(--muted);display:block;margin-bottom:28px}
-.tier{display:grid;grid-template-columns:200px 1fr auto;gap:26px;align-items:baseline;padding:28px 0;border-top:1px solid var(--line)}
-.tier:last-of-type{border-bottom:1px solid var(--line)}
-.tier h2{font-weight:600;font-size:clamp(1.1rem,2vw,1.4rem);letter-spacing:-.01em}
-.tier p{color:var(--muted);font-size:15px;line-height:1.65;max-width:44ch}
-.tier .price{white-space:nowrap;font-size:13px;font-weight:600;color:var(--muted)}
-.tier.featured{background:var(--blue);color:#fff;padding:28px 24px;margin:0 -24px}
-.tier.featured .tier-inner{grid-template-columns:200px 1fr auto;gap:26px;display:grid;align-items:baseline;width:100%}
-.tier.featured p{color:rgba(255,255,255,.78)}
-.tier.featured .price{color:rgba(255,255,255,.8)}
-
-.note{padding:clamp(50px,8vh,90px) 22px;border-top:1px solid var(--line)}
-.note .in{max-width:940px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,64px)}
-.note h2{font-weight:700;font-size:clamp(1.3rem,2.6vw,1.9rem);line-height:1.1;letter-spacing:-.02em;margin-bottom:16px}
-.note p{color:var(--muted);font-size:15px;line-height:1.7}
-
-.rv{opacity:0;transform:translateY(20px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
-.rv.is-in{opacity:1;transform:none}
+.wrap{max-width:720px;margin:0 auto;padding:0 22px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.hero{padding:clamp(150px,22vh,220px) 0 clamp(50px,8vh,80px)}
+.hero .eyebrow{display:block;margin-bottom:20px}
+.hero h1{font-weight:700;line-height:.98;letter-spacing:-.02em;font-variation-settings:'wdth' 116;font-size:clamp(2.2rem,5.4vw,3.6rem)}
+.body{padding:0 0 clamp(80px,12vh,140px)}
+.body p{font-size:15px;line-height:1.65;max-width:46ch;color:var(--ink)}
+.body p+p{margin-top:20px}
 :focus-visible{outline:2px solid currentColor;outline-offset:3px}
-
-@media(max-width:820px){
-  .tier{grid-template-columns:1fr;gap:8px;padding:22px 0}
-  .tier .price{margin-top:4px}
-  .note .in{grid-template-columns:1fr}
-}
-@media(prefers-reduced-motion:reduce){
-  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
-  .rv{opacity:1;transform:none}
-}
 </style>
 </head>
 <body>
@@ -186,7 +156,7 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
   .nav-toggle span::before,.nav-toggle span::after{transition:none}
 }
 </style>
-<nav>
+<nav data-variant="light">
   <a href="/" aria-label="Get Inspired Society, home"><img class="mark" src="/assets/mark.png" alt="Get Inspired Society" width="110" height="88"></a>
   <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="Open menu">
     <span></span>
@@ -244,50 +214,15 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
 </script>
 
 
-<section class="hero">
-  <div class="wrap">
-    <span class="eyebrow">Support</span>
-    <h1>Keep the<br>printing going.</h1>
-    <p>The work is free. The printing is not. Support covers what it costs to put ink on paper.</p>
-  </div>
+<section class="hero wrap">
+  <span class="eyebrow">Privacy</span>
+  <h1>How we use IP addresses.</h1>
 </section>
 
-<section class="tiers">
-  <div class="wrap">
-    <span class="eyebrow rv">What you get</span>
-
-    <div class="tier rv">
-      <h2>Reader</h2>
-      <p>Your name in the colophon of every issue you support. The magazine stays free for everyone.</p>
-      <span class="price">&euro;5 / issue</span>
-    </div>
-
-    <div class="tier rv">
-      <h2>Print subscriber</h2>
-      <p>A printed copy mailed to you when each issue lands. The same five artists, on paper.</p>
-      <span class="price">&euro;25 / issue</span>
-    </div>
-
-    <div class="tier rv">
-      <h2>Sustainer</h2>
-      <p>Covers the printing for one full issue. Four issues a year. Your name goes first in the colophon.</p>
-      <span class="price">&euro;100 / year</span>
-    </div>
-
-  </div>
-</section>
-
-<section class="note">
-  <div class="in">
-    <div class="rv">
-      <h2>Nothing to do with getting in.</h2>
-      <p>Support and selection are completely separate. Supporting this does not affect submissions, and not supporting it does not close any door. The Society is free to enter and always will be.</p>
-    </div>
-    <div class="rv">
-      <h2>Where the money goes.</h2>
-      <p>Print runs, paper, binding. Occasionally hosting and the tools that keep the archive searchable. There is no salary in here. This has always been a side project and it stays that way.</p>
-    </div>
-  </div>
+<section class="body wrap">
+  <p>On every work page, we hash your IP address together with your browser's user agent before we store anything. That hash lets us recognise a repeat view of the same work within a day, so refreshing the page or running a script against it does not inflate the count. The IP address itself is never stored.</p>
+  <p>On the contact form, we use your IP address to limit how many messages can be sent in a short time. This stops spam without requiring an account.</p>
+  <p>Hashes are deleted automatically after 30 days.</p>
 </section>
 
 <style>
@@ -306,11 +241,5 @@ footer .stamp{margin-top:26px;font-size:11px;color:rgba(255,255,255,.35);letter-
   <p class="stamp">Get Inspired Society · Since 2009 · Rotterdam</p>
 </footer>
 
-
-<script>
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const io = new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}})},{threshold:.15});
-document.querySelectorAll('.rv').forEach(el=>io.observe(el));
-</script>
 </body>
 </html>

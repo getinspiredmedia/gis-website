@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy · Get Inspired Society</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<!-- @include: analytics -->
+<style>
+:root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Archivo',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:720px;margin:0 auto;padding:0 22px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.hero{padding:clamp(150px,22vh,220px) 0 clamp(50px,8vh,80px)}
+.hero .eyebrow{display:block;margin-bottom:20px}
+.hero h1{font-weight:700;line-height:.98;letter-spacing:-.02em;font-variation-settings:'wdth' 116;font-size:clamp(2.2rem,5.4vw,3.6rem)}
+.body{padding:0 0 clamp(80px,12vh,140px)}
+.body p{font-size:15px;line-height:1.65;max-width:46ch;color:var(--ink)}
+.body p+p{margin-top:20px}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+</style>
+</head>
+<body>
+<!-- @include: wipe -->
+<!-- @include: nav -->
+
+<section class="hero wrap">
+  <span class="eyebrow">Privacy</span>
+  <h1>How we use IP addresses.</h1>
+</section>
+
+<section class="body wrap">
+  <p>On every work page, we hash your IP address together with your browser's user agent before we store anything. That hash lets us recognise a repeat view of the same work within a day, so refreshing the page or running a script against it does not inflate the count. The IP address itself is never stored.</p>
+  <p>On the contact form, we use your IP address to limit how many messages can be sent in a short time. This stops spam without requiring an account.</p>
+  <p>Hashes are deleted automatically after 30 days.</p>
+</section>
+
+<!-- @include: footer -->
+</body>
+</html>
