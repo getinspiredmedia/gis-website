@@ -133,7 +133,9 @@ async function run() {
       'body links to the public /submit CTA (no token) — got ' + mail.html);
     assert(mail.html.includes('Thank you for showing your work.'),
       'body includes the closing line — got ' + mail.html);
-    console.log('PASS - the mail has the correct recipient, subject, title, /work/:slug link and /submit CTA');
+    assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
+      'body ends with "Creative regards, Get Inspired Society" like every other maker-facing email — got ' + mail.html);
+    console.log('PASS - the mail has the correct recipient, subject, title, /work/:slug link, /submit CTA and sign-off');
 
     child.kill();
     child = null;
