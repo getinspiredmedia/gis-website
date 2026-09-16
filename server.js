@@ -43,22 +43,31 @@ db.exec(`
     status     TEXT NOT NULL DEFAULT 'previous'
                    CHECK(status IN ('current','previous','archived')),
     view_count INTEGER NOT NULL DEFAULT 0,
+    review_status TEXT NOT NULL DEFAULT 'approved'
+                   CHECK(review_status IN ('pending','approved','rejected')),
+    approved_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
 
-// Seed works from static JSON when database is empty
+// Seed works from static JSON when database is empty. Seed data is
+// pre-approved — it stands in for already-published works, not new
+// submissions awaiting review.
 if (db.prepare('SELECT COUNT(*) as n FROM works').get().n === 0) {
   const seed = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'works.json'), 'utf8'));
-  const ins  = db.prepare('INSERT OR IGNORE INTO works (slug,title,artist,portfolio,image_url,status) VALUES (?,?,?,?,?,?)');
+  const ins  = db.prepare('INSERT OR IGNORE INTO works (slug,title,artist,portfolio,image_url,status,review_status) VALUES (?,?,?,?,?,?,?)');
   db.transaction(rows => rows.forEach(r =>
-    ins.run(r.slug, r.title, r.artist, r.portfolio || '#', r.image, r.current ? 'current' : 'previous')
+    ins.run(r.slug, r.title, r.artist, r.portfolio || '#', r.image, r.current ? 'current' : 'previous', 'approved')
   ))(seed);
 }
 
 // Migrations for existing databases
 try { db.exec("ALTER TABLE works ADD COLUMN email TEXT NOT NULL DEFAULT ''"); } catch {}
 try { db.exec("ALTER TABLE works ADD COLUMN view_count INTEGER NOT NULL DEFAULT 0"); } catch {}
+// Existing rows predate the review step — grandfathered in as approved so
+// already-published work doesn't disappear from the wall.
+try { db.exec("ALTER TABLE works ADD COLUMN review_status TEXT NOT NULL DEFAULT 'approved' CHECK(review_status IN ('pending','approved','rejected'))"); } catch {}
+try { db.exec("ALTER TABLE works ADD COLUMN approved_at TEXT"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN artist_name  TEXT NOT NULL DEFAULT ''"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN artist_email TEXT NOT NULL DEFAULT ''"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN used INTEGER NOT NULL DEFAULT 0"); } catch {}
@@ -92,9 +101,15 @@ db.exec('CREATE INDEX IF NOT EXISTS idx_work_views_work_hash ON work_views(work_
 // The UPDATE only ever matches rows still in status='previous', so a work is
 // archived (and mailed) exactly once — a restart within the same hour just
 // re-runs the query against rows that are already 'archived' and matches none.
+// The 7-day wall window runs from approved_at, not created_at — otherwise a
+// submission that waits days for review would get a shortened (or zero)
+// visible run once approved. approved_at is null for rows grandfathered as
+// approved by the review-step migration (they predate any pending period),
+// so COALESCE falls back to created_at for exactly those, preserving their
+// original archive timing.
 async function archiveOldWorks() {
   const rows = db.prepare(
-    "UPDATE works SET status='archived' WHERE status='previous' AND datetime(created_at, '+7 days') <= datetime('now') RETURNING slug, title, email"
+    "UPDATE works SET status='archived' WHERE status='previous' AND review_status='approved' AND datetime(COALESCE(approved_at, created_at), '+7 days') <= datetime('now') RETURNING slug, title, email"
   ).all();
   if (rows.length > 0) console.log(`[archive] archived ${rows.length} work(s)`);
   for (const row of rows) {
@@ -274,16 +289,18 @@ app.post('/api/event', express.json({ type: () => true }), async (req, res) => {
 app.get('/api/works', (req, res) => {
   const rows = db.prepare(
     "SELECT slug,title,artist,portfolio,image_url AS image,status FROM works " +
-    "WHERE status != 'archived' " +
+    "WHERE status != 'archived' AND review_status = 'approved' " +
     "ORDER BY CASE status WHEN 'current' THEN 0 ELSE 1 END, id DESC"
   ).all();
   res.json(rows.map(w => ({ ...w, current: w.status === 'current' })));
 });
 
-// Single work by slug — no status filter, used for fallback display of archived works
+// Single work by slug — no lifecycle-status filter (so an archived work's page
+// stays reachable), but still gated on review_status so a pending or rejected
+// work behaves exactly like an unknown slug: 404.
 app.get('/api/works/:slug', (req, res) => {
   const row = db.prepare(
-    'SELECT slug,title,artist,portfolio,image_url AS image,status FROM works WHERE slug=?'
+    "SELECT slug,title,artist,portfolio,image_url AS image,status FROM works WHERE slug=? AND review_status='approved'"
   ).get(req.params.slug);
   if (!row) return res.status(404).json({ error: 'Not found.' });
   res.json({ ...row, current: row.status === 'current' });
@@ -345,8 +362,8 @@ app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
       slug = baseSlug + '-' + (suffix++);
     }
 
-    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status) VALUES (?,?,?,?,?,?,?)')
-      .run(slug, title, name, email, '#', '/uploads/' + filename, 'previous');
+    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status,review_status) VALUES (?,?,?,?,?,?,?,?)')
+      .run(slug, title, name, email, '#', '/uploads/' + filename, 'previous', 'pending');
 
     db.prepare('UPDATE tokens SET used=1 WHERE token=?').run(req.params.token);
 
@@ -355,8 +372,8 @@ app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
     await Promise.all([
       sendEmail({
         to:      ADMIN_EMAIL,
-        subject: `Hand-in received: "${title}" by ${name}`,
-        html:    `<p>${name} (${email}) handed in a work.<br>Title: ${title}<br><br>View: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
+        subject: `Pending approval: "${title}" by ${name}`,
+        html:    `<p>${name} (${email}) handed in a work — pending your approval.<br>Title: ${title}<br><br>Review it: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
       }),
       sendEmail({
         to:      email,
@@ -407,21 +424,21 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
     }
 
     const imagePath = '/uploads/' + filename;
-    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status) VALUES (?,?,?,?,?,?,?)')
-      .run(slug, title, name.trim(), email.trim(), portfolio.trim(), imagePath, 'previous');
+    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status,review_status) VALUES (?,?,?,?,?,?,?,?)')
+      .run(slug, title, name.trim(), email.trim(), portfolio.trim(), imagePath, 'previous', 'pending');
 
     console.log('[submit] added work:', name, email, slug);
 
     await Promise.all([
       sendEmail({
         to:      ADMIN_EMAIL,
-        subject: `New work on the wall: "${title}" by ${name}`,
-        html:    `<p>${name} (${email}) submitted a work.<br>Portfolio: ${portfolio}<br>Title: ${title}<br><br>View: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
+        subject: `Pending approval: "${title}" by ${name}`,
+        html:    `<p>${name} (${email}) submitted a work — pending your approval.<br>Portfolio: ${portfolio}<br>Title: ${title}<br><br>Review it: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
       }),
       sendEmail({
         to:      email.trim(),
-        subject: 'Your work is on the wall — Get Inspired Society',
-        html:    `<p>Hi ${name},</p><p>Your work is now visible on On View.<br><a href="${SITE_URL}/on-view">${SITE_URL}/on-view</a></p><p>Share it with others!</p>`,
+        subject: 'Your work is in — Get Inspired Society',
+        html:    `<p>Hi ${name},</p><p>We have received your work "<b>${title}</b>". We will let you know when it goes on the wall.</p>`,
       }),
     ]);
 
@@ -468,6 +485,18 @@ app.patch('/api/admin/works/:id', requireAdmin, (req, res) => {
 
 app.delete('/api/admin/works/:id', requireAdmin, (req, res) => {
   db.prepare('DELETE FROM works WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/works/:id/approve', requireAdmin, (req, res) => {
+  const r = db.prepare("UPDATE works SET review_status='approved', approved_at=datetime('now') WHERE id=?").run(req.params.id);
+  if (r.changes === 0) return res.status(404).json({ error: 'Not found.' });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/works/:id/reject', requireAdmin, (req, res) => {
+  const r = db.prepare("UPDATE works SET review_status='rejected' WHERE id=?").run(req.params.id);
+  if (r.changes === 0) return res.status(404).json({ error: 'Not found.' });
   res.json({ ok: true });
 });
 
@@ -604,7 +633,7 @@ function isScraperUserAgent(userAgent) {
 
 app.get('/work/:slug', (req, res) => {
   const row = db.prepare(
-    'SELECT id,slug,title,artist,portfolio,image_url AS image,status FROM works WHERE slug=?'
+    "SELECT id,slug,title,artist,portfolio,image_url AS image,status FROM works WHERE slug=? AND review_status='approved'"
   ).get(req.params.slug);
   // Known OG-preview scrapers are excluded so a shared link doesn't inflate
   // the count before a single human has opened it. Real visits count once
