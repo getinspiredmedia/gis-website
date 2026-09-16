@@ -19,7 +19,6 @@ const ROOT = path.resolve(__dirname, '..');
 const DB_PATH = path.join(ROOT, 'test', '.archive-email-test.db');
 const PORT = 3199;
 const BASE = `http://127.0.0.1:${PORT}`;
-const SUBMIT_TOKEN = 'test-submit-token';
 const SITE_URL = 'https://getinspiredsociety.test';
 
 function assert(cond, msg) {
@@ -63,7 +62,6 @@ function startServer(fixturePort) {
       DB_PATH,
       PORT: String(PORT),
       SITE_URL,
-      SUBMIT_TOKEN,
       RESEND_API_KEY: 'test-key',
       RESEND_BASE_URL: `http://127.0.0.1:${fixturePort}`,
     },
@@ -131,11 +129,11 @@ async function run() {
       'body includes the work title in the agreed sentence — got ' + mail.html);
     assert(mail.html.includes(`${SITE_URL}/work/archive-email-test-work`),
       'body links to the work\'s permanent /work/:slug page — got ' + mail.html);
-    assert(mail.html.includes(`${SITE_URL}/submit/${SUBMIT_TOKEN}`),
-      'body links to the (shared) /submit/:token CTA — got ' + mail.html);
+    assert(mail.html.includes(`${SITE_URL}/submit`) && !mail.html.includes(`${SITE_URL}/submit/`),
+      'body links to the public /submit CTA (no token) — got ' + mail.html);
     assert(mail.html.includes('Thank you for showing your work.'),
       'body includes the closing line — got ' + mail.html);
-    console.log('PASS - the mail has the correct recipient, subject, title, /work/:slug link and /submit/:token CTA');
+    console.log('PASS - the mail has the correct recipient, subject, title, /work/:slug link and /submit CTA');
 
     child.kill();
     child = null;

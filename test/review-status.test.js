@@ -90,12 +90,18 @@ async function submitHandIn(handInToken, title, imageBuf) {
   return fetch(`${BASE}/hand-in/${handInToken}`, { method: 'POST', body: form });
 }
 
+// hp/captcha: /api/submit gained a honeypot + hCaptcha gate in a later epic
+// (see test/submit-public.test.js for dedicated coverage of that gate
+// itself). HCAPTCHA_SECRET is unset in this test env, so any non-empty
+// captcha token is accepted without a real hCaptcha round-trip.
 async function apiSubmit({ name, email, portfolio, work_title }, imageBuf) {
   const form = new FormData();
   form.append('name', name);
   form.append('email', email);
   form.append('portfolio', portfolio);
   form.append('work_title', work_title);
+  form.append('hp', '');
+  form.append('captcha', 'test-captcha-token');
   form.append('image', new Blob([imageBuf], { type: 'image/webp' }), 'test.webp');
   return fetch(`${BASE}/api/submit`, { method: 'POST', body: form });
 }
