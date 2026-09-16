@@ -13,6 +13,7 @@
     "test:plausible-proxy": "node test/plausible-proxy.test.js",
     "test:view-count": "node test/view-count.test.js",
     "test:archive-email": "node test/archive-email.test.js",
+    "test:review-status": "node test/review-status.test.js",
     "start": "exec node server.js"
   },
   "engines": {
