@@ -1,13 +1,13 @@
 'use strict';
 /*
- * 5 pages sit outside the build pipeline (see CLAUDE.md) and carry a
+ * 6 pages sit outside the build pipeline (see CLAUDE.md) and carry a
  * hand-maintained copy of build/partials/analytics.html's Plausible script
- * tags: public/on-view/index.html, public/work/index.html, and the 3
- * magazine reader pages (chasing-light, no-algorithm, origins — readers have
- * no nav, per the design system, so this is the only shared partial they
- * carry). This guards against any of them silently drifting from the
- * partial — e.g. if the script hash, domain, or init snippet ever changes
- * and one copy doesn't get updated.
+ * tags: public/on-view/index.html, public/work/index.html, public/submit/
+ * index.html, and the 3 magazine reader pages (chasing-light, no-algorithm,
+ * origins — readers have no nav, per the design system, so this is the only
+ * shared partial they carry). This guards against any of them silently
+ * drifting from the partial — e.g. if the script hash, domain, or init
+ * snippet ever changes and one copy doesn't get updated.
  *
  * This is a separate checker from check-nav-drift.js, not an extension of
  * it: the two partials have structurally unrelated content to extract (nav
@@ -25,6 +25,7 @@ const ROOT = path.resolve(__dirname, '..');
 const HAND_MAINTAINED_COPIES = [
   'public/on-view/index.html',
   'public/work/index.html',
+  'public/submit/index.html',
   'public/magazine/chasing-light/index.html',
   'public/magazine/no-algorithm/index.html',
   'public/magazine/origins/index.html',
