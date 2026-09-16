@@ -313,6 +313,19 @@ async function run() {
     }
     console.log('PASS - rejecting a pending work sets review_status=rejected');
 
+    // Reject triggers an email to the maker with the agreed text — no reason given
+    {
+      const mail = emailRequests.find(m => m.subject === 'Your submission — Get Inspired Society');
+      assert(!!mail, 'a reject email was sent — got subjects: ' + JSON.stringify(emailRequests.map(m => m.subject)));
+      assert(mail.to === rejected.email || (Array.isArray(mail.to) && mail.to.includes(rejected.email)),
+        'the reject email is addressed to the maker — got ' + JSON.stringify(mail.to));
+      assert(mail.html.includes("Thanks for sharing your work. We're not able to feature it on On View this time. We'd love to see what you submit next."),
+        'the reject email uses the agreed text exactly — got ' + mail.html);
+      assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
+        'the reject email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+    }
+    console.log('PASS - rejecting a work emails the maker with the agreed text and standard sign-off, no reason given');
+
     {
       const listRes = await fetch(`${BASE}/api/works`);
       const list = await listRes.json();

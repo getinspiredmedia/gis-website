@@ -528,9 +528,19 @@ app.post('/api/admin/works/:id/approve', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/admin/works/:id/reject', requireAdmin, (req, res) => {
-  const r = db.prepare("UPDATE works SET review_status='rejected' WHERE id=?").run(req.params.id);
-  if (r.changes === 0) return res.status(404).json({ error: 'Not found.' });
+app.post('/api/admin/works/:id/reject', requireAdmin, async (req, res) => {
+  const row = db.prepare(
+    "UPDATE works SET review_status='rejected' WHERE id=? RETURNING artist, email"
+  ).get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found.' });
+  if (row.email) {
+    await sendEmail({
+      to:      row.email,
+      subject: 'Your submission — Get Inspired Society',
+      html:    `<p>${row.artist},</p><p>Thanks for sharing your work. We're not able to feature it on On View this time. We'd love to see what you submit next.</p>`
+             + `<p>Creative regards,<br>Get Inspired Society</p>`,
+    });
+  }
   res.json({ ok: true });
 });
 
