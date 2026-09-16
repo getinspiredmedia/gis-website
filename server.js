@@ -16,7 +16,6 @@ const DB_PATH      = process.env.DB_PATH       || path.join(__dirname, 'data', '
 // Locally: data/uploads/  |  Railway: /data/uploads/
 const UPLOAD_DIR   = process.env.UPLOAD_DIR    || path.join(path.dirname(DB_PATH), 'uploads');
 const ADMIN_PWD    = process.env.ADMIN_PASSWORD || 'admin';
-const SUBMIT_TOKEN = process.env.SUBMIT_TOKEN  || '';
 const RESEND_KEY      = process.env.RESEND_API_KEY;
 const FROM_EMAIL      = process.env.RESEND_FROM        || 'noreply@getinspiredsociety.com';
 const ADMIN_EMAIL     = process.env.ADMIN_EMAIL        || 'info@getinspiredsociety.com';
@@ -119,7 +118,7 @@ async function archiveOldWorks() {
       subject: 'Your work has come down from On View',
       html:    `<p>"${row.title}" was on the wall for seven days. It comes down today.</p>`
              + `<p>The page stays online: <a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
-             + `<p>On View runs every week. Submit again: <a href="${SITE_URL}/submit/${SUBMIT_TOKEN}">${SITE_URL}/submit/${SUBMIT_TOKEN}</a></p>`
+             + `<p>On View runs every week. Submit again: <a href="${SITE_URL}/submit">${SITE_URL}/submit</a></p>`
              + `<p>Thank you for showing your work.</p>`,
     });
   }
@@ -165,6 +164,22 @@ function allowContact(ip) {
   if (hits.length >= limit) return false;
   hits.push(now);
   contactRequests.set(ip, hits);
+  return true;
+}
+
+// /submit is public (no token needed) as of the open call — same
+// sliding-window pattern and limit as allowContact, kept as its own Map so
+// the two actions don't share one quota.
+const submitRequests = new Map();
+
+function allowSubmit(ip) {
+  const now    = Date.now();
+  const window = 15 * 60 * 1000;
+  const limit  = 5;
+  const hits   = (submitRequests.get(ip) || []).filter(t => now - t < window);
+  if (hits.length >= limit) return false;
+  hits.push(now);
+  submitRequests.set(ip, hits);
   return true;
 }
 
@@ -235,9 +250,6 @@ const upload = multer({
 
 app.set('trust proxy', 1); // Railway sits behind a proxy; needed for correct req.ip
 app.use(express.json());
-
-// Block /submit without token — must go before static so /submit/index.html isn't served directly
-app.get('/submit', (req, res) => res.status(404).send('Not found'));
 
 // Serve uploads from volume path (works regardless of where UPLOAD_DIR is)
 app.use('/uploads', express.static(UPLOAD_DIR));
@@ -393,16 +405,26 @@ app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
 
 app.post('/api/submit', upload.single('image'), async (req, res) => {
   try {
-    const { name, email, portfolio, work_title } = req.body || {};
+    const { name, email, portfolio, work_title, hp, captcha } = req.body || {};
+
+    if (hp) return res.json({ ok: true }); // honeypot — silent, no captcha/rate-limit slot consumed
+    if (!captcha) return res.status(400).json({ error: 'Please complete the captcha.' });
+    const captchaOk = await verifyHcaptcha(captcha);
+    if (!captchaOk) return res.status(400).json({ error: 'Captcha verification failed. Please try again.' });
+    const ip = req.ip || req.socket.remoteAddress || '';
+    if (!allowSubmit(ip)) return res.status(429).json({ error: 'Too many submissions. Please wait a few minutes.' });
 
     if (!name?.trim() || !email?.trim())            return res.status(400).json({ error: 'Name and email are required.' });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address.' });
     if (!portfolio?.trim())                          return res.status(400).json({ error: 'Portfolio URL is required.' });
     if (!req.file)                                  return res.status(400).json({ error: 'No image uploaded.' });
 
-    // Duplicate check: active (non-archived) work for this email
-    const existing = db.prepare("SELECT id FROM works WHERE email=? AND status!='archived'").get(email.trim());
-    if (existing) return res.status(409).json({ error: 'You already have a work on the wall. It will be archived after 7 days, then you can submit again.' });
+    // Duplicate check: an unresolved submission (pending or approved, and
+    // still on the wall) for this email already exists. A rejected work must
+    // not count here — it's a resolved outcome, not an active hold, so it
+    // must never permanently block a future attempt.
+    const existing = db.prepare("SELECT id FROM works WHERE email=? AND status!='archived' AND review_status IN ('pending','approved')").get(email.trim());
+    if (existing) return res.status(409).json({ error: "You already have a submission pending review or on the wall. Try again once that's resolved." });
 
     const filename = crypto.randomUUID() + '.webp';
     try {
@@ -511,9 +533,10 @@ app.post('/api/admin/tokens', requireAdmin, (req, res) => {
 
 // ── Page routes ───────────────────────────────────────────────────────────────
 
+// /submit is public now — old shared-token links still work via a redirect,
+// for any token value (the token itself is no longer checked or needed).
 app.get('/submit/:token', (req, res) => {
-  if (!SUBMIT_TOKEN || req.params.token !== SUBMIT_TOKEN) return res.status(404).send('Not found');
-  res.sendFile(path.join(__dirname, 'public', 'submit', 'index.html'));
+  res.redirect(301, '/submit');
 });
 
 // ── Work page — server-rendered Open Graph / Twitter Card tags ────────────────
