@@ -15,6 +15,7 @@
     "test:archive-email": "node test/archive-email.test.js",
     "test:review-status": "node test/review-status.test.js",
     "test:submit-public": "node test/submit-public.test.js",
+    "test:rounds": "node test/rounds.test.js",
     "start": "exec node server.js"
   },
   "engines": {

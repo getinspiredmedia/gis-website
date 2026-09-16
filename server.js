@@ -67,6 +67,7 @@ try { db.exec("ALTER TABLE works ADD COLUMN view_count INTEGER NOT NULL DEFAULT 
 // already-published work doesn't disappear from the wall.
 try { db.exec("ALTER TABLE works ADD COLUMN review_status TEXT NOT NULL DEFAULT 'approved' CHECK(review_status IN ('pending','approved','rejected'))"); } catch {}
 try { db.exec("ALTER TABLE works ADD COLUMN approved_at TEXT"); } catch {}
+try { db.exec("ALTER TABLE works ADD COLUMN round_number INTEGER"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN artist_name  TEXT NOT NULL DEFAULT ''"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN artist_email TEXT NOT NULL DEFAULT ''"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN used INTEGER NOT NULL DEFAULT 0"); } catch {}
@@ -94,6 +95,42 @@ db.exec(`
   );
 `);
 db.exec('CREATE INDEX IF NOT EXISTS idx_work_views_work_hash ON work_views(work_id, visitor_hash)');
+
+// Weekly rounds (epic 4). Created by hand via SQL (see CLAUDE.md) — there is
+// deliberately no admin UI to add or edit them. round_number is the natural
+// key: simple, stable, and matches how everything else refers to a round.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS rounds (
+    round_number   INTEGER PRIMARY KEY,
+    starts_at      TEXT NOT NULL,
+    ends_at        TEXT NOT NULL,
+    winner_work_id INTEGER,
+    announced_at   TEXT
+  );
+`);
+
+// The round whose [starts_at, ends_at) window covers this moment, or null if
+// none — assigned once at submission time (created_at), never reassigned.
+function currentRoundNumber() {
+  const row = db.prepare(
+    "SELECT round_number FROM rounds WHERE starts_at <= datetime('now') AND datetime('now') < ends_at ORDER BY round_number DESC LIMIT 1"
+  ).get();
+  return row ? row.round_number : null;
+}
+
+// A round is ready for a winner once it has at least one approved work and
+// the most recent approved_at among that round's approved works is 7+ days
+// in the past — the same window archiveOldWorks() already uses per work. A
+// still-pending work in the round is invisible to this query (it only looks
+// at review_status='approved'), so it never holds up the round.
+function roundStats(roundNumber) {
+  const row = db.prepare(
+    "SELECT COUNT(*) AS n, MAX(approved_at) AS latest FROM works WHERE round_number=? AND review_status='approved'"
+  ).get(roundNumber);
+  const ready = row.n > 0 && !!row.latest
+    && db.prepare("SELECT datetime(?, '+7 days') <= datetime('now') AS ready").get(row.latest).ready === 1;
+  return { approvedCount: row.n, ready };
+}
 
 // ── Auto-archive ──────────────────────────────────────────────────────────────
 
@@ -375,8 +412,8 @@ app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
       slug = baseSlug + '-' + (suffix++);
     }
 
-    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status,review_status) VALUES (?,?,?,?,?,?,?,?)')
-      .run(slug, title, name, email, '#', '/uploads/' + filename, 'previous', 'pending');
+    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status,review_status,round_number) VALUES (?,?,?,?,?,?,?,?,?)')
+      .run(slug, title, name, email, '#', '/uploads/' + filename, 'previous', 'pending', currentRoundNumber());
 
     db.prepare('UPDATE tokens SET used=1 WHERE token=?').run(req.params.token);
 
@@ -447,8 +484,8 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
     }
 
     const imagePath = '/uploads/' + filename;
-    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status,review_status) VALUES (?,?,?,?,?,?,?,?)')
-      .run(slug, title, name.trim(), email.trim(), portfolio.trim(), imagePath, 'previous', 'pending');
+    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status,review_status,round_number) VALUES (?,?,?,?,?,?,?,?,?)')
+      .run(slug, title, name.trim(), email.trim(), portfolio.trim(), imagePath, 'previous', 'pending', currentRoundNumber());
 
     console.log('[submit] added work:', name, email, slug);
 
@@ -542,6 +579,47 @@ app.post('/api/admin/works/:id/reject', requireAdmin, async (req, res) => {
     });
   }
   res.json({ ok: true });
+});
+
+// ── Admin: rounds ─────────────────────────────────────────────────────────────
+// Rounds themselves are created by hand via SQL (see CLAUDE.md) — no
+// create/edit UI here, only the read-only overview and the one-time
+// winner action, per the epic's scope.
+
+app.get('/api/admin/rounds', requireAdmin, (req, res) => {
+  const rounds = db.prepare('SELECT * FROM rounds ORDER BY round_number DESC').all();
+  res.json(rounds.map(r => {
+    const stats = roundStats(r.round_number);
+    const winner = r.winner_work_id
+      ? db.prepare('SELECT slug, title, artist, view_count FROM works WHERE id=?').get(r.winner_work_id)
+      : null;
+    return {
+      ...r,
+      approved_count: stats.approvedCount,
+      status: r.announced_at ? 'winner_announced' : (stats.ready ? 'ready_for_winner' : 'ongoing'),
+      winner,
+    };
+  }));
+});
+
+// Winner: the approved work in the round with the highest (deduplicated)
+// view_count; a tie goes to whichever was created first. This tiebreak
+// (earliest created_at) is an assumption applied without explicit
+// confirmation from André — see CLAUDE.md.
+app.post('/api/admin/rounds/:round_number/announce-winner', requireAdmin, (req, res) => {
+  const roundNumber = Number(req.params.round_number);
+  const round = db.prepare('SELECT * FROM rounds WHERE round_number=?').get(roundNumber);
+  if (!round) return res.status(404).json({ error: 'Round not found.' });
+  if (round.announced_at) return res.status(409).json({ error: 'Winner already announced for this round.' });
+  if (!roundStats(roundNumber).ready) return res.status(400).json({ error: 'This round is not ready for a winner yet.' });
+
+  const winner = db.prepare(
+    "SELECT id, slug, title, artist, view_count FROM works WHERE round_number=? AND review_status='approved' ORDER BY view_count DESC, created_at ASC LIMIT 1"
+  ).get(roundNumber);
+  if (!winner) return res.status(400).json({ error: 'No approved works in this round.' });
+
+  db.prepare("UPDATE rounds SET winner_work_id=?, announced_at=datetime('now') WHERE round_number=?").run(winner.id, roundNumber);
+  res.json({ ok: true, winner });
 });
 
 app.post('/api/admin/tokens', requireAdmin, (req, res) => {
