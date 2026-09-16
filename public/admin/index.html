@@ -57,6 +57,14 @@ button{font:inherit;cursor:pointer}
 .badge-approved{background:#d1fae5;color:#065f46}
 .badge-rejected{background:#fee2e2;color:#991b1b}
 
+.thumb{width:48px;height:48px;object-fit:cover;border-radius:2px;display:block;background:var(--line)}
+.thumb-lg{width:48px;height:48px;object-fit:cover;border-radius:2px;display:block;background:var(--line)}
+.pending-thumb-col{width:60px}
+@media (min-width:900px){
+  .thumb-lg{width:96px;height:96px}
+  .pending-thumb-col{width:110px}
+}
+
 /* Buttons */
 .btn-sm{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
 .btn-sm:hover{background:#f5f6f8;border-color:var(--ink)}
@@ -112,7 +120,7 @@ button{font:inherit;cursor:pointer}
   <div class="panel active" id="panel-pending">
     <div class="section-head"><h2>Pending submissions</h2></div>
     <table class="tbl" id="pending-tbl">
-      <thead><tr><th style="width:60px"></th><th>Title</th><th>Artist</th><th>Email</th><th>Submitted</th><th>Actions</th></tr></thead>
+      <thead><tr><th class="pending-thumb-col"></th><th>Title</th><th>Artist</th><th>Email</th><th>Portfolio</th><th>Submitted</th><th>Actions</th></tr></thead>
       <tbody id="pending-body"></tbody>
     </table>
   </div>
@@ -207,17 +215,18 @@ function loadWorks(){
   });
 }
 
-function thumb(w){
-  return w.image_url?'<img src="'+esc(w.image_url)+'" style="width:48px;height:48px;object-fit:cover;border-radius:2px;display:block;background:var(--line)" loading="lazy" onerror="this.style.opacity=\'0\'">':'';
+function thumb(w,cls){
+  return w.image_url?'<img src="'+esc(w.image_url)+'" class="'+(cls||'thumb')+'" loading="lazy" onerror="this.style.opacity=\'0\'">':'';
 }
 
 function renderPending(rows){
   var tbody=document.getElementById('pending-body');
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No pending submissions.</td></tr>';return;}
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="7" class="empty">No pending submissions.</td></tr>';return;}
   tbody.innerHTML=rows.map(function(w){
-    return '<tr><td>'+thumb(w)+'</td><td><b>'+esc(w.title)+'</b><br><small style="color:var(--muted)">'+esc(w.slug)+'</small></td>'+
+    return '<tr><td>'+thumb(w,'thumb-lg')+'</td><td><b>'+esc(w.title)+'</b><br><small style="color:var(--muted)">'+esc(w.slug)+'</small></td>'+
       '<td>'+esc(w.artist)+'</td>'+
       '<td><small style="color:var(--muted)">'+esc(w.email||'')+'</small></td>'+
+      '<td><a href="'+esc(w.portfolio)+'" target="_blank" rel="noopener"><small>'+esc(w.portfolio)+'</small></a></td>'+
       '<td><small style="color:var(--muted)">'+esc((w.created_at||'').slice(0,10))+'</small></td>'+
       '<td><div style="display:flex;gap:6px;flex-wrap:wrap">'+
       '<button class="btn-sm primary" onclick="approveWork('+w.id+')">Approve</button>'+

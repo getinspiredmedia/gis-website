@@ -394,6 +394,7 @@ async function run() {
       const adminRows = await adminRes.json();
       const adminRow = adminRows.find(w => w.slug === submitWork.slug);
       assert(!!adminRow && adminRow.review_status === 'pending', 'the /api/submit work shows up in the admin API as pending (the Pending tab), not pre-approved');
+      assert(adminRow.portfolio === 'https://example.com/portfolio', `the admin API row carries the submitter's portfolio URL — got ${adminRow.portfolio}`);
     }
     console.log('PASS - a pending /api/submit work is invisible on the wall and /work/:slug, and sits in the admin Pending tab until approved');
 

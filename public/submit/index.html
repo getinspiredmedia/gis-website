@@ -46,9 +46,13 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
 .btn:disabled{opacity:.45;cursor:default;pointer-events:none}
 .msg{margin-top:18px;font-size:14px;line-height:1.55;display:none}
 .msg.err{color:#991b1b}
+.meta{font-size:12px;color:var(--muted);line-height:1.5}
+.intro-note{margin-bottom:32px}
 #state-done{display:none;text-align:center;padding:80px 0}
 #state-done h2{font-size:clamp(2rem,4.4vw,3rem);font-weight:700;letter-spacing:-.02em;font-variation-settings:'wdth' 114;line-height:1.04}
 #state-done p{margin-top:16px;color:var(--muted);font-size:15px}
+#state-done .meta{margin-top:24px}
+#state-done .meta a{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -57,6 +61,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
     <span class="eyebrow">Get Inspired Society &nbsp;<span style="font-weight:400;opacity:.55">On View</span></span>
     <h1>Put your work forward.</h1>
     <p class="sub">One image. One week on the wall.</p>
+    <p class="meta intro-note">We review every submission and let you know either way. We don't discuss decisions further.</p>
 
     <form id="form" novalidate>
       <label class="field">
@@ -98,6 +103,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
   <div id="state-done">
     <h2>Got it.</h2>
     <p>We've received your submission. If it's selected, we'll be in touch.</p>
+    <p class="meta"><a href="https://getinspiredsociety.com">getinspiredsociety.com</a></p>
   </div>
 </div>
 
