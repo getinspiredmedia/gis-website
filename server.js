@@ -119,7 +119,8 @@ async function archiveOldWorks() {
       html:    `<p>"${row.title}" was on the wall for seven days. It comes down today.</p>`
              + `<p>The page stays online: <a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
              + `<p>On View runs every week. Submit again: <a href="${SITE_URL}/submit">${SITE_URL}/submit</a></p>`
-             + `<p>Thank you for showing your work.</p>`,
+             + `<p>Thank you for showing your work.</p>`
+             + `<p>Creative regards,<br>Get Inspired Society</p>`,
     });
   }
 }
@@ -390,7 +391,7 @@ app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
       sendEmail({
         to:      email,
         subject: 'Your work is in — Get Inspired Society',
-        html:    `<p>${name},</p><p>We have received your work "<b>${title}</b>".</p><p>We will let you know when it goes on the wall.</p><p>— Get Inspired Society</p>`,
+        html:    `<p>${name},</p><p>We have received your work "<b>${title}</b>".</p><p>We will let you know when it goes on the wall.</p><p>Creative regards,<br>Get Inspired Society</p>`,
       }),
     ]);
 
@@ -460,7 +461,7 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
       sendEmail({
         to:      email.trim(),
         subject: 'Your work is in — Get Inspired Society',
-        html:    `<p>Hi ${name},</p><p>We have received your work "<b>${title}</b>". We will let you know when it goes on the wall.</p>`,
+        html:    `<p>Hi ${name},</p><p>We have received your work "<b>${title}</b>". We will let you know when it goes on the wall.</p><p>Creative regards,<br>Get Inspired Society</p>`,
       }),
     ]);
 
@@ -510,9 +511,20 @@ app.delete('/api/admin/works/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/admin/works/:id/approve', requireAdmin, (req, res) => {
-  const r = db.prepare("UPDATE works SET review_status='approved', approved_at=datetime('now') WHERE id=?").run(req.params.id);
-  if (r.changes === 0) return res.status(404).json({ error: 'Not found.' });
+app.post('/api/admin/works/:id/approve', requireAdmin, async (req, res) => {
+  const row = db.prepare(
+    "UPDATE works SET review_status='approved', approved_at=datetime('now') WHERE id=? RETURNING slug, title, artist, email"
+  ).get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found.' });
+  if (row.email) {
+    await sendEmail({
+      to:      row.email,
+      subject: 'Your work is on the wall — Get Inspired Society',
+      html:    `<p>${row.artist},</p><p>"${row.title}" is now on the wall.<br><a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
+             + `<p>It stays up for seven days.</p>`
+             + `<p>Creative regards,<br>Get Inspired Society</p>`,
+    });
+  }
   res.json({ ok: true });
 });
 

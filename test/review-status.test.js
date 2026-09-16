@@ -13,6 +13,7 @@
  * approved (approved_at stays null, not reconstructable).
  */
 const { spawn } = require('child_process');
+const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
@@ -26,6 +27,7 @@ const LEGACY_UPLOAD_DIR = path.join(ROOT, 'test', '.review-status-legacy-test-up
 const PORT = 3196;
 const BASE = `http://127.0.0.1:${PORT}`;
 const ADMIN_PASSWORD = 'test-admin-pwd';
+const SITE_URL = 'https://getinspiredsociety.test';
 
 function assert(cond, msg) {
   if (!cond) throw new Error('ASSERTION FAILED: ' + msg);
@@ -55,10 +57,19 @@ function waitForServer(retries) {
   });
 }
 
-function startServer(dbPath, uploadDir) {
+function startServer(dbPath, uploadDir, fixturePort) {
   return spawn('node', ['server.js'], {
     cwd: ROOT,
-    env: { ...process.env, DB_PATH: dbPath, UPLOAD_DIR: uploadDir, PORT: String(PORT), ADMIN_PASSWORD },
+    env: {
+      ...process.env,
+      DB_PATH: dbPath,
+      UPLOAD_DIR: uploadDir,
+      PORT: String(PORT),
+      ADMIN_PASSWORD,
+      SITE_URL,
+      RESEND_API_KEY: 'test-key',
+      RESEND_BASE_URL: `http://127.0.0.1:${fixturePort}`,
+    },
     stdio: 'ignore',
   });
 }
@@ -110,6 +121,27 @@ async function run() {
   cleanupFiles();
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
+  // RESEND_BASE_URL redirected to a local fixture standing in for
+  // api.resend.com — the real host is unreachable from this sandbox, same
+  // pattern as test/archive-email.test.js.
+  const emailRequests = [];
+  const fixture = http.createServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/emails') {
+      let body = '';
+      req.on('data', c => { body += c; });
+      req.on('end', () => {
+        emailRequests.push(JSON.parse(body));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ id: 'test-email-id' }));
+      });
+      return;
+    }
+    res.writeHead(404);
+    res.end();
+  });
+  await new Promise(resolve => fixture.listen(0, '127.0.0.1', resolve));
+  const fixturePort = fixture.address().port;
+
   let child;
   try {
     // ── Migration: rows predating the review step are grandfathered as approved ──
@@ -135,7 +167,7 @@ async function run() {
       legacyDb.close();
     }
 
-    child = startServer(LEGACY_DB_PATH, LEGACY_UPLOAD_DIR);
+    child = startServer(LEGACY_DB_PATH, LEGACY_UPLOAD_DIR, fixturePort);
     await waitForServer(30);
     await new Promise(r => setTimeout(r, 500)); // let startup migrations land
 
@@ -153,7 +185,7 @@ async function run() {
     await new Promise(r => setTimeout(r, 300));
 
     // ── Main flow ──────────────────────────────────────────────────────────
-    child = startServer(DB_PATH, UPLOAD_DIR);
+    child = startServer(DB_PATH, UPLOAD_DIR, fixturePort);
     await waitForServer(30);
 
     const adminToken = await adminAuth();
@@ -179,6 +211,17 @@ async function run() {
     assert(work.review_status === 'pending', `a new /hand-in submission is review_status=pending — got ${work.review_status}`);
     assert(work.approved_at === null, 'a pending submission has no approved_at yet');
     console.log('PASS - a new /hand-in submission gets review_status=pending');
+
+    // The confirmation email matches the pending reality: no premature
+    // share link, and ends with the standard maker-facing sign-off.
+    {
+      const mail = emailRequests.find(m => m.subject === 'Your work is in — Get Inspired Society' && m.html.includes('Pending Test Work'));
+      assert(!!mail, 'a confirmation email was sent for the /hand-in submission');
+      assert(!mail.html.includes(`${SITE_URL}/work/`), 'the confirmation email does not link to a not-yet-live work page — got ' + mail.html);
+      assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
+        'the confirmation email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+    }
+    console.log('PASS - the /hand-in confirmation email matches the pending status and has the standard sign-off');
 
     // Invisible everywhere public
     {
@@ -213,6 +256,19 @@ async function run() {
       assert(!!row.approved_at, 'approve records approved_at');
     }
     console.log('PASS - approving a pending work sets review_status=approved and records approved_at');
+
+    // Approve triggers an email to the maker with a working /work/:slug link
+    {
+      const mail = emailRequests.find(m => m.subject === 'Your work is on the wall — Get Inspired Society');
+      assert(!!mail, 'an approval email was sent — got subjects: ' + JSON.stringify(emailRequests.map(m => m.subject)));
+      assert(mail.to === work.email || (Array.isArray(mail.to) && mail.to.includes(work.email)),
+        'the approval email is addressed to the maker — got ' + JSON.stringify(mail.to));
+      assert(mail.html.includes(`${SITE_URL}/work/${work.slug}`),
+        'the approval email links to the live /work/:slug page — got ' + mail.html);
+      assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
+        'the approval email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+    }
+    console.log('PASS - approving a work emails the maker with a working /work/:slug link');
 
     // Now visible everywhere
     {
@@ -301,6 +357,15 @@ async function run() {
     console.log('PASS - a new /api/submit submission gets review_status=pending, same as /hand-in');
 
     {
+      const mail = emailRequests.find(m => m.subject === 'Your work is in — Get Inspired Society' && m.html.includes('Submit Test Work'));
+      assert(!!mail, 'a confirmation email was sent for the /api/submit submission');
+      assert(!mail.html.includes(`${SITE_URL}/work/`), 'the confirmation email does not link to a not-yet-live work page — got ' + mail.html);
+      assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
+        'the confirmation email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+    }
+    console.log('PASS - the /api/submit confirmation email matches the pending status and has the standard sign-off');
+
+    {
       const listRes = await fetch(`${BASE}/api/works`);
       const list = await listRes.json();
       assert(!list.some(w => w.slug === submitWork.slug), '/api/submit work is absent from GET /api/works until approved');
@@ -340,7 +405,7 @@ async function run() {
       db.close();
     }
 
-    child = startServer(DB_PATH, UPLOAD_DIR);
+    child = startServer(DB_PATH, UPLOAD_DIR, fixturePort);
     await waitForServer(30);
     await new Promise(r => setTimeout(r, 1000)); // let the immediate archiveOldWorks() call land
 
@@ -362,6 +427,7 @@ async function run() {
       child.kill();
       await new Promise(r => setTimeout(r, 300));
     }
+    fixture.close();
     cleanupFiles();
   }
 }
