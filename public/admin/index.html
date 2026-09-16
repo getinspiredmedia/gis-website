@@ -105,6 +105,7 @@ button{font:inherit;cursor:pointer}
     <button class="tab active" data-tab="pending" id="tab-pending">Pending</button>
     <button class="tab" data-tab="approved" id="tab-approved">Approved</button>
     <button class="tab" data-tab="rejected" id="tab-rejected">Rejected</button>
+    <button class="tab" data-tab="rounds" id="tab-rounds">Rounds</button>
   </div>
 
   <!-- Pending -->
@@ -133,6 +134,15 @@ button{font:inherit;cursor:pointer}
       <tbody id="rejected-body"></tbody>
     </table>
   </div>
+
+  <!-- Rounds -->
+  <div class="panel" id="panel-rounds">
+    <div class="section-head"><h2>Rounds</h2></div>
+    <table class="tbl" id="rounds-tbl">
+      <thead><tr><th>Round</th><th>Window</th><th>Approved</th><th>Status</th><th>Winner</th><th>Actions</th></tr></thead>
+      <tbody id="rounds-body"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
@@ -152,7 +162,7 @@ function doLogin(){
   fetch('/api/admin/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})})
     .then(function(r){return r.json();})
     .then(function(d){
-      if(d.token){sessionStorage.setItem('gis_admin',d.token);session=d.token;showApp();loadWorks();}
+      if(d.token){sessionStorage.setItem('gis_admin',d.token);session=d.token;showApp();refreshAll();}
       else{document.getElementById('login-err').style.display='';}
     }).catch(function(){document.getElementById('login-err').style.display='';});
 }
@@ -247,28 +257,70 @@ function renderRejected(rows){
 }
 
 window.setStatus=function(id,status){
-  api('PATCH','/api/admin/works/'+id,{status:status}).then(loadWorks);
+  api('PATCH','/api/admin/works/'+id,{status:status}).then(refreshAll);
 };
 
 window.approveWork=function(id){
-  api('POST','/api/admin/works/'+id+'/approve').then(loadWorks);
+  api('POST','/api/admin/works/'+id+'/approve').then(refreshAll);
 };
 
 window.rejectWork=function(id){
   if(!confirm('Reject this submission?'))return;
-  api('POST','/api/admin/works/'+id+'/reject').then(loadWorks);
+  api('POST','/api/admin/works/'+id+'/reject').then(refreshAll);
 };
 
 window.deleteWork=function(id){
   if(!confirm('Delete this work?'))return;
-  api('DELETE','/api/admin/works/'+id).then(loadWorks);
+  api('DELETE','/api/admin/works/'+id).then(refreshAll);
 };
+
+// ── Rounds ────────────────────────────────────────────────────────────────────
+// Rounds are created by hand via SQL (see CLAUDE.md) — this tab is read-only
+// plus the one winner action, no create/edit UI.
+function loadRounds(){
+  api('GET','/api/admin/rounds').then(renderRounds);
+}
+
+var ROUND_STATUS_LABEL={ongoing:'Ongoing',ready_for_winner:'Ready for winner',winner_announced:'Winner announced'};
+var ROUND_STATUS_BADGE={ongoing:'badge-pending',ready_for_winner:'badge-current',winner_announced:'badge-approved'};
+
+function renderRounds(rows){
+  var tbody=document.getElementById('rounds-body');
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No rounds yet — create one via SQL, see CLAUDE.md.</td></tr>';return;}
+  tbody.innerHTML=rows.map(function(r){
+    var winnerCell=r.winner
+      ?('<b>'+esc(r.winner.title)+'</b><br><small style="color:var(--muted)">'+esc(r.winner.artist)+' · '+(r.winner.view_count||0)+' views</small>')
+      :'<small style="color:var(--muted)">—</small>';
+    var actionCell=r.status==='ready_for_winner'
+      ?'<button class="btn-sm primary" onclick="announceWinner('+r.round_number+')">Announce winner</button>'
+      :'';
+    return '<tr><td><b>#'+r.round_number+'</b></td>'+
+      '<td><small style="color:var(--muted)">'+esc((r.starts_at||'').slice(0,10))+' – '+esc((r.ends_at||'').slice(0,10))+'</small></td>'+
+      '<td>'+r.approved_count+'</td>'+
+      '<td><span class="badge '+ROUND_STATUS_BADGE[r.status]+'">'+ROUND_STATUS_LABEL[r.status]+'</span></td>'+
+      '<td>'+winnerCell+'</td>'+
+      '<td>'+actionCell+'</td></tr>';
+  }).join('');
+}
+
+window.announceWinner=function(roundNumber){
+  if(!confirm('Announce the winner for round '+roundNumber+'? This can only be done once.'))return;
+  api('POST','/api/admin/rounds/'+roundNumber+'/announce-winner').then(function(d){
+    if(d.error){alert(d.error);return;}
+    refreshAll();
+  });
+};
+
+function refreshAll(){
+  loadWorks();
+  loadRounds();
+}
 
 function esc(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-if(session) loadWorks();
+if(session) refreshAll();
 }());
 </script>
 </body>
