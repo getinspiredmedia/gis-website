@@ -118,7 +118,9 @@ nav:not(.solid) .mark-dark{filter:invert(1)}
 main {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 64px 24px 96px;
+  /* 150px clears the fixed nav (up to ~128px tall at desktop widths) —
+     64px let it overlap the "On View" back link, swallowing its clicks. */
+  padding: 150px 24px 96px;
 }
 
 /* ── Back link ── */
