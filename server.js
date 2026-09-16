@@ -101,9 +101,15 @@ db.exec('CREATE INDEX IF NOT EXISTS idx_work_views_work_hash ON work_views(work_
 // The UPDATE only ever matches rows still in status='previous', so a work is
 // archived (and mailed) exactly once — a restart within the same hour just
 // re-runs the query against rows that are already 'archived' and matches none.
+// The 7-day wall window runs from approved_at, not created_at — otherwise a
+// submission that waits days for review would get a shortened (or zero)
+// visible run once approved. approved_at is null for rows grandfathered as
+// approved by the review-step migration (they predate any pending period),
+// so COALESCE falls back to created_at for exactly those, preserving their
+// original archive timing.
 async function archiveOldWorks() {
   const rows = db.prepare(
-    "UPDATE works SET status='archived' WHERE status='previous' AND review_status='approved' AND datetime(created_at, '+7 days') <= datetime('now') RETURNING slug, title, email"
+    "UPDATE works SET status='archived' WHERE status='previous' AND review_status='approved' AND datetime(COALESCE(approved_at, created_at), '+7 days') <= datetime('now') RETURNING slug, title, email"
   ).all();
   if (rows.length > 0) console.log(`[archive] archived ${rows.length} work(s)`);
   for (const row of rows) {
@@ -418,21 +424,21 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
     }
 
     const imagePath = '/uploads/' + filename;
-    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status) VALUES (?,?,?,?,?,?,?)')
-      .run(slug, title, name.trim(), email.trim(), portfolio.trim(), imagePath, 'previous');
+    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status,review_status) VALUES (?,?,?,?,?,?,?,?)')
+      .run(slug, title, name.trim(), email.trim(), portfolio.trim(), imagePath, 'previous', 'pending');
 
     console.log('[submit] added work:', name, email, slug);
 
     await Promise.all([
       sendEmail({
         to:      ADMIN_EMAIL,
-        subject: `New work on the wall: "${title}" by ${name}`,
-        html:    `<p>${name} (${email}) submitted a work.<br>Portfolio: ${portfolio}<br>Title: ${title}<br><br>View: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
+        subject: `Pending approval: "${title}" by ${name}`,
+        html:    `<p>${name} (${email}) submitted a work — pending your approval.<br>Portfolio: ${portfolio}<br>Title: ${title}<br><br>Review it: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
       }),
       sendEmail({
         to:      email.trim(),
-        subject: 'Your work is on the wall — Get Inspired Society',
-        html:    `<p>Hi ${name},</p><p>Your work is now visible on On View.<br><a href="${SITE_URL}/on-view">${SITE_URL}/on-view</a></p><p>Share it with others!</p>`,
+        subject: 'Your work is in — Get Inspired Society',
+        html:    `<p>Hi ${name},</p><p>We have received your work "<b>${title}</b>". We will let you know when it goes on the wall.</p>`,
       }),
     ]);
 

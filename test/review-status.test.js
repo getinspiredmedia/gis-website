@@ -90,6 +90,16 @@ async function submitHandIn(handInToken, title, imageBuf) {
   return fetch(`${BASE}/hand-in/${handInToken}`, { method: 'POST', body: form });
 }
 
+async function apiSubmit({ name, email, portfolio, work_title }, imageBuf) {
+  const form = new FormData();
+  form.append('name', name);
+  form.append('email', email);
+  form.append('portfolio', portfolio);
+  form.append('work_title', work_title);
+  form.append('image', new Blob([imageBuf], { type: 'image/webp' }), 'test.webp');
+  return fetch(`${BASE}/api/submit`, { method: 'POST', body: form });
+}
+
 async function run() {
   cleanupFiles();
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -263,6 +273,82 @@ async function run() {
       assert(rows.every(w => ['pending', 'approved', 'rejected'].includes(w.review_status)), 'every admin row carries a valid review_status');
     }
     console.log('PASS - admin API exposes a valid review_status on every row');
+
+    // ── /api/submit must not bypass the approval gate ───────────────────────
+    // /api/submit backs the publicly-shared /submit/:SUBMIT_TOKEN page — it
+    // must go through the same pending gate as /hand-in, not land as approved.
+    const submitRes = await apiSubmit({
+      name: 'Submit Artist', email: 'submit-artist@example.com',
+      portfolio: 'https://example.com/portfolio', work_title: 'Submit Test Work',
+    }, imageBuf);
+    const submitJson = await submitRes.json();
+    assert(submitRes.status === 200 && submitJson.ok, '/api/submit submission is accepted');
+
+    let submitWork;
+    {
+      const db = new Database(DB_PATH);
+      submitWork = db.prepare("SELECT * FROM works WHERE title='Submit Test Work'").get();
+      db.close();
+    }
+    assert(!!submitWork, '/api/submit created a work row');
+    assert(submitWork.review_status === 'pending', `a new /api/submit submission is review_status=pending — got ${submitWork.review_status}`);
+    console.log('PASS - a new /api/submit submission gets review_status=pending, same as /hand-in');
+
+    {
+      const listRes = await fetch(`${BASE}/api/works`);
+      const list = await listRes.json();
+      assert(!list.some(w => w.slug === submitWork.slug), '/api/submit work is absent from GET /api/works until approved');
+
+      const apiRes = await fetch(`${BASE}/api/works/${submitWork.slug}`);
+      assert(apiRes.status === 404, `GET /api/works/:slug returns 404 for a pending /api/submit work — got ${apiRes.status}`);
+
+      const pageRes = await fetch(`${BASE}/work/${submitWork.slug}`);
+      const html = await pageRes.text();
+      assert(html.includes('Work not found'), 'GET /work/:slug renders "not found" for a pending /api/submit work');
+
+      const adminRes = await fetch(`${BASE}/api/admin/works`, { headers: { Authorization: 'Bearer ' + adminToken } });
+      const adminRows = await adminRes.json();
+      const adminRow = adminRows.find(w => w.slug === submitWork.slug);
+      assert(!!adminRow && adminRow.review_status === 'pending', 'the /api/submit work shows up in the admin API as pending (the Pending tab), not pre-approved');
+    }
+    console.log('PASS - a pending /api/submit work is invisible on the wall and /work/:slug, and sits in the admin Pending tab until approved');
+
+    child.kill();
+    child = null;
+    await new Promise(r => setTimeout(r, 300));
+
+    // ── Wall window runs from approved_at, not created_at ───────────────────
+    // Seeded directly (server down) so created_at/approved_at are exact and
+    // predate archiveOldWorks()'s immediate run at the next startup.
+    let recentlyApprovedId, longApprovedId;
+    {
+      const db = new Database(DB_PATH);
+      recentlyApprovedId = db.prepare(
+        "INSERT INTO works (slug,title,artist,portfolio,image_url,status,review_status,created_at,approved_at) " +
+        "VALUES (?,?,?,?,?,?,?,datetime('now','-10 days'),datetime('now','-2 days'))"
+      ).run('review-delay-recent-approval', 'Review Delay Recent Approval', 'Test Artist', '#', '/uploads/test.webp', 'previous', 'approved').lastInsertRowid;
+      longApprovedId = db.prepare(
+        "INSERT INTO works (slug,title,artist,portfolio,image_url,status,review_status,created_at,approved_at) " +
+        "VALUES (?,?,?,?,?,?,?,datetime('now','-10 days'),datetime('now','-8 days'))"
+      ).run('review-delay-long-approval', 'Review Delay Long Approval', 'Test Artist', '#', '/uploads/test.webp', 'previous', 'approved').lastInsertRowid;
+      db.close();
+    }
+
+    child = startServer(DB_PATH, UPLOAD_DIR);
+    await waitForServer(30);
+    await new Promise(r => setTimeout(r, 1000)); // let the immediate archiveOldWorks() call land
+
+    {
+      const db = new Database(DB_PATH);
+      const recent = db.prepare('SELECT status FROM works WHERE id=?').get(recentlyApprovedId);
+      const long = db.prepare('SELECT status FROM works WHERE id=?').get(longApprovedId);
+      db.close();
+      assert(recent.status === 'previous',
+        `a work approved only 2 days ago stays on the wall despite a 10-day-old created_at — got status "${recent.status}" (would have been wrongly archived if the window still ran from created_at)`);
+      assert(long.status === 'archived',
+        `a work approved 8 days ago is archived once its window (from approved_at) has passed — got status "${long.status}"`);
+    }
+    console.log('PASS - the 7-day wall window is measured from approved_at, not the original created_at: a review delay no longer eats into a work\'s visible run, and archiving still fires once approved_at is old enough');
 
     console.log('\nALL PASS');
   } finally {
