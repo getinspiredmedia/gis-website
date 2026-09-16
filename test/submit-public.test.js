@@ -108,6 +108,7 @@ async function run() {
       assert(r.status === 200, `GET /submit responds 200 without a token — got ${r.status}`);
       const html = await r.text();
       assert(html.toLowerCase().includes('submit your work') || html.includes('id="form"'), 'GET /submit renders the submission form');
+      assert(html.includes('https://getinspiredsociety.com'), 'the post-submission confirmation screen links to https://getinspiredsociety.com');
     }
     console.log('PASS - /submit is publicly reachable without a token');
 
