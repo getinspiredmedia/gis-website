@@ -35,25 +35,40 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Wall ── */
-.wall {
+/* ── Stage & wall frame ──
+   The stage fills the screen with the page's own --wall colour. The frame
+   inside it follows the work's aspect ratio (--ar, set from the image's
+   natural size in JS) and is bounded by the stage minus the reserved bands
+   for the masthead (top) and plaque + progress (bottom), so every work fits
+   the screen whole at any size. No blur, scale or fill behind the frame. */
+.stage {
+  --stage-top: 140px;
+  --stage-bottom: 140px;
+  --stage-side: 96px;
   position: fixed;
   inset: 0;
-  background-size: cover;
+  z-index: 0;
+  background: var(--wall);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--stage-top) var(--stage-side) var(--stage-bottom);
+}
+@media (max-width: 860px) {
+  .stage { --stage-top: 100px; --stage-side: 24px; }
+}
+.wall {
+  --ar: 1.5;
+  width: min(100%, calc((100vh - var(--stage-top) - var(--stage-bottom)) * var(--ar)));
+  width: min(100%, calc((100svh - var(--stage-top) - var(--stage-bottom)) * var(--ar)));
+  aspect-ratio: var(--ar);
+  background-size: contain;
   background-position: center;
-  background-color: var(--band);
+  background-repeat: no-repeat;
   opacity: 0;
   transition: opacity .45s var(--ease);
-  z-index: 0;
 }
 .wall.visible { opacity: 1; }
-.wall::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(11,12,16,.65) 0%, transparent 45%);
-  pointer-events: none;
-}
 
 /* ── Nav ── */
 nav{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid transparent;transition:transform .45s var(--ease),background .35s,border-color .35s,padding .35s var(--ease)}
@@ -260,7 +275,9 @@ footer {
   </div>
 </nav>
 
-<div class="wall" id="wall" aria-hidden="true"></div>
+<div class="stage" aria-hidden="true">
+  <div class="wall" id="wall"></div>
+</div>
 
 <button class="arrow arrow-prev" id="btn-prev" aria-label="Previous work" style="display:none">&#8592;</button>
 <button class="arrow arrow-next" id="btn-next" aria-label="Next work" style="display:none">&#8594;</button>
@@ -336,35 +353,6 @@ footer {
     }
   }
 
-  /* ── Nav mark colour adaptation ── */
-  function adaptNavMark(imgEl) {
-    try {
-      var mark = document.querySelector('nav .mark');
-      if (!mark) return;
-      var vw = innerWidth, vh = innerHeight;
-      var sw = 160, sh = 120;
-      var iw = imgEl.naturalWidth, ih = imgEl.naturalHeight;
-      if (!iw || !ih) return;
-      var scale = Math.max(vw / iw, vh / ih);
-      var c = document.createElement('canvas');
-      c.width = sw; c.height = sh;
-      var ctx = c.getContext('2d');
-      ctx.drawImage(imgEl, (vw - iw * scale) / 2, (vh - ih * scale) / 2, iw * scale, ih * scale);
-      var d = ctx.getImageData(0, 0, sw, sh).data;
-      var lum = 0, n = d.length / 4;
-      for (var i = 0; i < d.length; i += 4) lum += 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-      mark.classList.toggle('mark-dark', (lum / n) > 128);
-    } catch(e) { /* CORS of andere fout — behoud wit standaard */ }
-  }
-
-  function sampleImage(url) {
-    try {
-      var img = new Image();
-      img.onload = function() { adaptNavMark(img); };
-      img.src = url;
-    } catch(e) {}
-  }
-
   /* ── Preload next image ── */
   function preload(work) {
     if (!work) return;
@@ -372,28 +360,41 @@ footer {
     img.src = work.image;
   }
 
-  /* ── Show work ── */
-  function showWork(work) {
-    if (reduceMotion.matches) {
+  /* ── Show work ──
+     The frame follows the work's own aspect ratio, so the image is loaded
+     first to read its natural size; the frame is only shown (and the plaque
+     and progress bar updated) once that ratio is known. The nav mark stays
+     white: it now always sits on the --wall stage, never on the image. */
+  var showId = 0;
+
+  function revealWork(work, next, id) {
+    var img = new Image();
+    function done(ratio) {
+      if (id !== showId) return; /* a newer showWork() superseded this one */
+      if (ratio) wall.style.setProperty('--ar', ratio);
       wall.style.backgroundImage = 'url(\'' + work.image + '\')';
       wall.classList.add('visible');
       updatePlaque(work);
       resetProgress();
-      var next = shuffled[pos + 1] || shuffled[0];
       preload(next);
-      sampleImage(work.image);
+    }
+    img.onload = function () {
+      done(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : null);
+    };
+    img.onerror = function () { done(null); };
+    img.src = work.image;
+  }
+
+  function showWork(work) {
+    var id = ++showId;
+    if (reduceMotion.matches) {
+      revealWork(work, shuffled[pos + 1] || shuffled[0], id);
       return;
     }
 
     wall.classList.remove('visible');
     setTimeout(function () {
-      wall.style.backgroundImage = 'url(\'' + work.image + '\')';
-      wall.classList.add('visible');
-      updatePlaque(work);
-      resetProgress();
-      var next = shuffled[(pos) % shuffled.length];
-      preload(next);
-      sampleImage(work.image);
+      revealWork(work, shuffled[(pos) % shuffled.length], id);
     }, FADE_MS + 50);
   }
 
