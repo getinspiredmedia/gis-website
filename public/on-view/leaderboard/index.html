@@ -123,6 +123,23 @@ main {
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.55);display:block;margin-bottom:14px}
 h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,4.4rem);line-height:.96;letter-spacing:-.02em;font-variation-settings:'wdth' 116;margin-bottom:40px}
 
+/* ── Back link — same component as public/work/index.html ── */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+  text-decoration: none;
+  margin-bottom: 32px;
+  transition: color .25s;
+}
+.back:hover { color: rgba(255,255,255,.9); }
+.back:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
 /* ── Tile grid — component spec: docs/gis-design-system.md §4 "Tile" ── */
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .tile{position:relative;aspect-ratio:1;overflow:hidden;background:var(--band);display:block}
@@ -163,6 +180,7 @@ footer {
 </nav>
 
 <main id="main">
+  <a class="back" href="/on-view">&#8592; On View</a>
   <span class="eyebrow">Get Inspired Society &nbsp;<span style="font-weight:400;opacity:.55">On View</span></span>
   <h1>This round's top 10.</h1>
   <div id="content"></div>
