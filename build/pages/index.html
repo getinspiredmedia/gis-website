@@ -49,9 +49,8 @@ a{color:inherit;text-decoration:none}
 .wall header .eyebrow{color:var(--muted)}
 .wall header .more{color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:2px;transition:border-color .25s}
 .wall header .more:hover{border-color:var(--ink)}
-.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;grid-auto-rows:min(15vw,150px)}
-.cell{position:relative;overflow:hidden;background:var(--blue)}
-.cell.k-black{background:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.cell{position:relative;overflow:hidden;background:var(--blue);aspect-ratio:1}
 .cell.k-void{background:var(--line)}
 .cell .art{position:absolute;inset:0;opacity:0;transform:scale(1.08);transition:opacity 900ms var(--ease),transform 1400ms var(--ease)}
 .cell.lit .art{opacity:1;transform:none}
@@ -62,11 +61,6 @@ a{color:inherit;text-decoration:none}
 .cell .art.a5{background:radial-gradient(120% 100% at 80% 25%,#a8b6a0,#42513c 65%,#171d15)}
 .cell .name{position:absolute;left:0;right:0;bottom:0;padding:12px 14px;color:#fff;font-size:12px;letter-spacing:.04em;background:linear-gradient(transparent,rgba(0,0,0,.62));opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s}
 .cell:hover .name,.cell:focus-visible .name{opacity:1;transform:none}
-.s-2x2{grid-column:span 2;grid-row:span 2}
-.s-2x1{grid-column:span 2}
-.s-3x2{grid-column:span 3;grid-row:span 2}
-.s-1x1{grid-column:span 1}
-.s-4x1{grid-column:span 4}
 
 /* magazine shelf */
 .shelf{background:var(--paper);padding:clamp(60px,9vh,110px) 0 clamp(70px,10vh,120px)}
@@ -116,8 +110,7 @@ a{color:inherit;text-decoration:none}
 :focus-visible{outline:2px solid currentColor;outline-offset:3px}
 
 @media(max-width:860px){
-  .grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:44vw}
-  .s-3x2,.s-4x1{grid-column:span 2}
+  .grid{grid-template-columns:repeat(2,1fr)}
   .doors{grid-template-columns:1fr}
   .door.look{border-right:0;border-bottom:1px solid var(--line)}
 }
@@ -291,8 +284,6 @@ if(room && !reduce){
     if (cached) renderHero(JSON.parse(cached));
   } catch(e){}
 
-  var spanPat = ['s-3x2','s-1x1 k-black','s-2x2','s-1x1','s-2x1','s-4x1 k-black'];
-
   function renderPrevGrid(prev) {
     if (!prev || prev.length < 2) {
       if (wallSection) wallSection.style.display = 'none';
@@ -300,16 +291,16 @@ if(room && !reduce){
     }
     if (!grid) return;
     grid.innerHTML = '';
-    prev.slice(0,6).forEach(function(w, i) {
+    prev.slice(0,4).forEach(function(w) {
       var a = document.createElement('a');
       a.href = '/work/' + w.slug;
-      a.className = 'cell ' + (spanPat[i] || 's-2x2');
+      a.className = 'cell';
       var art = document.createElement('span');
       art.className = 'art';
       if (w.image) {
         art.style.backgroundImage    = "url('" + w.image.replace(/'/g,'%27') + "')";
         art.style.backgroundSize     = 'cover';
-        art.style.backgroundPosition = 'center';
+        art.style.backgroundPosition = 'center top';
       }
       var name = document.createElement('span');
       name.className = 'name';
