@@ -55,10 +55,10 @@ a{color:inherit;text-decoration:none}
 .wall header .eyebrow{color:var(--muted)}
 .wall header .more{color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:2px;transition:border-color .25s}
 .wall header .more:hover{border-color:var(--ink)}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.cell{position:relative;overflow:hidden;background:var(--blue);aspect-ratio:1}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
+.cell{position:relative;overflow:hidden;background:var(--blue);aspect-ratio:var(--ar,1)}
 .cell.k-void{background:var(--line)}
-.cell .art{position:absolute;inset:0;opacity:0;transform:scale(1.08);transition:opacity 900ms var(--ease),transform 1400ms var(--ease)}
+.cell .art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transform:scale(1.08);transition:opacity 900ms var(--ease),transform 1400ms var(--ease)}
 .cell.lit .art{opacity:1;transform:none}
 .cell .art.a1{background:radial-gradient(110% 100% at 30% 20%,#7d8aa8,#2b3247 70%,#171a24)}
 .cell .art.a2{background:radial-gradient(100% 120% at 70% 80%,#c8b49a,#6a5a48 65%,#2a241d)}
@@ -493,12 +493,16 @@ if(room && !reduce){
       var a = document.createElement('a');
       a.href = '/work/' + w.slug;
       a.className = 'cell';
-      var art = document.createElement('span');
+      // The tile keeps the column width; its height follows the work's own
+      // aspect ratio (--ar, read from the loaded image) so nothing is cropped.
+      var art = document.createElement('img');
       art.className = 'art';
+      art.alt = '';
       if (w.image) {
-        art.style.backgroundImage    = "url('" + w.image.replace(/'/g,'%27') + "')";
-        art.style.backgroundSize     = 'cover';
-        art.style.backgroundPosition = 'center top';
+        art.onload = function() {
+          if (art.naturalWidth && art.naturalHeight) a.style.setProperty('--ar', art.naturalWidth / art.naturalHeight);
+        };
+        art.src = w.image;
       }
       var name = document.createElement('span');
       name.className = 'name';
