@@ -226,6 +226,8 @@ nav:not(.solid) .mark-dark{filter:invert(1)}
 
 /* ── Statement section ── */
 .statement-section {
+  position: relative;
+  z-index: 1;
   background: var(--blue);
   color: #fff;
   padding: 80px 24px;
@@ -241,8 +243,13 @@ nav:not(.solid) .mark-dark{filter:invert(1)}
   font-variation-settings: 'wdth' 118;
 }
 
+/* Line break between the two sentences on desktop only; on narrow screens they wrap naturally. */
+@media (max-width: 860px) { .stmt-br { display: none; } }
+
 /* ── Footer ── */
 footer {
+  position: relative;
+  z-index: 1;
   background: var(--ink);
   color: rgba(255,255,255,.4);
   padding: 40px 24px;
@@ -296,7 +303,7 @@ footer {
 
 <section class="statement-section" aria-label="Statement">
   <div class="stmt-inner">
-    <p class="stmt-line">Chosen, not counted.</p>
+    <p class="stmt-line">Reviewed first.<br class="stmt-br"> Then seen.</p>
   </div>
 </section>
 
