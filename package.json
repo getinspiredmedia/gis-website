@@ -17,6 +17,7 @@
     "test:submit-public": "node test/submit-public.test.js",
     "test:rounds": "node test/rounds.test.js",
     "test:leaderboard": "node test/leaderboard.test.js",
+    "test:on-view-round": "node test/on-view-round.test.js",
     "start": "exec node server.js"
   },
   "engines": {

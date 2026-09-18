@@ -384,6 +384,17 @@ app.get('/api/on-view/leaderboard', (req, res) => {
   res.json(shuffle(rows));
 });
 
+// The active round's number and window for the homepage open-call hero. Only
+// those three fields, ISO 8601 in UTC; null (not a 404) when no round is
+// active, so the hero can just hide that one cell.
+app.get('/api/on-view/round', (req, res) => {
+  const roundNumber = currentRoundNumber();
+  if (roundNumber === null) return res.json(null);
+  const row = db.prepare('SELECT round_number, starts_at, ends_at FROM rounds WHERE round_number=?').get(roundNumber);
+  const iso = t => t.replace(' ', 'T') + 'Z';
+  res.json({ round_number: row.round_number, starts_at: iso(row.starts_at), ends_at: iso(row.ends_at) });
+});
+
 app.post('/api/contact', async (req, res) => {
   const { message, email, hp, captcha } = req.body || {};
   if (hp) return res.json({ ok: true }); // honeypot — silent, no captcha/rate-limit slot consumed
