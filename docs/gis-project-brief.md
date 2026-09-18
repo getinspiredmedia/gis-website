@@ -106,3 +106,24 @@ Two options are on the table:
 - **PDF / print links** — `[to confirm]`
 - **Autumn open call dates** — `[to confirm]`
 - **Custom domain `getinspiredsociety.com`** — DNS configuration deferred; site currently runs on Railway subdomain only
+
+---
+
+## 6. The round winner
+
+Replaces the earlier voting mechanic, 2026-09-18. That plan had members vote inside Circle, the vote produced a shortlist of three, and André picked the lead. It is dropped, and so is its line for the /on-view page, "Chosen, not counted." Views now decide the prize of a round, so that line stopped being true.
+
+The line for the page is now "Reviewed first. Then seen."
+
+How it works today:
+- Every submission is reviewed by an admin before it is public, on every entry path. This is the human decision, and it is what keeps "No algorithm decides what's here." true.
+- Approved work is on view for seven days, counted from approval.
+- In an open call round the most viewed work wins a t-shirt. Views are counted once per visitor per work within 24 hours. The raw count is never public.
+- Tiebreak on equal views: earliest created_at wins.
+- The public leaderboard shows the top ten of the round in shuffled order, no numbers.
+- The winner is notified by hand, not automated.
+- Views decide the prize only. They never decide what is public, and nobody is removed from the wall for having fewer views.
+
+Rhythm: round 1 runs 18 to 25 September 2026 (UTC). Rounds 2 to 4 are inserted by hand in SQL once the previous round ends, there is no admin UI for it. Full detail lives in on-view-open-call-backlog.md and the addendum above.
+
+Promotion comes from /work/:slug, not from asking for clicks. Makers share their own work.

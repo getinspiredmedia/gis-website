@@ -98,6 +98,10 @@ Square corners, hairline border (`--line`), blue on focus. Labels sit above the 
 
 **Circle:** Community platform moved to `society.getinspiredsociety.com`. The main site never checks membership itself.
 
+**Round winner.** Every submission is reviewed by an admin before it is public, and approved work stays on view for seven days. In an open call round the most viewed work wins a t-shirt. Views are deduplicated per visitor per work within 24 hours, and the raw count is never shown publicly. Tiebreak on equal views: earliest submission. The /on-view statement is "Reviewed first. Then seen.", because review decides what is public and the audience only decides the prize. The earlier plan, members voting inside Circle with André picking the lead, is dropped.
+
+/ opens on the open call hero instead of the cold open for as long as the On View Open Call runs (decided 2026-09-18). The previous hero, a section with the current work as background, is kept unbuilt at build/archive/hero-current-selection.html. Ink ground, no blue in the hero, so the page still has exactly one blue statement. Eyebrow, a two line page title ("Show one work. Win a t-shirt."), an outlined pill to /submit, a small text link to /on-view/leaderboard, a square white panel holding the t-shirt image (object-fit: contain, never cropped), and a three cell facts strip: submissions, on view, prize. The round dates come from GET /api/on-view/round, not from hardcoded copy. The tiles below are labelled "Currently on view".
+
 **Open decision — `/on-view` (resolve before building)**
 
 Two options are on the table:
