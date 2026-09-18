@@ -131,9 +131,9 @@ async function run() {
       assert(extractMeta(html, 'property', 'og:title') === 'Test Current Work by Current Artist', 'og:title correct for current work');
       assert(extractMeta(html, 'property', 'og:description') === OG_DESCRIPTION, 'og:description is the exact fixed sentence');
       const image = extractMeta(html, 'property', 'og:image');
-      assert(image === 'https://gis-website-production.up.railway.app/og-image/test-current-work', 'og:image points at /og-image/:slug, not the raw upload: ' + image);
+      assert(image === 'https://getinspiredsociety.com/og-image/test-current-work', 'og:image points at /og-image/:slug, not the raw upload: ' + image);
       assert(extractMeta(html, 'property', 'og:type') === 'article', 'og:type is article');
-      assert(extractMeta(html, 'property', 'og:url') === 'https://gis-website-production.up.railway.app/work/test-current-work', 'og:url is canonical absolute URL');
+      assert(extractMeta(html, 'property', 'og:url') === 'https://getinspiredsociety.com/work/test-current-work', 'og:url is canonical absolute URL');
       assert(extractMeta(html, 'name', 'twitter:card') === 'summary_large_image', 'twitter:card present');
       console.log('PASS - current work: HTML tags present and correct');
     }
@@ -143,7 +143,7 @@ async function run() {
       const html = await fetch(`${BASE}/work/test-archived-work`).then(r => r.text());
       assert(extractMeta(html, 'property', 'og:title') === 'Test Archived Work by Archived Artist', 'og:title correct for archived work');
       assert(extractMeta(html, 'property', 'og:description') === OG_DESCRIPTION, 'og:description exact match for archived work too');
-      assert(extractMeta(html, 'property', 'og:image') === 'https://gis-website-production.up.railway.app/og-image/test-archived-work', 'og:image points at /og-image/:slug for archived work too');
+      assert(extractMeta(html, 'property', 'og:image') === 'https://getinspiredsociety.com/og-image/test-archived-work', 'og:image points at /og-image/:slug for archived work too');
       console.log('PASS - archived work (past 7-day wall cycle): HTML tags still correct');
     }
 

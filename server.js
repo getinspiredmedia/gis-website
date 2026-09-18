@@ -19,7 +19,7 @@ const ADMIN_PWD    = process.env.ADMIN_PASSWORD || 'admin';
 const RESEND_KEY      = process.env.RESEND_API_KEY;
 const FROM_EMAIL      = process.env.RESEND_FROM        || 'noreply@getinspiredsociety.com';
 const ADMIN_EMAIL     = process.env.ADMIN_EMAIL        || 'info@getinspiredsociety.com';
-const SITE_URL        = process.env.SITE_URL           || 'https://gis-website-production.up.railway.app';
+const SITE_URL        = process.env.SITE_URL           || 'https://getinspiredsociety.com';
 const HCAPTCHA_SECRET = process.env.HCAPTCHA_SECRET;
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
@@ -422,6 +422,7 @@ app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
     const filename = crypto.randomUUID() + '.webp';
     try {
       await sharp(req.file.buffer)
+        .rotate()
         .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
         .webp({ quality: 82 })
         .toFile(path.join(UPLOAD_DIR, filename));
@@ -495,6 +496,7 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
     const filename = crypto.randomUUID() + '.webp';
     try {
       await sharp(req.file.buffer)
+        .rotate()
         .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
         .webp({ quality: 82 })
         .toFile(path.join(UPLOAD_DIR, filename));
