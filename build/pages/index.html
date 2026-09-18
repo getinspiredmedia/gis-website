@@ -21,20 +21,26 @@ a{color:inherit;text-decoration:none}
 .statement{font-weight:700;line-height:.94;letter-spacing:-.02em;font-variation-settings:'wdth' 118;font-size:clamp(2.6rem,7.4vw,6.6rem)}
 .lede{font-size:clamp(1rem,1.5vw,1.2rem);line-height:1.55;max-width:34ch}
 
-/* cold open */
-.open{position:relative;height:100svh;min-height:560px;background:var(--ink);overflow:hidden;display:flex;align-items:flex-end}
-.open figure{position:absolute;inset:0}
-.open .plate{width:100%;height:100%;background:radial-gradient(120% 90% at 62% 34%,#2a3550 0%,#14161f 55%,#0b0c10 100%);transform:scale(1.06);opacity:0;animation:plateIn 2600ms var(--ease) forwards}
-@keyframes plateIn{to{transform:scale(1);opacity:1}}
-.open .veil{position:absolute;inset:0;background:var(--ink);transform-origin:top;animation:veil 1200ms var(--ease) 300ms forwards}
-@keyframes veil{to{transform:scaleY(0)}}
-.open .caption{position:relative;z-index:2;color:#fff;padding:0 28px 34px;width:100%;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;opacity:0;animation:fadeUp 900ms var(--ease) 1900ms forwards}
-.open .caption .eyebrow{color:#fff;opacity:.72}
-.open .caption h1{font-size:clamp(1.4rem,3vw,2.4rem);font-weight:600;letter-spacing:-.01em;margin-top:8px;font-variation-settings:'wdth' 108}
-.open .caption .meta{font-size:12px;color:rgba(255,255,255,.6);text-align:right;line-height:1.7}
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.hero-pp{display:inline-block;margin-top:10px;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.55);border-bottom:1px solid rgba(255,255,255,.28);padding-bottom:3px;text-decoration:none;transition:color .25s,border-color .25s}
-.hero-pp:hover{color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.6)}
+/* open call hero (temporary; the previous "current selection" hero is archived in build/archive/) */
+.callout{background:var(--ink);color:#fff;min-height:100svh;display:flex;flex-direction:column;padding:clamp(150px,20vh,200px) 28px 0}
+.callout-main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,500px);grid-template-rows:1fr 1fr;grid-template-areas:"head tee" "actions tee";column-gap:clamp(32px,6vw,96px);padding-bottom:clamp(40px,7vh,72px)}
+.callout-head{grid-area:head;align-self:end}
+.callout-head .eyebrow{display:block;margin-bottom:18px;color:rgba(255,255,255,.72)}
+.callout h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,4.4rem);line-height:.96;letter-spacing:-.02em;font-variation-settings:'wdth' 116}
+.callout-actions{grid-area:actions;align-self:start;display:flex;align-items:center;flex-wrap:wrap;gap:18px 26px;margin-top:34px}
+.callout .btn{margin-top:0;align-self:auto}
+.callout .btn:hover{background:#fff;color:var(--ink);gap:16px}
+.callout-link{font-size:12px;color:rgba(255,255,255,.72);text-decoration:underline;text-underline-offset:3px;transition:color .25s}
+.callout-link:hover{color:#fff}
+.tee{grid-area:tee;align-self:center;justify-self:end;width:100%;max-width:500px;aspect-ratio:1;background:#fff}
+.tee img{width:100%;height:100%;object-fit:contain}
+.facts{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border-top:1px solid rgba(255,255,255,.18);list-style:none}
+.fact{padding:22px 24px 30px 0}
+.fact .eyebrow{display:block;color:rgba(255,255,255,.72)}
+.fact-value{display:block;margin-top:10px;font-size:clamp(1.15rem,1.8vw,1.5rem);font-weight:600;letter-spacing:-.01em;font-variation-settings:'wdth' 108}
+.fact-detail{display:block;margin-top:6px;font-size:12px;line-height:1.5;color:rgba(255,255,255,.66)}
+.fact.is-pending{visibility:hidden}
+.fact[hidden]{display:none}
 
 /* claim */
 .claim{background:var(--blue);color:#fff;padding:clamp(80px,14vh,180px) 28px;display:flex;justify-content:center}
@@ -110,14 +116,22 @@ a{color:inherit;text-decoration:none}
 :focus-visible{outline:2px solid currentColor;outline-offset:3px}
 
 @media(max-width:860px){
+  .callout{padding:110px 22px 0}
+  .callout-main{grid-template-columns:minmax(0,1fr);grid-template-rows:auto;grid-template-areas:"head" "tee" "actions";padding-bottom:36px}
+  .callout-head{align-self:start}
+  .tee{justify-self:stretch;max-width:none;margin-top:28px}
+  .callout-actions{flex-direction:column;align-items:stretch;gap:18px;margin-top:28px}
+  .callout .btn{justify-content:center;width:100%}
+  .callout-link{align-self:flex-start}
+  .facts{grid-auto-flow:row;grid-auto-columns:auto}
+  .fact{padding:20px 0 22px}
+  .fact + .fact{border-top:1px solid rgba(255,255,255,.18)}
   .grid{grid-template-columns:repeat(2,1fr)}
   .doors{grid-template-columns:1fr}
   .door.look{border-right:0;border-bottom:1px solid var(--line)}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
-  .open .plate{opacity:1;transform:none}
-  .open .caption{opacity:1}
   .claim .statement{transform:none}
   .rv{opacity:1;transform:none}
   .room .torch{display:none}
@@ -128,17 +142,23 @@ a{color:inherit;text-decoration:none}
 <!-- @include: wipe -->
 <!-- @include: nav -->
 
-<section class="open">
-  <figure><div class="plate" id="hero-plate"></div></figure>
-  <div class="veil"></div>
-  <div class="caption">
-    <div>
-      <span class="eyebrow" id="hero-label">On view</span>
-      <h1 id="hero-artist">&nbsp;</h1>
-      <a class="hero-pp" id="hero-portfolio" href="#" target="_blank" rel="noopener" style="display:none">Portfolio</a>
+<section class="callout">
+  <div class="callout-main">
+    <div class="callout-head">
+      <span class="eyebrow">On view open call</span>
+      <h1>Show one work.<br>Win a t-shirt.</h1>
     </div>
-    <div class="meta" id="hero-meta"></div>
+    <div class="tee"><img src="/img/gis-tee-front-back.png" width="1000" height="1000" alt="Get Inspired Society t-shirt in black, front and back"></div>
+    <div class="callout-actions">
+      <a class="btn" href="/submit">Submit your work &rarr;</a>
+      <a class="callout-link" href="/on-view/leaderboard">See the leaderboard</a>
+    </div>
   </div>
+  <ul class="facts">
+    <li class="fact is-pending" id="fact-submissions"><span class="eyebrow">Submissions</span><span class="fact-value" id="fact-submissions-value">&nbsp;</span><span class="fact-detail" id="fact-submissions-detail">&nbsp;</span></li>
+    <li class="fact"><span class="eyebrow">On view</span><span class="fact-value">Seven days</span><span class="fact-detail">Every submission is reviewed first.</span></li>
+    <li class="fact"><span class="eyebrow">Prize</span><span class="fact-value">One t-shirt</span><span class="fact-detail">For the most viewed work of the round.</span></li>
+  </ul>
 </section>
 
 <section class="claim rv">
@@ -149,7 +169,7 @@ a{color:inherit;text-decoration:none}
 
 <section class="wall" id="wall" style="display:none">
   <header>
-    <span class="eyebrow">Previously on view</span>
+    <span class="eyebrow">Currently on view</span>
     <a class="eyebrow more" href="/on-view">See all &rarr;</a>
   </header>
   <div class="grid" id="prev-grid"></div>
@@ -198,26 +218,6 @@ a{color:inherit;text-decoration:none}
 <!-- @include: footer -->
 
 <script>
-function adaptNavMark(imgEl) {
-  try {
-    var mark = document.querySelector('nav .mark');
-    if (!mark) return;
-    var vw = innerWidth, vh = innerHeight;
-    var sw = 160, sh = 120;
-    var iw = imgEl.naturalWidth, ih = imgEl.naturalHeight;
-    if (!iw || !ih) return;
-    var scale = Math.max(vw / iw, vh / ih);
-    var c = document.createElement('canvas');
-    c.width = sw; c.height = sh;
-    var ctx = c.getContext('2d');
-    ctx.drawImage(imgEl, (vw - iw * scale) / 2, (vh - ih * scale) / 2, iw * scale, ih * scale);
-    var d = ctx.getImageData(0, 0, sw, sh).data;
-    var lum = 0, n = d.length / 4;
-    for (var i = 0; i < d.length; i += 4) lum += 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-    mark.classList.toggle('mark-dark', (lum / n) > 128);
-  } catch(e) { /* CORS of andere fout — behoud wit standaard */ }
-}
-
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const io = new IntersectionObserver((entries)=>{
   entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('is-in'); io.unobserve(e.target); }});
@@ -243,49 +243,13 @@ if(room && !reduce){
   });
 }
 
-// Dynamic hero + previous grid
+// Currently on view: the works on the wall right now (up to 4)
 (function(){
-  var heroLabel   = document.getElementById('hero-label');
-  var heroArtist  = document.getElementById('hero-artist');
-  var heroMeta    = document.getElementById('hero-meta');
-  var heroPlate   = document.getElementById('hero-plate');
   var wallSection = document.getElementById('wall');
   var grid        = document.getElementById('prev-grid');
 
-  function renderHero(w) {
-    if (!w) return;
-    if (heroLabel)  heroLabel.textContent  = 'On view';
-    if (heroArtist) heroArtist.textContent = w.artist || '';
-    if (heroMeta)   heroMeta.textContent   = (w.title && w.title !== w.artist) ? w.title : '';
-    var pp = document.getElementById('hero-portfolio');
-    if (pp) {
-      if (w.portfolio && w.portfolio !== '#') {
-        pp.href = w.portfolio;
-        pp.style.display = '';
-      } else {
-        pp.style.display = 'none';
-      }
-    }
-    if (heroPlate && w.image) {
-      var img = new Image();
-      img.onload = function() {
-        heroPlate.style.backgroundImage    = "url('" + w.image.replace(/'/g,'%27') + "')";
-        heroPlate.style.backgroundSize     = 'cover';
-        heroPlate.style.backgroundPosition = 'center';
-        adaptNavMark(img);
-      };
-      img.src = w.image;
-    }
-    try { sessionStorage.setItem('gis_hero', JSON.stringify({artist:w.artist,title:w.title,image:w.image,slug:w.slug,portfolio:w.portfolio})); } catch(e){}
-  }
-
-  try {
-    var cached = sessionStorage.getItem('gis_hero');
-    if (cached) renderHero(JSON.parse(cached));
-  } catch(e){}
-
-  function renderPrevGrid(prev) {
-    if (!prev || prev.length < 2) {
+  function renderGrid(prev) {
+    if (!prev || !prev.length) {
       if (wallSection) wallSection.style.display = 'none';
       return;
     }
@@ -317,17 +281,47 @@ if(room && !reduce){
     wallSection.style.display = '';
   }
 
+  // /api/works returns every approved, non-archived work, which is exactly
+  // what /on-view rotates through: those are the works on the wall now.
   fetch('/api/works')
     .then(function(r){ return r.json(); })
-    .then(function(data){
-      var cur  = data.find(function(w){ return w.current; });
-      var prev = data.filter(function(w){ return !w.current; });
-      if (cur) renderHero(cur);
-      renderPrevGrid(prev);
-    })
+    .then(renderGrid)
     .catch(function(){
       if (wallSection) wallSection.style.display = 'none';
     });
+})();
+// Open call hero: the Submissions cell comes from the active round (UTC).
+// Until the fetch settles the cell keeps its space (no layout shift); with no
+// active round, or on any failure, only that cell is hidden.
+(function(){
+  var cell   = document.getElementById('fact-submissions');
+  var value  = document.getElementById('fact-submissions-value');
+  var detail = document.getElementById('fact-submissions-detail');
+  if (!cell) return;
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function hideCell() { cell.hidden = true; }
+
+  function formatRange(s, e) {
+    var sameYear = s.getUTCFullYear() === e.getUTCFullYear();
+    if (sameYear && s.getUTCMonth() === e.getUTCMonth()) {
+      return s.getUTCDate() + ' to ' + e.getUTCDate() + ' ' + MONTHS[e.getUTCMonth()];
+    }
+    var y = function(d){ return sameYear ? '' : ' ' + d.getUTCFullYear(); };
+    return s.getUTCDate() + ' ' + MONTHS[s.getUTCMonth()] + y(s) + ' to ' + e.getUTCDate() + ' ' + MONTHS[e.getUTCMonth()] + y(e);
+  }
+
+  fetch('/api/on-view/round')
+    .then(function(r){ if (!r.ok) throw new Error('round'); return r.json(); })
+    .then(function(round){
+      if (!round) { hideCell(); return; }
+      var s = new Date(round.starts_at), e = new Date(round.ends_at);
+      if (isNaN(s) || isNaN(e)) { hideCell(); return; }
+      value.textContent  = formatRange(s, e);
+      detail.textContent = 'Round ' + round.round_number + ', ' + s.getUTCFullYear() + '. All dates in UTC.';
+      cell.classList.remove('is-pending');
+    })
+    .catch(hideCell);
 })();
 </script>
 </body>
