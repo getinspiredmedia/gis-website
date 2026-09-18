@@ -132,6 +132,17 @@ function roundStats(roundNumber) {
   return { approvedCount: row.n, ready };
 }
 
+// Fisher-Yates, in place on a copy — used to hide the view_count ranking
+// behind the public leaderboard (see GET /api/on-view/leaderboard).
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 // ── Auto-archive ──────────────────────────────────────────────────────────────
 
 // The UPDATE only ever matches rows still in status='previous', so a work is
@@ -354,6 +365,23 @@ app.get('/api/works/:slug', (req, res) => {
   ).get(req.params.slug);
   if (!row) return res.status(404).json({ error: 'Not found.' });
   res.json({ ...row, current: row.status === 'current' });
+});
+
+// Public top-10 of the active round for the "in the running" leaderboard
+// (public/on-view/leaderboard/index.html). Deliberately excludes view_count
+// from the response entirely and shuffles the order server-side — the
+// business requirement is a public standings page that keeps the suspense,
+// so nothing in the payload may reveal the ranking behind it. No active
+// round: empty array, not a 404 — the page renders a quiet empty state.
+app.get('/api/on-view/leaderboard', (req, res) => {
+  const roundNumber = currentRoundNumber();
+  if (roundNumber === null) return res.json([]);
+  const rows = db.prepare(
+    "SELECT slug, title, artist, image_url AS image FROM works " +
+    "WHERE round_number = ? AND review_status = 'approved' " +
+    "ORDER BY view_count DESC LIMIT 10"
+  ).all(roundNumber);
+  res.json(shuffle(rows));
 });
 
 app.post('/api/contact', async (req, res) => {
