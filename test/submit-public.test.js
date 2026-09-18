@@ -178,6 +178,29 @@ async function run() {
     }
     console.log('PASS - /submit/:token redirects to /submit for any token value, old shared links keep working');
 
+    // Phone photos are stored as landscape pixels plus an EXIF orientation
+    // flag; the pipeline must bake that rotation in (the webp output drops
+    // EXIF), otherwise a portrait photo is stored sideways.
+    {
+      const exifJpeg = await sharp({ create: { width: 1600, height: 900, channels: 3, background: { r: 40, g: 90, b: 160 } } })
+        .jpeg().withMetadata({ orientation: 6 }).toBuffer();
+      const form = new FormData();
+      form.append('name', 'Exif Artist');
+      form.append('email', 'exif-artist@example.com');
+      form.append('portfolio', 'https://example.com');
+      form.append('work_title', 'Exif Work');
+      form.append('hp', '');
+      form.append('captcha', 'test-captcha-token');
+      form.append('image', new Blob([exifJpeg], { type: 'image/jpeg' }), 'portrait.jpg');
+      const r = await fetch(`${BASE}/api/submit`, { method: 'POST', body: form });
+      const j = await r.json();
+      assert(r.status === 200 && j.ok, `an EXIF-oriented JPEG upload is accepted — got ${r.status} ${JSON.stringify(j)}`);
+      const stored = workRowByEmail('exif-artist@example.com');
+      const meta = await sharp(fs.readFileSync(path.join(UPLOAD_DIR, path.basename(stored.image_url)))).metadata();
+      assert(meta.width === 900 && meta.height === 1600, `a portrait phone photo (EXIF orientation 6) is stored upright as 900x1600, not sideways — got ${meta.width}x${meta.height}`);
+    }
+    console.log('PASS - an upload with EXIF orientation is stored upright (portrait stays portrait)');
+
     // Rate limiter — run last: it deliberately exhausts the per-IP quota for
     // the rest of this test run, so nothing below it can rely on a fresh one.
     {

@@ -277,6 +277,7 @@ async function run() {
         'the approval email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
       assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
         'the approval email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
+      assert(!/railway/i.test(mail.html), 'the approval email contains no Railway domain — got ' + mail.html);
     }
     console.log('PASS - approving a work emails the maker with a working /work/:slug link');
 

@@ -142,9 +142,12 @@ main {
 
 /* ── Work image ── */
 .work-image {
+  display: block;
   width: 100%;
-  aspect-ratio: 16/9;
-  background: var(--band) center/cover no-repeat;
+  height: auto;
+  max-height: 80vh;
+  object-fit: contain;
+  background: var(--band);
   margin-bottom: 40px;
 }
 
@@ -280,7 +283,7 @@ footer {
       : '';
 
     content.innerHTML =
-      '<div class="work-image reveal" id="img" style="background-image:url(\'' + esc(work.image) + '\')" role="img" aria-label="' + esc(work.title) + ' by ' + esc(work.artist) + '"></div>' +
+      '<img class="work-image reveal" id="img" src="' + esc(work.image) + '" alt="' + esc(work.title) + ' by ' + esc(work.artist) + '">' +
       '<p class="status ' + statusClass + ' reveal">' + esc(statusLabel) + '</p>' +
       '<h1 class="work-title reveal">' + esc(work.title) + '</h1>' +
       '<p class="work-artist reveal">' + esc(work.artist) + '</p>' +
