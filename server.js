@@ -455,7 +455,7 @@ app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
       }),
       sendEmail({
         to:      email,
-        subject: 'Your work is in — Get Inspired Society',
+        subject: 'Your work is in, Get Inspired Society',
         html:    `<p>${name},</p><p>We have received your work "<b>${title}</b>".</p><p>We will let you know when it goes on the wall.</p><p>Creative regards,<br>Get Inspired Society</p>`,
       }),
     ]);
@@ -525,7 +525,7 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
       }),
       sendEmail({
         to:      email.trim(),
-        subject: 'Your work is in — Get Inspired Society',
+        subject: 'Your work is in, Get Inspired Society',
         html:    `<p>Hi ${name},</p><p>We have received your work "<b>${title}</b>". We will let you know when it goes on the wall.</p><p>Creative regards,<br>Get Inspired Society</p>`,
       }),
     ]);
@@ -584,9 +584,12 @@ app.post('/api/admin/works/:id/approve', requireAdmin, async (req, res) => {
   if (row.email) {
     await sendEmail({
       to:      row.email,
-      subject: 'Your work is on the wall — Get Inspired Society',
+      subject: 'Your work is on the wall, Get Inspired Society',
       html:    `<p>${row.artist},</p><p>"${row.title}" is now on the wall.<br><a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
              + `<p>It stays up for seven days.</p>`
+             + `<p>This week's wall is also a contest. The work with the most views on its page by the end of the week wins a t-shirt. Sharing your link is one way to get more views.</p>`
+             + `<p>Example: "My work &quot;${row.title}&quot; is on the wall at Get Inspired Society this week. ${SITE_URL}/work/${row.slug}"</p>`
+             + `<p>Suggested hashtag: #GetInspiredSociety</p>`
              + `<p>Creative regards,<br>Get Inspired Society</p>`,
     });
   }
@@ -601,7 +604,7 @@ app.post('/api/admin/works/:id/reject', requireAdmin, async (req, res) => {
   if (row.email) {
     await sendEmail({
       to:      row.email,
-      subject: 'Your submission — Get Inspired Society',
+      subject: 'Your submission, Get Inspired Society',
       html:    `<p>${row.artist},</p><p>Thanks for sharing your work. We're not able to feature it on On View this time. We'd love to see what you submit next.</p>`
              + `<p>Creative regards,<br>Get Inspired Society</p>`,
     });

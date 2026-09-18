@@ -215,11 +215,13 @@ async function run() {
     // The confirmation email matches the pending reality: no premature
     // share link, and ends with the standard maker-facing sign-off.
     {
-      const mail = emailRequests.find(m => m.subject === 'Your work is in — Get Inspired Society' && m.html.includes('Pending Test Work'));
+      const mail = emailRequests.find(m => m.subject === 'Your work is in, Get Inspired Society' && m.html.includes('Pending Test Work'));
       assert(!!mail, 'a confirmation email was sent for the /hand-in submission');
       assert(!mail.html.includes(`${SITE_URL}/work/`), 'the confirmation email does not link to a not-yet-live work page — got ' + mail.html);
       assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
         'the confirmation email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+      assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
+        'the confirmation email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
     }
     console.log('PASS - the /hand-in confirmation email matches the pending status and has the standard sign-off');
 
@@ -259,14 +261,22 @@ async function run() {
 
     // Approve triggers an email to the maker with a working /work/:slug link
     {
-      const mail = emailRequests.find(m => m.subject === 'Your work is on the wall — Get Inspired Society');
+      const mail = emailRequests.find(m => m.subject === 'Your work is on the wall, Get Inspired Society');
       assert(!!mail, 'an approval email was sent — got subjects: ' + JSON.stringify(emailRequests.map(m => m.subject)));
       assert(mail.to === work.email || (Array.isArray(mail.to) && mail.to.includes(work.email)),
         'the approval email is addressed to the maker — got ' + JSON.stringify(mail.to));
       assert(mail.html.includes(`${SITE_URL}/work/${work.slug}`),
         'the approval email links to the live /work/:slug page — got ' + mail.html);
+      assert(mail.html.includes("This week's wall is also a contest. The work with the most views on its page by the end of the week wins a t-shirt. Sharing your link is one way to get more views."),
+        'the approval email explains the contest — got ' + mail.html);
+      assert(mail.html.includes(`My work &quot;${work.title}&quot; is on the wall at Get Inspired Society this week. ${SITE_URL}/work/${work.slug}`),
+        'the approval email includes the ready-to-share example text with the real title and link — got ' + mail.html);
+      assert(mail.html.includes('Suggested hashtag: #GetInspiredSociety'),
+        'the approval email suggests the #GetInspiredSociety hashtag — got ' + mail.html);
       assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
         'the approval email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+      assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
+        'the approval email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
     }
     console.log('PASS - approving a work emails the maker with a working /work/:slug link');
 
@@ -315,7 +325,7 @@ async function run() {
 
     // Reject triggers an email to the maker with the agreed text — no reason given
     {
-      const mail = emailRequests.find(m => m.subject === 'Your submission — Get Inspired Society');
+      const mail = emailRequests.find(m => m.subject === 'Your submission, Get Inspired Society');
       assert(!!mail, 'a reject email was sent — got subjects: ' + JSON.stringify(emailRequests.map(m => m.subject)));
       assert(mail.to === rejected.email || (Array.isArray(mail.to) && mail.to.includes(rejected.email)),
         'the reject email is addressed to the maker — got ' + JSON.stringify(mail.to));
@@ -323,6 +333,8 @@ async function run() {
         'the reject email uses the agreed text exactly — got ' + mail.html);
       assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
         'the reject email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+      assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
+        'the reject email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
     }
     console.log('PASS - rejecting a work emails the maker with the agreed text and standard sign-off, no reason given');
 
@@ -370,11 +382,13 @@ async function run() {
     console.log('PASS - a new /api/submit submission gets review_status=pending, same as /hand-in');
 
     {
-      const mail = emailRequests.find(m => m.subject === 'Your work is in — Get Inspired Society' && m.html.includes('Submit Test Work'));
+      const mail = emailRequests.find(m => m.subject === 'Your work is in, Get Inspired Society' && m.html.includes('Submit Test Work'));
       assert(!!mail, 'a confirmation email was sent for the /api/submit submission');
       assert(!mail.html.includes(`${SITE_URL}/work/`), 'the confirmation email does not link to a not-yet-live work page — got ' + mail.html);
       assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
         'the confirmation email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+      assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
+        'the confirmation email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
     }
     console.log('PASS - the /api/submit confirmation email matches the pending status and has the standard sign-off');
 
