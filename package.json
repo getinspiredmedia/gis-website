@@ -16,6 +16,7 @@
     "test:review-status": "node test/review-status.test.js",
     "test:submit-public": "node test/submit-public.test.js",
     "test:rounds": "node test/rounds.test.js",
+    "test:leaderboard": "node test/leaderboard.test.js",
     "start": "exec node server.js"
   },
   "engines": {
