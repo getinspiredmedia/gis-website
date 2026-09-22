@@ -255,7 +255,7 @@ if(room && !reduce){
     }
     if (!grid) return;
     grid.innerHTML = '';
-    prev.slice(0,4).forEach(function(w) {
+    prev.forEach(function(w) {
       var a = document.createElement('a');
       a.href = '/work/' + w.slug;
       a.className = 'cell';
@@ -281,9 +281,9 @@ if(room && !reduce){
     wallSection.style.display = '';
   }
 
-  // /api/works returns every approved, non-archived work, which is exactly
-  // what /on-view rotates through: those are the works on the wall now.
-  fetch('/api/works')
+  // Shuffled server-side (see GET /api/on-view/tiles) so a fixed order never
+  // structurally favours the same works with more views.
+  fetch('/api/on-view/tiles')
     .then(function(r){ return r.json(); })
     .then(renderGrid)
     .catch(function(){
