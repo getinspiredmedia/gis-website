@@ -384,6 +384,20 @@ app.get('/api/on-view/leaderboard', (req, res) => {
   res.json(shuffle(rows));
 });
 
+// Shuffled selection of up to 4 works for the homepage "Currently on view"
+// tiles. Same pattern as the leaderboard above: query the whole eligible set
+// (approved, not archived — exactly what /on-view rotates through), shuffle
+// server-side, slice after. A fixed "newest first" order would structurally
+// favour those works with more views, which is unfair now that views decide
+// the round winner, and it doesn't fit "No algorithm decides what's here."
+app.get('/api/on-view/tiles', (req, res) => {
+  const rows = db.prepare(
+    "SELECT slug, title, artist, image_url AS image FROM works " +
+    "WHERE status != 'archived' AND review_status = 'approved'"
+  ).all();
+  res.json(shuffle(rows).slice(0, 4));
+});
+
 // The active round's number and window for the homepage open-call hero. Only
 // those three fields, ISO 8601 in UTC; null (not a 404) when no round is
 // active, so the hero can just hide that one cell.
