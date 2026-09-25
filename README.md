@@ -29,6 +29,10 @@ npm start
 
 De homepage toont tijdelijk een oproep om mee te doen (`build/pages/index.html`, sectie `.callout`) in plaats van de hero met de current selection van On View. De oude hero staat ongewijzigd in `build/archive/hero-current-selection.html` (wordt niet gebouwd, met terugzetinstructie bovenaan).
 
+## Ronde-winnaar
+
+De winnaar van een ronde wordt handmatig gekozen, niet automatisch bepaald op views. Zodra een ronde `ready_for_winner` is, kiest André in `/admin` (tab Rounds) een werk uit de goedgekeurde werken van die ronde en bevestigt; daarmee wordt de winnaar eenmalig vastgelegd.
+
 ## Deployment
 
 Gedeployed via Railway. Auto-deploy op push naar `master`.
