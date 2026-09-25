@@ -7,16 +7,15 @@
  * winner" once it has at least one approved work and the most recent
  * approved_at among that round's approved works is 7+ days in the past;
  * a still-pending work in the round is excluded from that aggregate
- * entirely, so it never blocks readiness. The winner is the approved
- * work with the highest deduplicated view_count, tied broken by earliest
- * created_at. POST /api/admin/rounds/:round_number/announce-winner only
- * succeeds on a ready, not-yet-announced round, and records
- * winner_work_id + announced_at exactly once.
+ * entirely, so it never blocks readiness. The winner is chosen by hand:
+ * POST /api/admin/rounds/:round_number/announce-winner takes { work_id } and
+ * only succeeds on a ready, not-yet-announced round, for an approved work
+ * that belongs to that round; it records winner_work_id + announced_at
+ * exactly once. Nothing is derived from view_count.
  *
- * Two assumptions applied here without explicit confirmation from André
- * (see CLAUDE.md "Rondes"): the tiebreak on equal view_count is earliest
- * created_at, and there is no admin UI to create/edit rounds — only the
- * documented SQL example.
+ * One assumption applied here without explicit confirmation from André
+ * (see CLAUDE.md "Rondes"): there is no admin UI to create/edit rounds —
+ * only the documented SQL example.
  */
 const { spawn } = require('child_process');
 const path = require('path');
@@ -89,6 +88,22 @@ async function apiSubmit(email, title, imageBuf) {
 function workByTitle(title) {
   const db = new Database(DB_PATH);
   const row = db.prepare('SELECT * FROM works WHERE title=?').get(title);
+  db.close();
+  return row;
+}
+
+async function announce(adminToken, round, body) {
+  const r = await fetch(`${BASE}/api/admin/rounds/${round}/announce-winner`, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {}),
+  });
+  return { status: r.status, json: await r.json() };
+}
+
+function roundRow(n) {
+  const db = new Database(DB_PATH);
+  const row = db.prepare('SELECT winner_work_id, announced_at FROM rounds WHERE round_number=?').get(n);
   db.close();
   return row;
 }
@@ -190,23 +205,31 @@ async function run() {
     }
     console.log('PASS - a round becomes ready once its most recent approval is 7+ days old');
 
-    // ── winner determination, including a tie ───────────────────────────
-    // Round 20: two approved works tied on view_count; earliest created_at wins.
+    // ── manual winner selection ─────────────────────────────────────────
+    // Round 20 is ready and has: the most viewed approved work, a less viewed
+    // approved work that is already archived (the one we will pick), a pending
+    // work and a rejected work. Round 30 is not ready (its only approval is 1
+    // day old).
     {
       const db = new Database(DB_PATH);
       db.prepare("INSERT INTO rounds (round_number, starts_at, ends_at) VALUES (20, datetime('now','-30 days'), datetime('now','-20 days'))").run();
-      db.prepare(
+      const ins = db.prepare(
         "INSERT INTO works (slug,title,artist,portfolio,image_url,status,review_status,round_number,created_at,approved_at,view_count) " +
-        "VALUES (?,?,?,?,?,?,?,?,datetime('now','-15 days'),datetime('now','-8 days'),10)"
-      ).run('round20-earliest', 'Round 20 Earliest', 'Artist Early', '#', '/uploads/e.webp', 'previous', 'approved', 20);
-      db.prepare(
-        "INSERT INTO works (slug,title,artist,portfolio,image_url,status,review_status,round_number,created_at,approved_at,view_count) " +
-        "VALUES (?,?,?,?,?,?,?,?,datetime('now','-14 days'),datetime('now','-8 days'),10)"
-      ).run('round20-later', 'Round 20 Later', 'Artist Late', '#', '/uploads/l.webp', 'previous', 'approved', 20);
+        "VALUES (?,?,?,?,?,?,?,?,datetime('now','-15 days'),?,?)"
+      );
+      ins.run('round20-top', 'Round 20 Top', 'Artist Top', '#', '/uploads/t.webp', 'previous', 'approved', 20, db.prepare("SELECT datetime('now','-8 days') AS d").get().d, 10);
+      ins.run('round20-chosen', 'Round 20 Chosen', 'Artist Chosen', '#', '/uploads/c.webp', 'archived', 'approved', 20, db.prepare("SELECT datetime('now','-9 days') AS d").get().d, 3);
+      ins.run('round20-pending', 'Round 20 Pending', 'Artist Pending', '#', '/uploads/p.webp', 'previous', 'pending', 20, null, 50);
+      ins.run('round20-rejected', 'Round 20 Rejected', 'Artist Rejected', '#', '/uploads/r.webp', 'previous', 'rejected', 20, null, 60);
       db.close();
     }
+    const top = workByTitle('Round 20 Top');
+    const chosen = workByTitle('Round 20 Chosen');
+    const pendingWork = workByTitle('Round 20 Pending');
+    const rejectedWork = workByTitle('Round 20 Rejected');
+    const otherRoundWork = workByTitle('Round 10 Old Approval');
 
-    // Not ready round (10 before its recent-approval aging, use round 30 fresh instead) rejects the action.
+    // A round that is not ready rejects the action, even for a valid work of its own.
     {
       const db = new Database(DB_PATH);
       db.prepare("INSERT INTO rounds (round_number, starts_at, ends_at) VALUES (30, datetime('now','-30 days'), datetime('now','-20 days'))").run();
@@ -217,41 +240,55 @@ async function run() {
       db.close();
     }
     {
-      const r = await fetch(`${BASE}/api/admin/rounds/30/announce-winner`, { method: 'POST', headers: { Authorization: 'Bearer ' + adminToken } });
-      const j = await r.json();
-      assert(r.status === 400 && j.error, `announce-winner on a not-ready round is rejected — got ${r.status} ${JSON.stringify(j)}`);
-    }
-    {
-      const db = new Database(DB_PATH);
-      const round = db.prepare('SELECT winner_work_id, announced_at FROM rounds WHERE round_number=30').get();
-      db.close();
+      // Even a valid, approved work of the round itself is refused while the round is ongoing.
+      const fresh = workByTitle('Round 30 Fresh');
+      const { status, json } = await announce(adminToken, 30, { work_id: fresh.id });
+      assert(status === 400 && json.error, `choosing a winner for a round that is still ongoing is rejected — got ${status} ${JSON.stringify(json)}`);
+      const round = roundRow(30);
       assert(!round.winner_work_id && !round.announced_at, 'a rejected announce-winner call sets nothing');
     }
-    console.log('PASS - announce-winner refuses to act on a round that is not ready yet, and sets nothing');
-
-    // Announce the winner for the ready, tied round 20.
-    let winnerJson;
     {
-      const r = await fetch(`${BASE}/api/admin/rounds/20/announce-winner`, { method: 'POST', headers: { Authorization: 'Bearer ' + adminToken } });
-      winnerJson = await r.json();
-      assert(r.status === 200 && winnerJson.ok, `announce-winner on a ready round succeeds — got ${r.status} ${JSON.stringify(winnerJson)}`);
+      const { status } = await announce(adminToken, 9999, { work_id: top.id });
+      assert(status === 404, `an unknown round is a 404 — got ${status}`);
     }
-    assert(winnerJson.winner.slug === 'round20-earliest', `on a tied view_count, the earliest created_at wins — got ${winnerJson.winner.slug}`);
+    console.log('PASS - choosing a winner for a round that is still ongoing (or does not exist) is refused, and sets nothing');
+
+    // On the ready round 20, every invalid choice is refused and sets nothing.
     {
-      const db = new Database(DB_PATH);
-      const round = db.prepare('SELECT winner_work_id, announced_at FROM rounds WHERE round_number=20').get();
-      const winnerRow = db.prepare('SELECT slug FROM works WHERE id=?').get(round.winner_work_id);
-      db.close();
+      const attempts = [
+        ['no work_id at all', {}],
+        ['a non-numeric work_id', { work_id: 'abc' }],
+        ['a work id that does not exist', { work_id: 999999 }],
+        ['an approved work of another round', { work_id: otherRoundWork.id }],
+        ['a pending work of the round', { work_id: pendingWork.id }],
+        ['a rejected work of the round', { work_id: rejectedWork.id }],
+      ];
+      for (const [label, body] of attempts) {
+        const { status, json } = await announce(adminToken, 20, body);
+        assert(status === 400 && json.error, `choosing ${label} is refused — got ${status} ${JSON.stringify(json)}`);
+        const round = roundRow(20);
+        assert(!round.winner_work_id && !round.announced_at, `a refused choice (${label}) sets nothing`);
+      }
+    }
+    console.log('PASS - a work outside the round, a pending/rejected work, an unknown id or no choice at all is refused, and sets nothing');
+
+    // Choose a winner on the ready round 20: the less viewed, archived work, not the most viewed one.
+    {
+      assert(top.view_count > chosen.view_count, 'fixture: the chosen work is deliberately not the most viewed');
+      const { status, json } = await announce(adminToken, 20, { work_id: chosen.id });
+      assert(status === 200 && json.ok, `choosing a winner on a ready round succeeds — got ${status} ${JSON.stringify(json)}`);
+      assert(json.winner.slug === 'round20-chosen', `the response names the chosen work, not the highest viewed — got ${json.winner.slug}`);
+      const round = roundRow(20);
+      assert(round.winner_work_id === chosen.id, `winner_work_id is the chosen work — got ${round.winner_work_id}`);
       assert(!!round.announced_at, 'announcing the winner records announced_at');
-      assert(winnerRow.slug === 'round20-earliest', 'winner_work_id points at the correctly tie-broken work');
     }
-    console.log('PASS - announce-winner picks the earliest-created work on a tied view_count, and records winner_work_id + announced_at');
+    console.log('PASS - a chosen (even archived, less viewed) approved work of a ready round becomes the winner: winner_work_id + announced_at are set');
 
-    // A second announce-winner call on the same round is refused.
+    // A second call on the same round is refused and does not change the winner.
     {
-      const r = await fetch(`${BASE}/api/admin/rounds/20/announce-winner`, { method: 'POST', headers: { Authorization: 'Bearer ' + adminToken } });
-      const j = await r.json();
-      assert(r.status === 409 && j.error, `a second announce-winner call on an already-announced round is refused — got ${r.status} ${JSON.stringify(j)}`);
+      const { status, json } = await announce(adminToken, 20, { work_id: top.id });
+      assert(status === 409 && json.error, `a second announce-winner call on an already-announced round is refused — got ${status} ${JSON.stringify(json)}`);
+      assert(roundRow(20).winner_work_id === chosen.id, 'the refused second call leaves the winner unchanged');
     }
     console.log('PASS - a round\'s winner is recorded exactly once; a repeat call is refused');
 
@@ -260,7 +297,7 @@ async function run() {
       const rows = await (await fetch(`${BASE}/api/admin/rounds`, { headers: { Authorization: 'Bearer ' + adminToken } })).json();
       const round20 = rows.find(r => r.round_number === 20);
       assert(round20.status === 'winner_announced', `round 20 shows status winner_announced — got "${round20.status}"`);
-      assert(round20.winner && round20.winner.slug === 'round20-earliest', 'round 20 lists the correct winner in the admin overview');
+      assert(round20.winner && round20.winner.slug === 'round20-chosen', 'round 20 lists the chosen winner in the admin overview');
     }
     console.log('PASS - the admin rounds overview reflects the announced winner');
 
