@@ -37,6 +37,10 @@ De winnaar van een ronde wordt handmatig gekozen, niet automatisch bepaald op vi
 
 In dezelfde tab heeft elke ronde een uitklapbaar intern "Views leaderboard": alle goedgekeurde werken van die ronde met exacte views, meeste eerst. Dit is alleen voor de admin (`GET /api/admin/rounds/:round_number/leaderboard`, admin-sessie vereist) en staat los van het publieke `/on-view/leaderboard`, dat geshuffeld blijft en geen aantallen toont.
 
+### Sluitingsmail
+
+Zodra `ends_at` van een ronde is gepasseerd, krijgt elke inzender met een goedgekeurd werk in die ronde één mail ("Round N is closed"). `rounds.closed_notification_sent_at` voorkomt dat de mail dubbel gaat; de check draait bij opstart en elk uur. Los van de winnaarsactie en van de archiefmail per werk.
+
 ## Deployment
 
 Gedeployed via Railway. Auto-deploy op push naar `master`.

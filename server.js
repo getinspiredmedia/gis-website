@@ -108,6 +108,8 @@ db.exec(`
     announced_at   TEXT
   );
 `);
+// Set once the "round closed" mail has gone out (see notifyClosedRounds()).
+try { db.exec("ALTER TABLE rounds ADD COLUMN closed_notification_sent_at TEXT"); } catch {}
 
 // The round whose [starts_at, ends_at) window covers this moment, or null if
 // none — assigned once at submission time (created_at), never reassigned.
@@ -254,9 +256,9 @@ function allowWorkView(ip) {
 
 const resend = RESEND_KEY ? new Resend(RESEND_KEY) : null;
 
-async function sendEmail({ to, subject, html }) {
+async function sendEmail({ to, subject, html, text }) {
   if (!resend) { console.warn('[email] Resend not configured — skipped:', subject); return; }
-  try { await resend.emails.send({ from: FROM_EMAIL, to, subject, html }); }
+  try { await resend.emails.send({ from: FROM_EMAIL, to, subject, ...(html ? { html } : { text }) }); }
   catch (e) { console.error('[email] send error:', e.message); }
 }
 
@@ -264,6 +266,55 @@ async function sendEmail({ to, subject, html }) {
 // (and the resend client it closes over) is defined above.
 archiveOldWorks();
 const archiveInterval = setInterval(archiveOldWorks, 60 * 60 * 1000);
+
+// ── Round closed mail ─────────────────────────────────────────────────────────
+
+// The greeting uses the first word of the stored name; a single-word name
+// (mononym, studio) is used whole, an empty one falls back to "there".
+function firstName(name) {
+  return (name || '').trim().split(/\s+/)[0] || 'there';
+}
+
+// Independent of announce-winner and of the per-work archive mail. The UPDATE
+// claims every closed, not yet notified round in one step, so a round is
+// notified exactly once — a restart or the next hourly run matches nothing,
+// same idea as the status transition in archiveOldWorks(). Recipients are the
+// approved works of the round (any lifecycle status) with an email address,
+// one mail per address; works without one are skipped.
+async function notifyClosedRounds() {
+  const rounds = db.prepare(
+    "UPDATE rounds SET closed_notification_sent_at=datetime('now') WHERE closed_notification_sent_at IS NULL AND ends_at <= datetime('now') RETURNING round_number"
+  ).all();
+  for (const { round_number } of rounds) {
+    const works = db.prepare(
+      "SELECT artist, email FROM works WHERE round_number=? AND review_status='approved' AND TRIM(email) != '' ORDER BY id"
+    ).all(round_number);
+    const seen = new Set();
+    let sent = 0;
+    for (const w of works) {
+      const to = w.email.trim();
+      if (seen.has(to.toLowerCase())) continue;
+      seen.add(to.toLowerCase());
+      sent++;
+      await sendEmail({
+        to,
+        subject: `Round ${round_number} is closed`,
+        text: [
+          `Hi ${firstName(w.artist)},`,
+          `Round ${round_number} of the On View open call closed today.`,
+          'Every submission gets its full seven days on the wall before a winner is picked. The round winner is announced once the last approved work from this round has had its full week of views.',
+          "If you win, you'll hear from us directly, and the winning work is shown on the site.",
+          `Keep showing your work. Submit again: ${SITE_URL}/submit`,
+          'Thank you for showing your work.',
+        ].join('\n\n'),
+      });
+    }
+    console.log(`[rounds] round ${round_number} closed, mailed ${sent} maker(s)`);
+  }
+}
+
+notifyClosedRounds();
+const closedRoundsInterval = setInterval(notifyClosedRounds, 60 * 60 * 1000);
 
 // ── View counting ────────────────────────────────────────────────────────────
 // A view counts once per visitor per work per 24h. "Visitor" is a salted hash
@@ -891,6 +942,7 @@ function shutdown(signal) {
   }, 10000);
 
   clearInterval(archiveInterval);
+  clearInterval(closedRoundsInterval);
   clearInterval(viewCleanupInterval);
 
   httpServer.close((err) => {

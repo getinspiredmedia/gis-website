@@ -21,6 +21,7 @@
     "test:on-view-tiles": "node test/on-view-tiles.test.js",
     "test:previous-winner": "node test/previous-winner.test.js",
     "test:admin-round-leaderboard": "node test/admin-round-leaderboard.test.js",
+    "test:round-closed-email": "node test/round-closed-email.test.js",
     "start": "exec node server.js"
   },
   "engines": {
