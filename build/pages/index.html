@@ -41,6 +41,36 @@ a{color:inherit;text-decoration:none}
 .fact-detail{display:block;margin-top:6px;font-size:12px;line-height:1.5;color:rgba(255,255,255,.66)}
 .fact.is-pending{visibility:hidden}
 .fact[hidden]{display:none}
+.callout.is-pending .callout-main,.callout.is-pending .facts{visibility:hidden}
+
+/* previous round winner: shown next to (desktop) or below (mobile) the open call once a winner has been announced */
+.winner{display:none;position:relative;background:#1c1f29;color:#fff}
+.has-winner .winner{display:block}
+.winner img{display:block;width:100%;height:auto;max-height:80svh;object-fit:contain}
+.winner-top,.winner-bottom{position:absolute;left:0;right:0;padding:16px 18px}
+.winner-top{top:0;background:linear-gradient(rgba(11,12,16,.75),transparent)}
+.winner-top .eyebrow{color:rgba(255,255,255,.78)}
+.winner-bottom{bottom:0;padding-top:48px;background:linear-gradient(transparent,rgba(11,12,16,.88) 65%)}
+.winner-title{display:block;font-size:22px;font-weight:700;line-height:1.05;letter-spacing:-.02em;font-variation-settings:'wdth' 112}
+.winner-artist{display:block;margin-top:6px;font-size:13px;color:rgba(255,255,255,.78)}
+.winner-artist:empty{display:none}
+.has-winner .winner{margin:32px 0 40px}
+@media(min-width:861px){
+  .callout.has-winner{display:grid;grid-template-columns:minmax(0,680fr) minmax(0,460fr);grid-template-rows:1fr auto;grid-template-areas:"main winner" "facts winner";column-gap:clamp(28px,3vw,40px);padding-left:max(28px,calc((100% - 1180px) / 2));padding-right:max(28px,calc((100% - 1180px) / 2))}
+  .has-winner .callout-main{grid-area:main;flex:none;grid-template-columns:220px minmax(0,1fr);grid-template-rows:auto auto;grid-template-areas:"head head" "tee actions";align-content:start;column-gap:28px;padding-bottom:40px}
+  .has-winner .callout-head{align-self:start;margin-bottom:32px}
+  .has-winner .callout h1{font-size:clamp(2rem,3.6vw,3.25rem)}
+  .has-winner .tee{justify-self:start;align-self:center;width:220px}
+  .has-winner .callout-actions{align-self:center;flex-direction:column;align-items:flex-start;gap:20px;margin-top:0}
+  .has-winner .facts{grid-area:facts}
+  .has-winner .fact{padding-right:16px}
+  .has-winner .fact-value{font-size:20px}
+  .has-winner .winner{grid-area:winner;align-self:start;margin:0 0 40px}
+  .winner-top,.winner-bottom{padding-left:22px;padding-right:22px}
+  .winner-bottom{padding-bottom:26px}
+  .winner-title{font-size:26px}
+  .winner-artist{font-size:14px}
+}
 
 /* claim */
 .claim{background:var(--blue);color:#fff;padding:clamp(80px,14vh,180px) 28px;display:flex;justify-content:center}
@@ -142,7 +172,7 @@ a{color:inherit;text-decoration:none}
 <!-- @include: wipe -->
 <!-- @include: nav -->
 
-<section class="callout">
+<section class="callout is-pending" id="callout">
   <div class="callout-main">
     <div class="callout-head">
       <span class="eyebrow">On view open call</span>
@@ -159,6 +189,11 @@ a{color:inherit;text-decoration:none}
     <li class="fact"><span class="eyebrow">On view</span><span class="fact-value">Seven days</span><span class="fact-detail">Every submission is reviewed first.</span></li>
     <li class="fact"><span class="eyebrow">Prize</span><span class="fact-value">One t-shirt</span><span class="fact-detail">For the most viewed work of the round.</span></li>
   </ul>
+  <a class="winner" id="winner" href="/" hidden>
+    <img id="winner-img" alt="">
+    <span class="winner-top"><span class="eyebrow" id="winner-round"></span></span>
+    <span class="winner-bottom"><span class="winner-title" id="winner-title"></span><span class="winner-artist" id="winner-artist"></span></span>
+  </a>
 </section>
 
 <section class="claim rv">
@@ -322,6 +357,49 @@ if(room && !reduce){
       cell.classList.remove('is-pending');
     })
     .catch(hideCell);
+})();
+// Open call hero, winner variant: once a round winner has been announced
+// (GET /api/on-view/previous-winner) the hero shows two columns. The hero stays
+// hidden (.is-pending) until the fetch and the winner image have settled, so the
+// layout is decided once and never jumps; on no winner, a failed fetch, an image
+// error or a slow response (2.5s) the plain full-width hero is shown.
+(function(){
+  var callout = document.getElementById('callout');
+  var link    = document.getElementById('winner');
+  if (!callout || !link) return;
+  var settled = false;
+
+  function settle(winner, img) {
+    if (settled) return;
+    settled = true;
+    if (winner) {
+      link.href = '/work/' + encodeURIComponent(winner.slug);
+      link.setAttribute('aria-label', 'Round ' + winner.round_number + ' winner: ' + winner.title + (winner.artist ? ' by ' + winner.artist : ''));
+      var shown = document.getElementById('winner-img');
+      shown.src = img.src;
+      shown.width = img.naturalWidth;
+      shown.height = img.naturalHeight;
+      document.getElementById('winner-round').textContent  = 'Round ' + winner.round_number + ' winner';
+      document.getElementById('winner-title').textContent  = winner.title;
+      document.getElementById('winner-artist').textContent = winner.artist && winner.artist !== winner.title ? winner.artist : '';
+      link.hidden = false;
+      callout.classList.add('has-winner');
+    }
+    callout.classList.remove('is-pending');
+  }
+
+  setTimeout(function(){ settle(null); }, 2500);
+
+  fetch('/api/on-view/previous-winner')
+    .then(function(r){ if (!r.ok) throw new Error('winner'); return r.json(); })
+    .then(function(winner){
+      if (!winner || !winner.image_url) { settle(null); return; }
+      var img = new Image();
+      img.onload  = function(){ settle(winner, img); };
+      img.onerror = function(){ settle(null); };
+      img.src = winner.image_url;
+    })
+    .catch(function(){ settle(null); });
 })();
 </script>
 </body>
