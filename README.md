@@ -35,6 +35,8 @@ De hero heeft een tweede variant: zodra er een ronde-winnaar is aangekondigd (`G
 
 De winnaar van een ronde wordt handmatig gekozen, niet automatisch bepaald op views. Zodra een ronde `ready_for_winner` is, kiest André in `/admin` (tab Rounds) een werk uit de goedgekeurde werken van die ronde en bevestigt; daarmee wordt de winnaar eenmalig vastgelegd.
 
+In dezelfde tab heeft elke ronde een uitklapbaar intern "Views leaderboard": alle goedgekeurde werken van die ronde met exacte views, meeste eerst. Dit is alleen voor de admin (`GET /api/admin/rounds/:round_number/leaderboard`, admin-sessie vereist) en staat los van het publieke `/on-view/leaderboard`, dat geshuffeld blijft en geen aantallen toont.
+
 ## Deployment
 
 Gedeployed via Railway. Auto-deploy op push naar `master`.

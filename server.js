@@ -675,6 +675,19 @@ app.get('/api/admin/rounds', requireAdmin, (req, res) => {
   }));
 });
 
+// Internal view leaderboard: every approved work of the round with its exact
+// view_count, most views first, earliest submission first on a tie. Admin only,
+// unlike the public /api/on-view/leaderboard (shuffled, no counts). Works with
+// round_number NULL belong to no round and are not listed here.
+app.get('/api/admin/rounds/:round_number/leaderboard', requireAdmin, (req, res) => {
+  const roundNumber = Number(req.params.round_number);
+  if (!db.prepare('SELECT 1 FROM rounds WHERE round_number=?').get(roundNumber)) return res.status(404).json({ error: 'Round not found.' });
+  res.json(db.prepare(
+    "SELECT id, slug, title, artist, view_count, created_at FROM works " +
+    "WHERE round_number=? AND review_status='approved' ORDER BY view_count DESC, created_at ASC, id ASC"
+  ).all(roundNumber));
+});
+
 // Winner: chosen by hand by the admin (body: { work_id }), not derived from
 // view_count. Only a ready, not yet announced round accepts a choice, and the
 // chosen work must be an approved work of that very round (archived ones

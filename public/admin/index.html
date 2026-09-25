@@ -81,6 +81,14 @@ button{font:inherit;cursor:pointer}
 .round-pick{border:1px solid var(--line);padding:6px 8px;font:inherit;font-size:12px;border-radius:2px;max-width:240px}
 .round-pick:focus{outline:0;border-color:var(--ink)}
 
+.lb-row td{padding-top:0;background:#fff}
+.lb-row summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);padding:2px 0 6px}
+.lb-note{font-size:12px;color:#92400e;background:#fef3c7;padding:6px 10px;margin:6px 0 10px;border-radius:2px}
+.lb-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.lb-tbl td{padding:6px 10px;border-bottom:1px solid var(--line)}
+.lb-tbl td:first-child{width:36px;color:var(--muted)}
+.lb-tbl td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+
 /* Submission cards */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
 .card{background:#fff;border:1px solid var(--line);overflow:hidden}
@@ -321,9 +329,23 @@ function renderRounds(rows,works){
       '<td>'+r.approved_count+'</td>'+
       '<td><span class="badge '+ROUND_STATUS_BADGE[r.status]+'">'+ROUND_STATUS_LABEL[r.status]+'</span></td>'+
       '<td>'+winnerCell+'</td>'+
-      '<td>'+actionCell+'</td></tr>';
+      '<td>'+actionCell+'</td></tr>'+
+      '<tr class="lb-row"><td colspan="6"><details ontoggle="if(this.open)loadBoard('+r.round_number+')"><summary>Views leaderboard (internal)</summary>'+
+      '<div class="lb-note">Internal only. These view counts are never shown publicly.</div><div id="lb-'+r.round_number+'"></div></details></td></tr>';
   }).join('');
 }
+
+window.loadBoard=function(roundNumber){
+  var box=document.getElementById('lb-'+roundNumber);
+  box.innerHTML='<small style="color:var(--muted)">Loading…</small>';
+  api('GET','/api/admin/rounds/'+roundNumber+'/leaderboard').then(function(rows){
+    if(!Array.isArray(rows)){box.innerHTML='<small style="color:var(--muted)">Could not load.</small>';return;}
+    if(!rows.length){box.innerHTML='<small style="color:var(--muted)">No approved works in this round.</small>';return;}
+    box.innerHTML='<table class="lb-tbl">'+rows.map(function(w,i){
+      return '<tr><td>'+(i+1)+'</td><td><b>'+esc(w.title)+'</b> <small style="color:var(--muted)">'+esc(w.artist)+'</small></td><td>'+(w.view_count||0)+' views</td></tr>';
+    }).join('')+'</table>';
+  });
+};
 
 window.announceWinner=function(roundNumber){
   var sel=document.getElementById('pick-'+roundNumber);
