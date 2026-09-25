@@ -31,6 +31,10 @@ De homepage toont tijdelijk een oproep om mee te doen (`build/pages/index.html`,
 
 De hero heeft een tweede variant: zodra er een ronde-winnaar is aangekondigd (`GET /api/on-view/previous-winner`, opgehaald bij elke pageload) toont hij op desktop twee kolommen, links de open call en rechts de winnaar (klikbaar naar `/work/:slug`, beeld nooit gecropt); op mobiel staat de winnaarskaart onder de open-call content. Zonder aangekondigde winnaar blijft de volle-breedte hero staan. Geen herdeploy nodig: de winnaar verschijnt zodra in `/admin` op "Announce winner" is geklikt.
 
+## Ronde-winnaar
+
+De winnaar van een ronde wordt handmatig gekozen, niet automatisch bepaald op views. Zodra een ronde `ready_for_winner` is, kiest André in `/admin` (tab Rounds) een werk uit de goedgekeurde werken van die ronde en bevestigt; daarmee wordt de winnaar eenmalig vastgelegd.
+
 ## Deployment
 
 Gedeployed via Railway. Auto-deploy op push naar `master`.

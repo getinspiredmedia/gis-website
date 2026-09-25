@@ -78,6 +78,8 @@ button{font:inherit;cursor:pointer}
 .form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
 .form-row input,.form-row select{border:1px solid var(--line);padding:9px 12px;font:inherit;font-size:13px;border-radius:2px;flex:1;min-width:140px}
 .form-row input:focus,.form-row select:focus{outline:0;border-color:var(--ink)}
+.round-pick{border:1px solid var(--line);padding:6px 8px;font:inherit;font-size:12px;border-radius:2px;max-width:240px}
+.round-pick:focus{outline:0;border-color:var(--ink)}
 
 /* Submission cards */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
@@ -287,22 +289,33 @@ window.deleteWork=function(id){
 // Rounds are created by hand via SQL (see CLAUDE.md) — this tab is read-only
 // plus the one winner action, no create/edit UI.
 function loadRounds(){
-  api('GET','/api/admin/rounds').then(renderRounds);
+  Promise.all([api('GET','/api/admin/rounds'),api('GET','/api/admin/works')]).then(function(res){
+    renderRounds(res[0],res[1]);
+  });
 }
 
 var ROUND_STATUS_LABEL={ongoing:'Ongoing',ready_for_winner:'Ready for winner',winner_announced:'Winner announced'};
 var ROUND_STATUS_BADGE={ongoing:'badge-pending',ready_for_winner:'badge-current',winner_announced:'badge-approved'};
 
-function renderRounds(rows){
+function renderRounds(rows,works){
   var tbody=document.getElementById('rounds-body');
   if(!rows.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No rounds yet — create one via SQL, see CLAUDE.md.</td></tr>';return;}
   tbody.innerHTML=rows.map(function(r){
     var winnerCell=r.winner
       ?('<b>'+esc(r.winner.title)+'</b><br><small style="color:var(--muted)">'+esc(r.winner.artist)+' · '+(r.winner.view_count||0)+' views</small>')
       :'<small style="color:var(--muted)">—</small>';
-    var actionCell=r.status==='ready_for_winner'
-      ?'<button class="btn-sm primary" onclick="announceWinner('+r.round_number+')">Announce winner</button>'
-      :'';
+    var actionCell='';
+    if(r.status==='ready_for_winner'){
+      var candidates=works.filter(function(w){return w.round_number===r.round_number&&w.review_status==='approved';})
+        .sort(function(a,b){return (b.view_count||0)-(a.view_count||0);});
+      var options='<option value="">Choose a work…</option>'+candidates.map(function(w){
+        return '<option value="'+w.id+'">'+esc(w.title)+' · '+esc(w.artist)+' · '+(w.view_count||0)+' views</option>';
+      }).join('');
+      actionCell='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
+        '<select class="round-pick" id="pick-'+r.round_number+'" aria-label="Winner of round '+r.round_number+'" onchange="document.getElementById(\'announce-'+r.round_number+'\').disabled=!this.value">'+options+'</select>'+
+        '<button class="btn-sm primary" id="announce-'+r.round_number+'" disabled onclick="announceWinner('+r.round_number+')">Announce winner</button>'+
+        '</div>';
+    }
     return '<tr><td><b>#'+r.round_number+'</b></td>'+
       '<td><small style="color:var(--muted)">'+esc((r.starts_at||'').slice(0,10))+' – '+esc((r.ends_at||'').slice(0,10))+'</small></td>'+
       '<td>'+r.approved_count+'</td>'+
@@ -313,8 +326,10 @@ function renderRounds(rows){
 }
 
 window.announceWinner=function(roundNumber){
-  if(!confirm('Announce the winner for round '+roundNumber+'? This can only be done once.'))return;
-  api('POST','/api/admin/rounds/'+roundNumber+'/announce-winner').then(function(d){
+  var sel=document.getElementById('pick-'+roundNumber);
+  if(!sel||!sel.value)return;
+  if(!confirm('Announce "'+sel.options[sel.selectedIndex].text+'" as the winner of round '+roundNumber+'? This can only be done once.'))return;
+  api('POST','/api/admin/rounds/'+roundNumber+'/announce-winner',{work_id:Number(sel.value)}).then(function(d){
     if(d.error){alert(d.error);return;}
     refreshAll();
   });

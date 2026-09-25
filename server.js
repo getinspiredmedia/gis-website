@@ -675,10 +675,10 @@ app.get('/api/admin/rounds', requireAdmin, (req, res) => {
   }));
 });
 
-// Winner: the approved work in the round with the highest (deduplicated)
-// view_count; a tie goes to whichever was created first. This tiebreak
-// (earliest created_at) is an assumption applied without explicit
-// confirmation from André — see CLAUDE.md.
+// Winner: chosen by hand by the admin (body: { work_id }), not derived from
+// view_count. Only a ready, not yet announced round accepts a choice, and the
+// chosen work must be an approved work of that very round (archived ones
+// count: by the time a round is ready, its early works have long come down).
 app.post('/api/admin/rounds/:round_number/announce-winner', requireAdmin, (req, res) => {
   const roundNumber = Number(req.params.round_number);
   const round = db.prepare('SELECT * FROM rounds WHERE round_number=?').get(roundNumber);
@@ -686,10 +686,12 @@ app.post('/api/admin/rounds/:round_number/announce-winner', requireAdmin, (req, 
   if (round.announced_at) return res.status(409).json({ error: 'Winner already announced for this round.' });
   if (!roundStats(roundNumber).ready) return res.status(400).json({ error: 'This round is not ready for a winner yet.' });
 
+  const workId = Number((req.body || {}).work_id);
+  if (!Number.isInteger(workId)) return res.status(400).json({ error: 'Choose a work to announce as the winner.' });
   const winner = db.prepare(
-    "SELECT id, slug, title, artist, view_count FROM works WHERE round_number=? AND review_status='approved' ORDER BY view_count DESC, created_at ASC LIMIT 1"
-  ).get(roundNumber);
-  if (!winner) return res.status(400).json({ error: 'No approved works in this round.' });
+    "SELECT id, slug, title, artist, view_count FROM works WHERE id=? AND round_number=? AND review_status='approved'"
+  ).get(workId, roundNumber);
+  if (!winner) return res.status(400).json({ error: 'That work is not an approved work of this round.' });
 
   db.prepare("UPDATE rounds SET winner_work_id=?, announced_at=datetime('now') WHERE round_number=?").run(winner.id, roundNumber);
   res.json({ ok: true, winner });
