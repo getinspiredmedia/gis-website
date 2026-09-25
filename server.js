@@ -269,12 +269,6 @@ const archiveInterval = setInterval(archiveOldWorks, 60 * 60 * 1000);
 
 // ── Round closed mail ─────────────────────────────────────────────────────────
 
-// The greeting uses the first word of the stored name; a single-word name
-// (mononym, studio) is used whole, an empty one falls back to "there".
-function firstName(name) {
-  return (name || '').trim().split(/\s+/)[0] || 'there';
-}
-
 // Independent of announce-winner and of the per-work archive mail. The UPDATE
 // claims every closed, not yet notified round in one step, so a round is
 // notified exactly once — a restart or the next hourly run matches nothing,
@@ -287,7 +281,7 @@ async function notifyClosedRounds() {
   ).all();
   for (const { round_number } of rounds) {
     const works = db.prepare(
-      "SELECT artist, email FROM works WHERE round_number=? AND review_status='approved' AND TRIM(email) != '' ORDER BY id"
+      "SELECT email FROM works WHERE round_number=? AND review_status='approved' AND TRIM(email) != '' ORDER BY id"
     ).all(round_number);
     const seen = new Set();
     let sent = 0;
@@ -300,8 +294,8 @@ async function notifyClosedRounds() {
         to,
         subject: `Round ${round_number} is closed`,
         text: [
-          `Hi ${firstName(w.artist)},`,
-          `Round ${round_number} of the On View open call closed today.`,
+          'Hi,',
+          `Round ${round_number} of the On View open call is now closed.`,
           'Every submission gets its full seven days on the wall before a winner is picked. The round winner is announced once the last approved work from this round has had its full week of views.',
           "If you win, you'll hear from us directly, and the winning work is shown on the site.",
           `Keep showing your work. Submit again: ${SITE_URL}/submit`,

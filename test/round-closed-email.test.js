@@ -123,8 +123,8 @@ async function run() {
     const annaMail = closedMails().find(m => [].concat(m.to)[0] === 'anna@example.com');
     assert(annaMail.subject === 'Round 1 is closed', `subject is "Round 1 is closed" — got ${JSON.stringify(annaMail.subject)}`);
     const expectedBody =
-      'Hi Anna,\n\n' +
-      'Round 1 of the On View open call closed today.\n\n' +
+      'Hi,\n\n' +
+      'Round 1 of the On View open call is now closed.\n\n' +
       'Every submission gets its full seven days on the wall before a winner is picked. The round winner is announced once the last approved work from this round has had its full week of views.\n\n' +
       "If you win, you'll hear from us directly, and the winning work is shown on the site.\n\n" +
       `Keep showing your work. Submit again: ${SITE_URL}/submit\n\n` +
@@ -133,8 +133,8 @@ async function run() {
     assert(!annaMail.html, 'the mail is plain text only');
     assert(!/[–—]/.test(annaMail.text + annaMail.subject), 'no long dashes in the copy');
     const studioMail = closedMails().find(m => [].concat(m.to)[0] === 'studio@example.com');
-    assert(studioMail.text.startsWith('Hi Studio,\n'), `a single-word name is used whole — got ${JSON.stringify(studioMail.text.slice(0, 20))}`);
-    console.log('PASS - subject, plain-text body, first name, single-word name and /submit link (no token) are correct');
+    assert(studioMail.text === expectedBody, 'every maker gets the same body: "Hi," with no name, whatever the stored artist name');
+    console.log('PASS - subject, plain-text body ("Hi," without a name, "is now closed") and /submit link (no token) are correct');
 
     // Pending, rejected, round-less works and the still running round get nothing.
     const all = JSON.stringify(emailRequests);
