@@ -29,6 +29,8 @@ npm start
 
 De homepage toont tijdelijk een oproep om mee te doen (`build/pages/index.html`, sectie `.callout`) in plaats van de hero met de current selection van On View. De oude hero staat ongewijzigd in `build/archive/hero-current-selection.html` (wordt niet gebouwd, met terugzetinstructie bovenaan).
 
+De hero heeft een tweede variant: zodra er een ronde-winnaar is aangekondigd (`GET /api/on-view/previous-winner`, opgehaald bij elke pageload) toont hij op desktop twee kolommen, links de open call en rechts de winnaar (klikbaar naar `/work/:slug`, beeld nooit gecropt); op mobiel staat de winnaarskaart onder de open-call content. Zonder aangekondigde winnaar blijft de volle-breedte hero staan. Geen herdeploy nodig: de winnaar verschijnt zodra in `/admin` op "Announce winner" is geklikt.
+
 ## Deployment
 
 Gedeployed via Railway. Auto-deploy op push naar `master`.

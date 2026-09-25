@@ -409,6 +409,21 @@ app.get('/api/on-view/round', (req, res) => {
   res.json({ round_number: row.round_number, starts_at: iso(row.starts_at), ends_at: iso(row.ends_at) });
 });
 
+// The most recently announced round winner for the homepage hero: the highest
+// round number that has an announced winner (not necessarily the round that
+// just ended). Only public fields, no view counts; null when nobody has been
+// announced yet. A winner whose work is gone or no longer approved is skipped,
+// since /work/:slug would not resolve for it.
+app.get('/api/on-view/previous-winner', (req, res) => {
+  const row = db.prepare(
+    "SELECT r.round_number, w.slug, w.title, w.artist, w.image_url FROM rounds r " +
+    "JOIN works w ON w.id = r.winner_work_id " +
+    "WHERE r.announced_at IS NOT NULL AND w.review_status = 'approved' " +
+    "ORDER BY r.round_number DESC LIMIT 1"
+  ).get();
+  res.json(row || null);
+});
+
 app.post('/api/contact', async (req, res) => {
   const { message, email, hp, captcha } = req.body || {};
   if (hp) return res.json({ ok: true }); // honeypot — silent, no captcha/rate-limit slot consumed
