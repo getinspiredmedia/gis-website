@@ -314,10 +314,13 @@ function renderRounds(rows,works){
       :'<small style="color:var(--muted)">—</small>';
     var actionCell='';
     if(r.status==='ready_for_winner'){
+      // Frozen count (view_count_at_archive) if the work has archived, else
+      // its live count — same rule as the round-leaderboard route.
+      var frozenCount=function(w){return w.view_count_at_archive!=null?w.view_count_at_archive:(w.view_count||0);};
       var candidates=works.filter(function(w){return w.round_number===r.round_number&&w.review_status==='approved';})
-        .sort(function(a,b){return (b.view_count||0)-(a.view_count||0);});
+        .sort(function(a,b){return frozenCount(b)-frozenCount(a);});
       var options='<option value="">Choose a work…</option>'+candidates.map(function(w){
-        return '<option value="'+w.id+'">'+esc(w.title)+' · '+esc(w.artist)+' · '+(w.view_count||0)+' views</option>';
+        return '<option value="'+w.id+'">'+esc(w.title)+' · '+esc(w.artist)+' · '+frozenCount(w)+' views</option>';
       }).join('');
       actionCell='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
         '<select class="round-pick" id="pick-'+r.round_number+'" aria-label="Winner of round '+r.round_number+'" onchange="document.getElementById(\'announce-'+r.round_number+'\').disabled=!this.value">'+options+'</select>'+

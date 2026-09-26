@@ -68,6 +68,15 @@ try { db.exec("ALTER TABLE works ADD COLUMN view_count INTEGER NOT NULL DEFAULT 
 try { db.exec("ALTER TABLE works ADD COLUMN review_status TEXT NOT NULL DEFAULT 'approved' CHECK(review_status IN ('pending','approved','rejected'))"); } catch {}
 try { db.exec("ALTER TABLE works ADD COLUMN approved_at TEXT"); } catch {}
 try { db.exec("ALTER TABLE works ADD COLUMN round_number INTEGER"); } catch {}
+// Views frozen at the moment a work archives (see archiveOldWorks()) — the
+// internal round ranking sorts on this instead of the still-growing
+// view_count, so a work archived early doesn't rack up post-archive views
+// (the page stays reachable) that a late-approved work never had the chance
+// to earn. One-time backfill for rows already archived before this column
+// existed (notably round 1): best-effort only, their real archive-moment
+// count can't be reconstructed, so this uses their current view_count.
+try { db.exec("ALTER TABLE works ADD COLUMN view_count_at_archive INTEGER"); } catch {}
+db.prepare("UPDATE works SET view_count_at_archive=view_count WHERE status='archived' AND view_count_at_archive IS NULL").run();
 try { db.exec("ALTER TABLE tokens ADD COLUMN artist_name  TEXT NOT NULL DEFAULT ''"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN artist_email TEXT NOT NULL DEFAULT ''"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN used INTEGER NOT NULL DEFAULT 0"); } catch {}
@@ -157,8 +166,11 @@ function shuffle(arr) {
 // so COALESCE falls back to created_at for exactly those, preserving their
 // original archive timing.
 async function archiveOldWorks() {
+  // view_count_at_archive is set in this same UPDATE, from view_count as it
+  // reads within this very statement, so no later view can land in the gap
+  // between the status flip and the freeze.
   const rows = db.prepare(
-    "UPDATE works SET status='archived' WHERE status='previous' AND review_status='approved' AND datetime(COALESCE(approved_at, created_at), '+7 days') <= datetime('now') RETURNING slug, title, email"
+    "UPDATE works SET status='archived', view_count_at_archive=view_count WHERE status='previous' AND review_status='approved' AND datetime(COALESCE(approved_at, created_at), '+7 days') <= datetime('now') RETURNING slug, title, email"
   ).all();
   if (rows.length > 0) console.log(`[archive] archived ${rows.length} work(s)`);
   for (const row of rows) {
@@ -709,7 +721,7 @@ app.get('/api/admin/rounds', requireAdmin, (req, res) => {
   res.json(rounds.map(r => {
     const stats = roundStats(r.round_number);
     const winner = r.winner_work_id
-      ? db.prepare('SELECT slug, title, artist, view_count FROM works WHERE id=?').get(r.winner_work_id)
+      ? db.prepare('SELECT slug, title, artist, COALESCE(view_count_at_archive, view_count) AS view_count FROM works WHERE id=?').get(r.winner_work_id)
       : null;
     return {
       ...r,
@@ -720,16 +732,22 @@ app.get('/api/admin/rounds', requireAdmin, (req, res) => {
   }));
 });
 
-// Internal view leaderboard: every approved work of the round with its exact
-// view_count, most views first, earliest submission first on a tie. Admin only,
-// unlike the public /api/on-view/leaderboard (shuffled, no counts). Works with
-// round_number NULL belong to no round and are not listed here.
+// Internal view leaderboard: every approved work of the round, most views
+// first, earliest submission first on a tie. Admin only, unlike the public
+// /api/on-view/leaderboard (shuffled, no counts). Works with round_number
+// NULL belong to no round and are not listed here.
+// view_count here is COALESCE(view_count_at_archive, view_count): an
+// archived work's views are frozen at its archive moment (see
+// archiveOldWorks()), so a work archived early can't keep collecting
+// post-archive views (the page stays reachable) that a later-approved work
+// never had the same window to earn. A work still on the wall shows its
+// live, still-growing count, since it isn't done yet.
 app.get('/api/admin/rounds/:round_number/leaderboard', requireAdmin, (req, res) => {
   const roundNumber = Number(req.params.round_number);
   if (!db.prepare('SELECT 1 FROM rounds WHERE round_number=?').get(roundNumber)) return res.status(404).json({ error: 'Round not found.' });
   res.json(db.prepare(
-    "SELECT id, slug, title, artist, view_count, created_at FROM works " +
-    "WHERE round_number=? AND review_status='approved' ORDER BY view_count DESC, created_at ASC, id ASC"
+    "SELECT id, slug, title, artist, COALESCE(view_count_at_archive, view_count) AS view_count, created_at FROM works " +
+    "WHERE round_number=? AND review_status='approved' ORDER BY COALESCE(view_count_at_archive, view_count) DESC, created_at ASC, id ASC"
   ).all(roundNumber));
 });
 
@@ -747,7 +765,7 @@ app.post('/api/admin/rounds/:round_number/announce-winner', requireAdmin, (req, 
   const workId = Number((req.body || {}).work_id);
   if (!Number.isInteger(workId)) return res.status(400).json({ error: 'Choose a work to announce as the winner.' });
   const winner = db.prepare(
-    "SELECT id, slug, title, artist, view_count FROM works WHERE id=? AND round_number=? AND review_status='approved'"
+    "SELECT id, slug, title, artist, COALESCE(view_count_at_archive, view_count) AS view_count FROM works WHERE id=? AND round_number=? AND review_status='approved'"
   ).get(workId, roundNumber);
   if (!winner) return res.status(400).json({ error: 'That work is not an approved work of this round.' });
 
