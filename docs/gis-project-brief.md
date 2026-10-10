@@ -99,7 +99,7 @@ Two options are on the table:
 ### Other open points
 
 - **Circle custom domain** — `[to confirm]`
-- **artsteps `ROOM_URL`** — `[to confirm]`
+- ~~**artsteps `ROOM_URL`**~~ — resolved: `https://www.getinspiredgallery.com/`, embedded on `/gallery`.
 - **Tally form link** — `[to confirm]`
 - **PDF / print links** — `[to confirm]`
 - **Autumn open call dates** — `[to confirm]`

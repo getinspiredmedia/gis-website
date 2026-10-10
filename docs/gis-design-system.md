@@ -114,7 +114,7 @@ Two options are on the table:
 
 ## 6. Open decisions
 
-- **`ROOM_URL`** — artsteps embed URL for the On View room — `[to confirm]`
+- ~~**`ROOM_URL`**~~ — **Resolved.** The room is `https://www.getinspiredgallery.com/` (repo `gis-gallery`), embedded on `/gallery` after a click.
 - **Tally form link** — URL behind "Apply as a creative" — `[to confirm]`
 - **PDF and print-order links** — links in the reader and magazine — `[to confirm]`
 - **Autumn open call calendar** — full date schedule — `[to confirm]`
