@@ -2,13 +2,15 @@
 /*
  * The Society page and the Log in pill are gone. Old links to /society (in
  * newsletters and posts) must 301 to the homepage, and no nav or footer on a
- * build page, On View, its leaderboard or the work page may link to /society
- * or to the Circle subdomain any more. The magazine readers keep their old
- * inline nav for now and are deliberately not checked here.
+ * build page, On View, its leaderboard, the work page or a magazine reader may link to /society
+ * or to the Circle subdomain any more. The magazine readers share the same nav
+ * and footer and are checked as well (found by glob).
  */
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+
+const { listReaderPages } = require('../build/readers');
 
 const ROOT = path.resolve(__dirname, '..');
 const DB_PATH = path.join(ROOT, 'test', '.society-redirect-test.db');
@@ -72,7 +74,7 @@ async function run() {
     console.log('PASS - the Society page and its source are gone');
 
     const buildOutputs = require('../build/pages.config').map(c => c.output);
-    const pages = [...buildOutputs, 'public/on-view/index.html', 'public/on-view/leaderboard/index.html', 'public/work/index.html'];
+    const pages = [...buildOutputs, 'public/on-view/index.html', 'public/on-view/leaderboard/index.html', 'public/work/index.html', ...listReaderPages()];
     for (const rel of pages) {
       const { nav, footer } = navAndFooter(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
       assert(nav && footer, `${rel} has a nav and a footer`);
