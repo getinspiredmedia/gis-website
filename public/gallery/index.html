@@ -34,9 +34,11 @@ a{color:inherit;text-decoration:none}
 .hall .head .side{font-size:13px;color:rgba(255,255,255,.6);line-height:1.7;text-align:right}
 
 .frame{max-width:1180px;margin:0 auto;position:relative;aspect-ratio:16/9;max-height:78vh;background:#15171f;overflow:hidden}
-.poster{position:absolute;inset:0;background-image:radial-gradient(120% 90% at 55% 40%,rgba(37,44,68,.6) 0%,rgba(20,23,32,.65) 60%,rgba(11,12,16,.72) 100%),url('/assets/gallery-poster.webp');background-size:auto,cover;background-position:center;display:flex;align-items:center;justify-content:center;transition:opacity .5s,transform 6s var(--ease)}
+.poster{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transition:opacity .5s,transform 6s var(--ease)}
+.poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.poster::before{content:'';position:absolute;inset:0;z-index:1;background:radial-gradient(120% 90% at 55% 40%,rgba(37,44,68,.6) 0%,rgba(20,23,32,.65) 60%,rgba(11,12,16,.72) 100%)}
 .poster:hover{transform:scale(1.02)}
-.enter-room{background:transparent;border:1px solid #fff;color:#fff;border-radius:999px;padding:16px 30px;font:inherit;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .3s,color .3s,gap .3s;display:inline-flex;align-items:center;gap:12px}
+.enter-room{position:relative;z-index:2;background:transparent;border:1px solid #fff;color:#fff;border-radius:999px;padding:16px 30px;font:inherit;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .3s,color .3s,gap .3s;display:inline-flex;align-items:center;gap:12px}
 .enter-room:hover{background:#fff;color:var(--ink);gap:18px}
 .frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .under{max-width:1180px;margin:14px auto 0;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:rgba(255,255,255,.55)}
@@ -251,31 +253,32 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
 <section class="hall">
   <div class="head">
     <div>
-      <span class="eyebrow">Exhibition no. 3</span>
-      <h1>Chasing Light</h1>
+      <span class="eyebrow">Exhibition no. 4</span>
+      <h1>Bloom</h1>
     </div>
     <p class="side">One room at a time.<br>It changes with the issue.</p>
   </div>
 
   <div class="frame" id="frame">
     <div class="poster" id="poster">
+      <img src="/assets/gallery-poster.webp" width="1915" height="1019" alt="The Bloom exhibition room, with works by Dina Belenko on the walls.">
       <button class="enter-room" id="enterRoom">Enter the room &rarr;</button>
     </div>
   </div>
 
   <div class="under">
     <span>Free to walk through. No account, no wall.</span>
-    <a href="#" id="full">Open fullscreen, recommended</a>
+    <a href="#" id="full">Open in a new window</a>
   </div>
 </section>
 
 <section class="hung">
   <div class="in">
-    <div class="name rv"><b>Will Corvara</b><span>Wall 01</span></div>
-    <div class="name rv"><b>Jeff Vonk</b><span>Wall 02</span></div>
-    <div class="name rv"><b>Ulf Berglund</b><span>Wall 03</span></div>
-    <div class="name rv"><b>Janusz Furrer</b><span>Wall 04</span></div>
-    <div class="name rv"><b>Joaquin Pastor Genzor</b><span>Wall 05</span></div>
+    <div class="name rv"><b>Dina Belenko</b><span>Room 01</span></div>
+    <div class="name rv"><b>Kylli Sparre</b><span>Room 02</span></div>
+    <div class="name rv"><b>Sara Fraysse</b><span>Room 03</span></div>
+    <div class="name rv"><b>Martina Dorigatti</b><span>Room 04</span></div>
+    <div class="name rv"><b>Clemens Maurer</b><span>Room 05</span></div>
   </div>
 </section>
 
@@ -284,9 +287,9 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
     <div class="rv">
       <h2>The room shows it.<br>The magazine tells it.</h2>
       <p>Same five artists, same theme. In print and on screen there is room for the thinking behind the work.</p>
-      <a class="btn" href="/magazine/chasing-light">Read Chasing Light</a>
+      <a class="btn" href="/magazine/bloom">Read Bloom</a>
     </div>
-    <a class="cover rv" href="/magazine/chasing-light" style="background-image:url('/assets/covers/chasing-light.webp');background-size:cover;background-position:center"><span>Issue no. 3</span></a>
+    <a class="cover rv" href="/magazine/bloom" style="background-image:url('/assets/covers/bloom.webp');background-size:cover;background-position:center"><span>Issue no. 4</span></a>
   </div>
 </section>
 
@@ -315,7 +318,7 @@ footer .stamp{margin-top:26px;font-size:11px;color:rgba(255,255,255,.35);letter-
 
 
 <script>
-const ROOM_URL = 'https://metasteps.com/viewer/9d7c9435-937e-4af7-99d0-ae831525f8af';
+const ROOM_URL = 'https://www.getinspiredgallery.com/';
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const io = new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}})},{threshold:.2});
@@ -329,8 +332,10 @@ document.getElementById('enterRoom').addEventListener('click', ()=>{
   const frame = document.getElementById('frame');
   const f = document.createElement('iframe');
   f.src = ROOM_URL;
-  f.allow = 'fullscreen; xr-spatial-tracking';
-  f.title = 'Chasing Light, exhibition room';
+  f.allow = 'fullscreen';
+  f.title = 'Bloom, exhibition room';
+  // Focus the room once it has loaded so WASD and the arrow keys work straight away.
+  f.addEventListener('load', () => f.focus());
   frame.appendChild(f);
   document.getElementById('poster').style.opacity = 0;
 });
