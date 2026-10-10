@@ -98,7 +98,7 @@ Two options are on the table:
 
 ### Other open points
 
-- **Circle custom domain** — `[to confirm]`
+- ~~**Circle custom domain**~~ — obsolete: Circle was discontinued and `society.getinspiredsociety.com` is redirected in Cloudflare.
 - ~~**artsteps `ROOM_URL`**~~ — resolved: `https://www.getinspiredgallery.com/`, embedded on `/gallery`.
 - **Tally form link** — `[to confirm]`
 - **PDF / print links** — `[to confirm]`
