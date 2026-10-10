@@ -20,7 +20,7 @@ Fase 1 — Project setup voltooid. Scaffold gepusht naar GitHub. Railway project
 
 ## Waar we mee bezig zijn
 
-- Overige pagina's invullen (magazine, gallery, society, about, contact, support)
+- Overige pagina's invullen (magazine, gallery, about, contact, support)
 
 ## Wat nog moet gebeuren
 
