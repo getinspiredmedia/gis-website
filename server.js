@@ -360,6 +360,10 @@ app.use(express.json());
 // Serve uploads from volume path (works regardless of where UPLOAD_DIR is)
 app.use('/uploads', express.static(UPLOAD_DIR));
 
+// The Society page is gone (old links in newsletters and posts still land here).
+// Non-strict routing makes this match both /society and /society/.
+app.get('/society', (req, res) => res.redirect(301, '/'));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Plausible analytics proxy ───────────────────────────────────────────────────

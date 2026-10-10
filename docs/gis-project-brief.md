@@ -22,7 +22,7 @@ The two audiences are kept separate: introduced late on each page, never disting
 
 ## 3. Sitemap
 
-Eight top-level paths. No extension in URLs; each path is served by its own `index.html` in `public/`.
+Seven top-level paths (`/society` was removed together with Circle; it answers a 301 to `/`). No extension in URLs; each path is served by its own `index.html` in `public/`.
 
 | Path | Description |
 |---|---|
@@ -30,7 +30,6 @@ Eight top-level paths. No extension in URLs; each path is served by its own `ind
 | `/on-view` | On View — currently a skeleton; see Open Decisions for architecture status |
 | `/magazine` | Magazine — four issues per year, five artists per issue |
 | `/gallery` | Gallery — viewable without an account |
-| `/society` | Society — platform identity and context |
 | `/about` | About — background on Get Inspired Society and André Kreft |
 | `/contact` | Contact |
 | `/support` | Support — subscribe or buy prints; no account required |
@@ -56,7 +55,6 @@ public/
 ├── on-view/index.html  → /on-view
 ├── magazine/index.html → /magazine
 ├── gallery/index.html  → /gallery
-├── society/index.html  → /society
 ├── about/index.html    → /about
 ├── contact/index.html  → /contact
 └── support/index.html  → /support
