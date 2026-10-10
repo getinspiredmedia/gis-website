@@ -20,12 +20,6 @@ module.exports = [
     footer: {},
   },
   {
-    input:  'build/pages/society.html',
-    output: 'public/society/index.html',
-    nav:    { active: 'society', variant: 'dark' },
-    footer: {},
-  },
-  {
     input:  'build/pages/about.html',
     output: 'public/about/index.html',
     nav:    { active: 'about', variant: 'light' },

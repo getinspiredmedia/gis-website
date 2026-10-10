@@ -20,7 +20,6 @@ npm start
 | `/on-view/leaderboard` | Tussenstand van de lopende ronde (top 10, willekeurige volgorde) |
 | `/magazine` | Magazine |
 | `/gallery` | Gallery |
-| `/society` | Society |
 | `/about` | About |
 | `/contact` | Contact |
 | `/support` | Support |
