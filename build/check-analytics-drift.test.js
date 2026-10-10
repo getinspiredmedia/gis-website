@@ -3,7 +3,7 @@
  * Regression test for check-analytics-drift.js. Covers both directions:
  *  1. Negative — the current, unmodified state reports zero errors (no
  *     false positives), so the check doesn't cry wolf on files nobody touched.
- *  2. Positive — a deliberate, temporary edit to one of the 7 hand-maintained
+ *  2. Positive — a deliberate, temporary edit to one of the hand-maintained
  *     copies (not the partial) is detected and named specifically; and a
  *     deliberate edit to the partial itself is detected across all copies.
  * Every mutation is restored in a finally block, including on assertion
@@ -11,6 +11,7 @@
  */
 const fs   = require('fs');
 const path = require('path');
+const { listReaderPages } = require('./readers');
 
 const ROOT    = path.resolve(__dirname, '..');
 const PARTIAL = path.join(ROOT, 'build', 'partials', 'analytics.html');
@@ -55,9 +56,9 @@ function run() {
         scriptError && scriptError.includes('pa-MH-OTeJcc74k86JrwLa7k.js') && scriptError.includes('pa-DIFFERENT-HASH.js'),
         'the reported error names public/work/index.html specifically and shows both script src values — got: ' + JSON.stringify(errors)
       );
-      // Only the mutated copy should be implicated, not the other 6.
-      const wronglyBlamed = errors.some(e => e.includes('on-view') || e.includes('public/submit') || e.includes('chasing-light') || e.includes('no-algorithm') || e.includes('origins'));
-      assert(!wronglyBlamed, 'only the mutated copy is reported, the other 6 untouched copies are not — got: ' + JSON.stringify(errors));
+      // Only the mutated copy should be implicated, not the others.
+      const wronglyBlamed = errors.some(e => e.includes('on-view') || e.includes('public/submit') || e.includes('public/magazine'));
+      assert(!wronglyBlamed, 'only the mutated copy is reported, the untouched copies are not — got: ' + JSON.stringify(errors));
 
       console.log('[check-analytics-drift.test] PASS — a single-copy edit is detected and correctly attributed:');
       console.log('  ' + scriptError);
@@ -84,9 +85,7 @@ function run() {
         'public/work/index.html',
         'public/submit/index.html',
         'public/on-view/leaderboard/index.html',
-        'public/magazine/chasing-light/index.html',
-        'public/magazine/no-algorithm/index.html',
-        'public/magazine/origins/index.html',
+        ...listReaderPages(),
       ];
       for (const copyPath of expectedCopies) {
         const found = errors.some(e => e.includes(copyPath) && e.includes('init script'));

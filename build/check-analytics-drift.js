@@ -1,11 +1,10 @@
 'use strict';
 /*
- * 7 pages sit outside the build pipeline (see CLAUDE.md) and carry a
+ * Pages outside the build pipeline (see CLAUDE.md) carry a
  * hand-maintained copy of build/partials/analytics.html's Plausible script
  * tags: public/on-view/index.html, public/work/index.html, public/submit/
- * index.html, public/on-view/leaderboard/index.html, and the 3 magazine
- * reader pages (chasing-light, no-algorithm, origins — readers have no nav,
- * per the design system, so this is the only shared partial they carry).
+ * index.html, public/on-view/leaderboard/index.html, and every magazine
+ * reader page (found by glob, see readers.js).
  * This guards against any of them silently
  * drifting from the partial — e.g. if the script hash, domain, or init
  * snippet ever changes and one copy doesn't get updated.
@@ -19,18 +18,19 @@
 const fs = require('fs');
 const path = require('path');
 
+const { listReaderPages } = require('./readers');
+
 const ROOT = path.resolve(__dirname, '..');
 
 // Hand-maintained copies of build/partials/analytics.html. Add a page here
-// the moment it gets its own copy of the analytics script tags.
+// the moment it gets its own copy of the analytics script tags. The magazine
+// readers are not listed: every public/magazine/<slug>/index.html counts.
 const HAND_MAINTAINED_COPIES = [
   'public/on-view/index.html',
   'public/work/index.html',
   'public/submit/index.html',
   'public/on-view/leaderboard/index.html',
-  'public/magazine/chasing-light/index.html',
-  'public/magazine/no-algorithm/index.html',
-  'public/magazine/origins/index.html',
+  ...listReaderPages(),
 ];
 
 function read(p) {

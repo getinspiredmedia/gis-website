@@ -67,6 +67,14 @@ if (analyticsDriftErrors.length) {
   process.exit(1);
 }
 
+const { checkReaderDrift } = require('./check-reader-drift');
+const readerDriftErrors = checkReaderDrift();
+if (readerDriftErrors.length) {
+  console.error('[build] Aborting — a magazine reader has drifted outside its issue markers:');
+  readerDriftErrors.forEach(e => console.error('  - ' + e));
+  process.exit(1);
+}
+
 pages.forEach(config => {
   const inputPath = path.join(ROOT, config.input);
   if (!fs.existsSync(inputPath)) {

@@ -3,8 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- issue:start -->
 <title>Chasing Light · Get Inspired Society</title>
 <meta name="description" content="Read Chasing Light, Issue 3 of Get Inspired Society. Five artists, twenty-two spreads.">
+<!-- issue:end -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
@@ -162,9 +164,11 @@ nav.solid .mark{height:clamp(30px,4vw,40px)}
 </nav>
 
 <section class="opening">
+<!-- issue:start -->
   <span class="eyebrow">Issue 3</span>
   <h1>Chasing Light</h1>
   <p class="sub">The same sun. Never the same light.</p>
+<!-- issue:end -->
 </section>
 
 <section class="reader" id="reader" aria-label="Magazine reader" tabindex="-1">
@@ -195,11 +199,15 @@ nav.solid .mark{height:clamp(30px,4vw,40px)}
 <section class="print-block">
   <div class="inner">
     <div class="txt">
+<!-- issue:start -->
       <h2>Chasing Light, in print.</h2>
+<!-- issue:end -->
       <div class="opts">
         <div class="opt">
+<!-- issue:start -->
           <a class="btn-white" id="printOrderBtn" href="https://www.peecho.com/print/en/2273132" target="_blank" rel="noopener">Order a print</a>
           <p class="note">A single issue. &euro;25, shipping not included.</p>
+<!-- issue:end -->
         </div>
       </div>
     </div>
@@ -229,6 +237,7 @@ footer .stamp{margin-top:26px;font-size:11px;color:rgba(255,255,255,.35);letter-
 </div>
 
 <script>
+// issue:start
 const ISSUE = {
   number: "Issue 3",
   title: "Chasing Light",
@@ -267,6 +276,7 @@ const ISSUE = {
     { name: "Joaquin Pastor Genzor", spread: 18 }
   ]
 };
+// issue:end
 
 const views = [{ type:"cover", src:ISSUE.cover, alt:ISSUE.coverAlt }]
   .concat(ISSUE.spreads.map(s => ({ type:"spread", src:s.src, alt:s.alt })));
@@ -363,9 +373,13 @@ if(printBtn){
     const el = document.getElementById("printImg");
     el.innerHTML = "";
     el.appendChild(img);
+// issue:start
     img.alt = "The printed edition of Chasing Light, held in hand.";
+// issue:end
   };
+// issue:start
   img.src = "/assets/print/holding-chasing-light.webp";
+// issue:end
 })();
 
 const hint = document.getElementById("hint");
