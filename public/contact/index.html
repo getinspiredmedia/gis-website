@@ -119,16 +119,12 @@ nav:not(.solid) .mark-dark{filter:invert(1)}
 .menu{display:flex;gap:4px;align-items:center}
 .menu a{text-decoration:none;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding:9px 13px;border-radius:999px;line-height:1;transition:background .25s,color .25s}
 .menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:rgba(255,255,255,.16)}
-.menu .enter{background:var(--blue);padding:10px 18px;margin-left:12px}
-.menu .enter:hover,.menu .enter:focus-visible{background:#fff;color:var(--blue)}
 nav[data-variant="light"] .mark{filter:invert(1)}
 nav[data-variant="light"].solid .mark{filter:none}
 nav[data-variant="light"] .menu a{color:var(--ink)}
 nav[data-variant="light"].solid .menu a{color:#fff}
 nav[data-variant="light"] .menu a:hover,nav[data-variant="light"] .menu a:focus-visible,nav[data-variant="light"] .menu a[aria-current]{background:rgba(11,12,16,.08)}
 nav[data-variant="light"].solid .menu a:hover,nav[data-variant="light"].solid .menu a:focus-visible,nav[data-variant="light"].solid .menu a[aria-current]{background:rgba(255,255,255,.16)}
-nav[data-variant="light"] .menu .enter,nav[data-variant="light"].solid .menu .enter{background:var(--blue);color:#fff}
-nav[data-variant="light"] .menu .enter:hover{background:var(--ink)}
 
 /* ── Mobile nav toggle ── */
 .nav-toggle{display:none;position:relative;z-index:2;width:40px;height:40px;flex-shrink:0;border:0;background:transparent;color:#fff;cursor:pointer;align-items:center;justify-content:center}
@@ -173,19 +169,6 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
   .menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:none;color:rgba(255,255,255,.6)}
   nav[data-variant="light"] .menu a{color:#fff}
   nav[data-variant="light"] .menu a:hover,nav[data-variant="light"] .menu a:focus-visible,nav[data-variant="light"] .menu a[aria-current]{background:none;color:rgba(255,255,255,.6)}
-  .menu .enter{
-    display:inline-flex;
-    margin:22px 0 0;
-    background:var(--blue);
-    color:#fff;
-    font-size:13px;
-    font-weight:600;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    padding:13px 26px;
-    border-radius:999px;
-  }
-  .menu .enter:hover,.menu .enter:focus-visible{background:#fff;color:var(--blue)}
   nav.nav-open .mark{filter:none}
   nav.nav-open .nav-toggle{color:#fff}
 }
