@@ -110,7 +110,7 @@ a{color:inherit;text-decoration:none}
       addEventListener('scroll', onScroll, {passive:true});
     }
     if(wipeEl){
-      document.querySelectorAll('a[href^="/"]').forEach(function(a){
+      document.querySelectorAll('a[href^="/"]:not([download]):not([target="_blank"])').forEach(function(a){
         a.addEventListener('click', function(ev){
           if(reduce) return;
           ev.preventDefault();
