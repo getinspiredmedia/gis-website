@@ -1,11 +1,21 @@
 <!--
-  ARCHIVED, NOT PART OF THE BUILD.
+  HISTORICAL COPY, NOT PART OF THE BUILD. build/pages/index.html is leading.
+
+  The content of this file is live again: since the homepage hero chooses
+  automatically (open call while a round is active, otherwise this current
+  selection hero, now with a submit button and an empty-wall state), the hero
+  below lives in build/pages/index.html. Changes made there are not copied back
+  here, so do not restore from this file. adaptNavMark() was not brought back
+  (a dark scrim over the plate replaces it). build/build.js only reads the
+  partials it names (nav, footer, wipe, analytics), so nothing in this
+  directory is built.
+
+  The original description follows.
 
   The homepage hero that showed the current selection of On View: a
   full-screen plate of the work with status "current" (from GET /api/works),
   with a caption (artist, title, portfolio link). It was replaced by the
-  temporary open-call hero. build/build.js only reads the partials it names
-  (nav, footer, wipe, analytics), so nothing in this directory is built.
+  temporary open-call hero.
 
   Note: this hero was never an iframe/embed and has no postMessage link; it is
   a plain <section class="open"> filled by inline JS.
