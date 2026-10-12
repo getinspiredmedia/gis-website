@@ -24,11 +24,14 @@ npm start
 | `/contact` | Contact |
 | `/support` | Support |
 
-## Tijdelijke open-call hero
+## Homepage-hero
 
-De homepage toont tijdelijk een oproep om mee te doen (`build/pages/index.html`, sectie `.callout`) in plaats van de hero met de current selection van On View. De oude hero staat ongewijzigd in `build/archive/hero-current-selection.html` (wordt niet gebouwd, met terugzetinstructie bovenaan).
+De hero op `/` kiest bij elke pageload zelf, via `GET /api/on-view/round` (`build/pages/index.html`, geen deploy of handmatige actie nodig):
 
-De hero heeft een tweede variant: zodra er een ronde-winnaar is aangekondigd (`GET /api/on-view/previous-winner`, opgehaald bij elke pageload) toont hij op desktop twee kolommen, links de open call en rechts de winnaar (klikbaar naar `/work/:slug`, beeld nooit gecropt); op mobiel staat de winnaarskaart onder de open-call content. Zonder aangekondigde winnaar blijft de volle-breedte hero staan. Geen herdeploy nodig: de winnaar verschijnt zodra in `/admin` op "Announce winner" is geklikt.
+- **Actieve ronde:** de open-call hero (sectie `.callout`: "Show one work." / "Win a t-shirt.", knop naar `/submit`, link naar het leaderboard, shirt, feitenstrook). Zodra een winnaar is aangekondigd (`GET /api/on-view/previous-winner`) komt daar op desktop een tweede kolom bij, op mobiel een kaart eronder, klikbaar naar `/work/:slug`; beeld nooit gecropt. De winnaar verschijnt zodra in `/admin` op "Announce winner" is geklikt.
+- **Geen actieve ronde** (geen rondes, alleen verleden of toekomstige rondes), een fout bij het ophalen of geen antwoord binnen 2,5 seconde: de current-selection hero (sectie `.open`): het werk met status `current` schermvullend met caption, plus de knop "Submit your work →" naar `/submit`. Is er geen current werk, dan is het een effen ink hero met alleen die knop.
+
+De twee varianten wisselen nooit zichtbaar: beide blijven verborgen tot de keuze is gemaakt. Na ronde 4 hoeft er dus niets te gebeuren; wordt er later weer een ronde aangemaakt, dan staat de open-call hero er vanzelf weer. `build/archive/hero-current-selection.html` is alleen nog een historisch exemplaar; `build/pages/index.html` is leidend.
 
 ## Ronde-winnaar
 

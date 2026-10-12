@@ -21,7 +21,8 @@ a{color:inherit;text-decoration:none}
 .statement{font-weight:700;line-height:.94;letter-spacing:-.02em;font-variation-settings:'wdth' 118;font-size:clamp(2.6rem,7.4vw,6.6rem)}
 .lede{font-size:clamp(1rem,1.5vw,1.2rem);line-height:1.55;max-width:34ch}
 
-/* open call hero (temporary; the previous "current selection" hero is archived in build/archive/) */
+/* Hero: the open call while a round is active (.callout), the current selection otherwise (.open). The script in this page picks one per load. */
+.callout[hidden],.open[hidden]{display:none}
 .callout{background:var(--ink);color:#fff;min-height:100svh;display:flex;flex-direction:column;padding:clamp(150px,20vh,200px) 28px 0}
 .callout-main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,500px);grid-template-rows:1fr 1fr;grid-template-areas:"head tee" "actions tee";column-gap:clamp(32px,6vw,96px);padding-bottom:clamp(40px,7vh,72px)}
 .callout-head{grid-area:head;align-self:end}
@@ -42,6 +43,30 @@ a{color:inherit;text-decoration:none}
 .fact.is-pending{visibility:hidden}
 .fact[hidden]{display:none}
 .callout.is-pending .callout-main,.callout.is-pending .facts{visibility:hidden}
+
+/* current selection hero (variant without an active round); cold open from build/archive/hero-current-selection.html */
+.open{position:relative;height:100svh;min-height:560px;background:var(--ink);overflow:hidden;display:flex;align-items:flex-end}
+.open figure{position:absolute;inset:0}
+.open figure::after{content:'';position:absolute;inset:0;background:linear-gradient(rgba(11,12,16,.55) 0,transparent 24%,transparent 55%,rgba(11,12,16,.7) 100%)}
+.open .plate{width:100%;height:100%;background:radial-gradient(120% 90% at 62% 34%,#2a3550 0%,#14161f 55%,#0b0c10 100%);transform:scale(1.06);opacity:0;animation:plateIn 2600ms var(--ease) forwards}
+@keyframes plateIn{to{transform:scale(1);opacity:1}}
+.open .veil{position:absolute;inset:0;background:var(--ink);transform-origin:top;animation:veil 1200ms var(--ease) 300ms forwards}
+@keyframes veil{to{transform:scaleY(0)}}
+.open .caption{position:relative;z-index:2;color:#fff;padding:0 28px 34px;width:100%;display:flex;flex-direction:column;align-items:stretch;gap:22px;opacity:0;animation:fadeUp 900ms var(--ease) 1900ms forwards}
+.open .caption-row{display:flex;justify-content:space-between;align-items:flex-end;gap:20px}
+.open .caption .eyebrow{color:#fff;opacity:.72}
+.open .caption h1{font-size:clamp(1.4rem,3vw,2.4rem);font-weight:600;letter-spacing:-.01em;margin-top:8px;font-variation-settings:'wdth' 108}
+.open .caption .meta{font-size:12px;color:rgba(255,255,255,.6);text-align:right;line-height:1.7}
+.open .caption .btn{margin-top:0;align-self:flex-start}
+.open .caption .btn:hover{background:#fff;color:var(--ink);gap:16px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.hero-pp{display:inline-block;margin-top:10px;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.55);border-bottom:1px solid rgba(255,255,255,.28);padding-bottom:3px;text-decoration:none;transition:color .25s,border-color .25s}
+.hero-pp:hover{color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.6)}
+/* empty wall: a plain ink hero with only the submit button */
+.open.is-empty{align-items:center;justify-content:center}
+.open.is-empty figure,.open.is-empty .veil,.open.is-empty .caption-row{display:none}
+.open.is-empty .caption{align-items:center;padding:0 28px;width:auto;animation-delay:200ms}
+.open.is-empty .caption .btn{align-self:center}
 
 /* previous round winner: shown next to (desktop) or below (mobile) the open call once a winner has been announced */
 .winner{display:none;position:relative;background:#1c1f29;color:#fff}
@@ -153,6 +178,9 @@ a{color:inherit;text-decoration:none}
   .callout-actions{flex-direction:column;align-items:stretch;gap:18px;margin-top:28px}
   .callout .btn{justify-content:center;width:100%}
   .callout-link{align-self:flex-start}
+  .open .caption{padding:0 22px 28px}
+  .open .caption .btn{justify-content:center;width:100%}
+  .open.is-empty .caption{width:100%}
   .facts{grid-auto-flow:row;grid-auto-columns:auto}
   .fact{padding:20px 0 22px}
   .fact + .fact{border-top:1px solid rgba(255,255,255,.18)}
@@ -165,6 +193,9 @@ a{color:inherit;text-decoration:none}
   .claim .statement{transform:none}
   .rv{opacity:1;transform:none}
   .room .torch{display:none}
+  .open .plate{opacity:1;transform:none;animation:none}
+  .open .veil{display:none}
+  .open .caption{opacity:1;animation:none}
 }
 </style>
 </head>
@@ -178,7 +209,7 @@ a{color:inherit;text-decoration:none}
       <span class="eyebrow">On view open call</span>
       <h1>Show one work.<br>Win a t-shirt.</h1>
     </div>
-    <div class="tee"><img src="/img/gis-tee-front-back.png" width="1000" height="1000" alt="Get Inspired Society t-shirt in black, front and back"></div>
+    <div class="tee"><img id="tee-img" data-src="/img/gis-tee-front-back.png" width="1000" height="1000" alt="Get Inspired Society t-shirt in black, front and back"></div>
     <div class="callout-actions">
       <a class="btn" href="/submit">Submit your work &rarr;</a>
       <a class="callout-link" href="/on-view/leaderboard">See the leaderboard</a>
@@ -194,6 +225,22 @@ a{color:inherit;text-decoration:none}
     <span class="winner-top"><span class="eyebrow" id="winner-round"></span></span>
     <span class="winner-bottom"><span class="winner-title" id="winner-title"></span><span class="winner-artist" id="winner-artist"></span></span>
   </a>
+</section>
+
+<section class="open" id="open" hidden>
+  <figure><div class="plate" id="hero-plate"></div></figure>
+  <div class="veil"></div>
+  <div class="caption">
+    <div class="caption-row">
+      <div>
+        <span class="eyebrow" id="hero-label">On view</span>
+        <h1 id="hero-artist">&nbsp;</h1>
+        <a class="hero-pp" id="hero-portfolio" href="#" target="_blank" rel="noopener" style="display:none">Portfolio</a>
+      </div>
+      <div class="meta" id="hero-meta"></div>
+    </div>
+    <a class="btn" href="/submit">Submit your work &rarr;</a>
+  </div>
 </section>
 
 <section class="claim rv">
@@ -326,17 +373,24 @@ if(room && !reduce){
       if (wallSection) wallSection.style.display = 'none';
     });
 })();
-// Open call hero: the Submissions cell comes from the active round (UTC).
-// Until the fetch settles the cell keeps its space (no layout shift); with no
-// active round, or on any failure, only that cell is hidden.
-(function(){
-  var cell   = document.getElementById('fact-submissions');
-  var value  = document.getElementById('fact-submissions-value');
-  var detail = document.getElementById('fact-submissions-detail');
-  if (!cell) return;
-  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+// Which hero this page load shows: the open call while a round is active (the
+// round endpoint answers with an object), the current selection in every other
+// case (null, an error, or no answer in time).
+function chooseHeroVariant(round) {
+  return round !== null && typeof round === 'object' && !Array.isArray(round) && 'round_number' in round
+    ? 'open-call'
+    : 'current';
+}
 
-  function hideCell() { cell.hidden = true; }
+// Hero chooser. Both heroes stay hidden until the choice is made and the chosen
+// one is ready; the dark open-call section holds the place meanwhile, so there is
+// never a visible switch from one hero to the other and no layout shift.
+(function(){
+  var callout = document.getElementById('callout');
+  var heroOpen = document.getElementById('open');
+  if (!callout || !heroOpen) return;
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var decided = false;
 
   function formatRange(s, e) {
     var sameYear = s.getUTCFullYear() === e.getUTCFullYear();
@@ -347,60 +401,144 @@ if(room && !reduce){
     return s.getUTCDate() + ' ' + MONTHS[s.getUTCMonth()] + y(s) + ' to ' + e.getUTCDate() + ' ' + MONTHS[e.getUTCMonth()] + y(e);
   }
 
-  fetch('/api/on-view/round')
-    .then(function(r){ if (!r.ok) throw new Error('round'); return r.json(); })
-    .then(function(round){
-      if (!round) { hideCell(); return; }
-      var s = new Date(round.starts_at), e = new Date(round.ends_at);
-      if (isNaN(s) || isNaN(e)) { hideCell(); return; }
+  // ── Variant a: the open call (active round) ──────────────────────────────
+  // The Submissions cell comes from the active round (UTC). It keeps its space
+  // until filled; if the dates are unusable only that cell is hidden. The shirt
+  // is only requested here, so the other variant never loads it. The hero is
+  // revealed once the winner (or its absence) and the shirt have settled, or
+  // after 2.5s; the winner column then makes the layout two columns once.
+  function showOpenCall(round) {
+    var cell   = document.getElementById('fact-submissions');
+    var value  = document.getElementById('fact-submissions-value');
+    var detail = document.getElementById('fact-submissions-detail');
+    var link   = document.getElementById('winner');
+    var tee    = document.getElementById('tee-img');
+    var winnerDone = false, teeDone = false;
+
+    function maybeReveal() {
+      if (winnerDone && teeDone) callout.classList.remove('is-pending');
+    }
+
+    var s = new Date(round.starts_at), e = new Date(round.ends_at);
+    if (isNaN(s) || isNaN(e)) {
+      cell.hidden = true;
+    } else {
       value.textContent  = formatRange(s, e);
       detail.textContent = 'Round ' + round.round_number + ', ' + s.getUTCFullYear() + '. All dates in UTC.';
       cell.classList.remove('is-pending');
-    })
-    .catch(hideCell);
-})();
-// Open call hero, winner variant: once a round winner has been announced
-// (GET /api/on-view/previous-winner) the hero shows two columns. The hero stays
-// hidden (.is-pending) until the fetch and the winner image have settled, so the
-// layout is decided once and never jumps; on no winner, a failed fetch, an image
-// error or a slow response (2.5s) the plain full-width hero is shown.
-(function(){
-  var callout = document.getElementById('callout');
-  var link    = document.getElementById('winner');
-  if (!callout || !link) return;
-  var settled = false;
-
-  function settle(winner, img) {
-    if (settled) return;
-    settled = true;
-    if (winner) {
-      link.href = '/work/' + encodeURIComponent(winner.slug);
-      link.setAttribute('aria-label', 'Round ' + winner.round_number + ' winner: ' + winner.title + (winner.artist ? ' by ' + winner.artist : ''));
-      var shown = document.getElementById('winner-img');
-      shown.src = img.src;
-      shown.width = img.naturalWidth;
-      shown.height = img.naturalHeight;
-      document.getElementById('winner-round').textContent  = 'Round ' + winner.round_number + ' winner';
-      document.getElementById('winner-title').textContent  = winner.title;
-      document.getElementById('winner-artist').textContent = winner.artist && winner.artist !== winner.title ? winner.artist : '';
-      link.hidden = false;
-      callout.classList.add('has-winner');
     }
-    callout.classList.remove('is-pending');
+
+    tee.onload = tee.onerror = function(){ teeDone = true; maybeReveal(); };
+    tee.src = tee.getAttribute('data-src');
+
+    function settle(winner, img) {
+      if (winnerDone) return;
+      winnerDone = true;
+      if (winner) {
+        link.href = '/work/' + encodeURIComponent(winner.slug);
+        link.setAttribute('aria-label', 'Round ' + winner.round_number + ' winner: ' + winner.title + (winner.artist ? ' by ' + winner.artist : ''));
+        var shown = document.getElementById('winner-img');
+        shown.src = img.src;
+        shown.width = img.naturalWidth;
+        shown.height = img.naturalHeight;
+        document.getElementById('winner-round').textContent  = 'Round ' + winner.round_number + ' winner';
+        document.getElementById('winner-title').textContent  = winner.title;
+        document.getElementById('winner-artist').textContent = winner.artist && winner.artist !== winner.title ? winner.artist : '';
+        link.hidden = false;
+        callout.classList.add('has-winner');
+      }
+      maybeReveal();
+    }
+
+    setTimeout(function(){ settle(null); teeDone = true; maybeReveal(); }, 2500);
+
+    fetch('/api/on-view/previous-winner')
+      .then(function(r){ if (!r.ok) throw new Error('winner'); return r.json(); })
+      .then(function(winner){
+        if (!winner || !winner.image_url) { settle(null); return; }
+        var img = new Image();
+        img.onload  = function(){ settle(winner, img); };
+        img.onerror = function(){ settle(null); };
+        img.src = winner.image_url;
+      })
+      .catch(function(){ settle(null); });
   }
 
-  setTimeout(function(){ settle(null); }, 2500);
+  // ── Variant b: the current selection (no active round) ───────────────────
+  // The work with status "current" from GET /api/works, full-screen, with the
+  // submit button in the caption. Without a current work: a plain ink hero with
+  // only the button. Revealed once the image has loaded or after 2.5s. The nav
+  // logo stays white; a dark scrim over the top and bottom of the plate keeps it
+  // and the caption legible on bright work instead of sampling the image.
+  function showCurrent() {
+    var plate = document.getElementById('hero-plate');
+    var finished = false, work = null;
 
-  fetch('/api/on-view/previous-winner')
-    .then(function(r){ if (!r.ok) throw new Error('winner'); return r.json(); })
-    .then(function(winner){
-      if (!winner || !winner.image_url) { settle(null); return; }
+    function paint(w, img) {
+      document.getElementById('hero-label').textContent  = 'On view';
+      document.getElementById('hero-artist').textContent = w.artist || '';
+      document.getElementById('hero-meta').textContent   = (w.title && w.title !== w.artist) ? w.title : '';
+      var pp = document.getElementById('hero-portfolio');
+      if (/^https?:\/\//i.test(w.portfolio || '')) {
+        pp.href = w.portfolio;
+        pp.style.display = '';
+      }
+      if (img) plate.style.backgroundImage = 'url("' + img.src.replace(/"/g, '%22') + '")';
+      plate.style.backgroundSize = 'cover';
+      plate.style.backgroundPosition = 'center';
+      try { sessionStorage.setItem('gis_hero', JSON.stringify({artist:w.artist,title:w.title,image:w.image,slug:w.slug,portfolio:w.portfolio})); } catch(e){}
+    }
+
+    function finish(w, img) {
+      if (finished) return;
+      finished = true;
+      if (w) paint(w, img); else heroOpen.classList.add('is-empty');
+      callout.hidden = true;
+      heroOpen.hidden = false;
+    }
+
+    function load(w) {
+      work = w;
       var img = new Image();
-      img.onload  = function(){ settle(winner, img); };
-      img.onerror = function(){ settle(null); };
-      img.src = winner.image_url;
-    })
-    .catch(function(){ settle(null); });
+      img.onload  = function(){ finish(w, img); };
+      img.onerror = function(){ finish(w, null); };
+      if (w.image) img.src = w.image; else finish(w, null);
+    }
+
+    setTimeout(function(){
+      if (!work) { finish(null); return; }
+      var img = new Image();
+      if (work.image) img.src = work.image;
+      finish(work, img);
+    }, 2500);
+
+    fetch('/api/works')
+      .then(function(r){ if (!r.ok) throw new Error('works'); return r.json(); })
+      .then(function(list){
+        var cur = list.find(function(w){ return w.current; });
+        if (cur) load(cur); else finish(null);
+      })
+      .catch(function(){
+        // The API failed: fall back to the work remembered from an earlier visit, if any.
+        var cached = null;
+        try { cached = JSON.parse(sessionStorage.getItem('gis_hero')); } catch(e){}
+        if (cached && cached.artist) load(cached); else finish(null);
+      });
+  }
+
+  function decide(round) {
+    if (decided) return;
+    decided = true;
+    clearTimeout(timer);
+    if (chooseHeroVariant(round) === 'open-call') showOpenCall(round); else showCurrent();
+  }
+
+  var timer = setTimeout(function(){ decide(null); }, 2500);
+
+  fetch('/api/on-view/round')
+    .then(function(r){ if (!r.ok) throw new Error('round'); return r.json(); })
+    .then(decide)
+    .catch(function(){ decide(null); });
 })();
 </script>
 </body>
