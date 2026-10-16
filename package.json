@@ -29,6 +29,7 @@
     "test:society-redirect": "node test/society-redirect.test.js",
     "test:homepage-hero-variant": "node test/homepage-hero-variant.test.js",
     "test:on-view-closing": "node test/on-view-closing.test.js",
+    "test:mail-escaping": "node test/mail-escaping.test.js",
     "start": "exec node server.js"
   },
   "engines": {

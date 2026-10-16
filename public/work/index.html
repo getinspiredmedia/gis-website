@@ -261,7 +261,7 @@ footer {
 
     var statusClass  = work.current ? 'on-view'  : 'off-view';
     var statusLabel  = work.current ? 'Currently on view' : 'Previously on view';
-    var portfolioHTML = work.portfolio && work.portfolio !== '#'
+    var portfolioHTML = /^https?:\/\//i.test(work.portfolio || '')
       ? '<a class="btn" href="' + esc(work.portfolio) + '" target="_blank" rel="noopener">Portfolio &rarr;</a>'
       : '';
 
