@@ -267,8 +267,8 @@ async function run() {
         'the approval email is addressed to the maker — got ' + JSON.stringify(mail.to));
       assert(mail.html.includes(`${SITE_URL}/work/${work.slug}`),
         'the approval email links to the live /work/:slug page — got ' + mail.html);
-      assert(mail.html.includes("This week's wall is also a contest. The work with the most views on its page by the end of the week wins a t-shirt. Sharing your link is one way to get more views."),
-        'the approval email explains the contest — got ' + mail.html);
+      assert(mail.html.includes('Want people to see it? Share your link.') && !/contest|t-shirt|most views/.test(mail.html),
+        'a work outside any active round gets the neutral share line, not the contest (see test:approve-email), got: ' + mail.html);
       assert(mail.html.includes(`My work &quot;${work.title}&quot; is on the wall at Get Inspired Society this week. ${SITE_URL}/work/${work.slug}`),
         'the approval email includes the ready-to-share example text with the real title and link — got ' + mail.html);
       assert(mail.html.includes('Suggested hashtag: #GetInspiredSociety'),
