@@ -46,6 +46,10 @@ Dit interne leaderboard (en de winnaarsdropdown bij "Announce winner") tonen en 
 
 Zodra `ends_at` van een ronde is gepasseerd, krijgt elke inzender met een goedgekeurd werk in die ronde één mail ("Round N is closed"). `rounds.closed_notification_sent_at` voorkomt dat de mail dubbel gaat; de check draait bij opstart en elk uur. Los van de winnaarsactie en van de archiefmail per werk.
 
+## Inzendingen en mails
+
+Alleen `/submit` (`POST /api/submit`) neemt inzendingen aan. De oude uitnodigingsflow `/hand-in/:token` is verwijderd: `/hand-in` en `/hand-in/:token` sturen door naar `/submit`, en de `tokens`-tabel wordt niet meer gebruikt (bewust niet gedropt). Alle door bezoekers ingevulde tekst wordt geescapet voordat ze in een HTML-mail komt, onderwerpen bevatten nooit regeleinden, en het portfolio moet een `http://`- of `https://`-link zijn; `/work/:slug` en `/admin` linken alleen zulke waarden.
+
 ## Deployment
 
 Gedeployed via Railway. Auto-deploy op push naar `master`.

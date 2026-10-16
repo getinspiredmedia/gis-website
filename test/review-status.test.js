@@ -3,7 +3,7 @@
  * Epic 2: every new submission requires approval before it goes live.
  * works.review_status (pending/approved/rejected) is separate from the
  * existing lifecycle status (current/previous/archived) — a submission can
- * be 'previous' + 'pending' at the same time. Covers: a /hand-in submission
+ * be 'previous' + 'pending' at the same time. Covers: a /api/submit submission
  * starts pending and is invisible everywhere public (GET /api/works,
  * GET /api/works/:slug, GET /work/:slug — all three behave exactly like an
  * unknown slug); approving sets review_status=approved + records
@@ -84,23 +84,6 @@ async function adminAuth() {
   return token;
 }
 
-async function createHandInToken(adminToken, name, email) {
-  const r = await fetch(`${BASE}/api/admin/tokens`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + adminToken },
-    body: JSON.stringify({ artist_name: name, artist_email: email }),
-  });
-  const { token } = await r.json();
-  return token;
-}
-
-async function submitHandIn(handInToken, title, imageBuf) {
-  const form = new FormData();
-  form.append('work_title', title);
-  form.append('image', new Blob([imageBuf], { type: 'image/webp' }), 'test.webp');
-  return fetch(`${BASE}/hand-in/${handInToken}`, { method: 'POST', body: form });
-}
-
 // hp/captcha: /api/submit gained a honeypot + hCaptcha gate in a later epic
 // (see test/submit-public.test.js for dedicated coverage of that gate
 // itself). HCAPTCHA_SECRET is unset in this test env, so any non-empty
@@ -115,6 +98,10 @@ async function apiSubmit({ name, email, portfolio, work_title }, imageBuf) {
   form.append('captcha', 'test-captcha-token');
   form.append('image', new Blob([imageBuf], { type: 'image/webp' }), 'test.webp');
   return fetch(`${BASE}/api/submit`, { method: 'POST', body: form });
+}
+
+function submitPlain(name, email, title, imageBuf) {
+  return apiSubmit({ name, email, portfolio: 'https://example.com', work_title: title }, imageBuf);
 }
 
 const CONFIRM = /^<p>Hi (.+),<\/p><p>We have received your work "<b>(.+)<\/b>"\. We will let you know when it goes on the wall\.<\/p><p>Creative regards,<br>Get Inspired Society<\/p>$/;
@@ -197,11 +184,10 @@ async function run() {
       create: { width: 400, height: 300, channels: 3, background: { r: 100, g: 120, b: 200 } },
     }).webp().toBuffer();
 
-    // A new /hand-in submission is pending
-    const handInToken = await createHandInToken(adminToken, 'Pending Artist', 'pending-artist@example.com');
-    const handInRes = await submitHandIn(handInToken, 'Pending Test Work', imageBuf);
+    // A new submission is pending
+    const handInRes = await submitPlain('Pending Artist', 'pending-artist@example.com', 'Pending Test Work', imageBuf);
     const handInJson = await handInRes.json();
-    assert(handInRes.status === 200 && handInJson.ok, 'hand-in submission is accepted');
+    assert(handInRes.status === 200 && handInJson.ok, 'submission is accepted');
 
     let work;
     {
@@ -209,24 +195,24 @@ async function run() {
       work = db.prepare("SELECT * FROM works WHERE title='Pending Test Work'").get();
       db.close();
     }
-    assert(!!work, 'the hand-in created a work row');
-    assert(work.review_status === 'pending', `a new /hand-in submission is review_status=pending — got ${work.review_status}`);
+    assert(!!work, 'the submission created a work row');
+    assert(work.review_status === 'pending', `a new submission is review_status=pending, got ${work.review_status}`);
     assert(work.approved_at === null, 'a pending submission has no approved_at yet');
-    console.log('PASS - a new /hand-in submission gets review_status=pending');
+    console.log('PASS - a new submission gets review_status=pending');
 
     // The confirmation email matches the pending reality: no premature
     // share link, and ends with the standard maker-facing sign-off.
     {
       const mail = emailRequests.find(m => m.subject === 'Your work is in, Get Inspired Society' && m.html.includes('Pending Test Work'));
-      assert(!!mail, 'a confirmation email was sent for the /hand-in submission');
+      assert(!!mail, 'a confirmation email was sent for the submission');
       assert(!mail.html.includes(`${SITE_URL}/work/`), 'the confirmation email does not link to a not-yet-live work page — got ' + mail.html);
       assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
         'the confirmation email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
-      assert(mail.html.startsWith('<p>Hi Pending Artist,</p>') && CONFIRM.test(mail.html), 'the /hand-in confirmation greets "Hi {artist}," and has the shared build-up — got ' + mail.html);
+      assert(mail.html.startsWith('<p>Hi Pending Artist,</p>') && CONFIRM.test(mail.html), 'the confirmation greets "Hi {artist}," and has the shared build-up, got ' + mail.html);
       assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
         'the confirmation email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
     }
-    console.log('PASS - the /hand-in confirmation email matches the pending status and has the standard sign-off');
+    console.log('PASS - the confirmation email matches the pending status and has the standard sign-off');
 
     // Invisible everywhere public
     {
@@ -301,8 +287,7 @@ async function run() {
     console.log('PASS - an approved work appears in the wall listing and is reachable via /api/works/:slug and /work/:slug');
 
     // ── Reject path ──────────────────────────────────────────────────────
-    const handInToken2 = await createHandInToken(adminToken, 'Rejected Artist', 'rejected-artist@example.com');
-    await submitHandIn(handInToken2, 'Rejected Test Work', imageBuf);
+    await submitPlain('Rejected Artist', 'rejected-artist@example.com', 'Rejected Test Work', imageBuf);
 
     let rejected;
     {
@@ -310,7 +295,7 @@ async function run() {
       rejected = db.prepare("SELECT * FROM works WHERE title='Rejected Test Work'").get();
       db.close();
     }
-    assert(!!rejected, 'the second hand-in created a work row');
+    assert(!!rejected, 'the second submission created a work row');
 
     {
       const r = await fetch(`${BASE}/api/admin/works/${rejected.id}/reject`, {
@@ -369,7 +354,7 @@ async function run() {
 
     // ── /api/submit must not bypass the approval gate ───────────────────────
     // /api/submit backs the publicly-shared /submit/:SUBMIT_TOKEN page — it
-    // must go through the same pending gate as /hand-in, not land as approved.
+    // must go through the same pending gate as every other submission, not land as approved.
     const submitRes = await apiSubmit({
       name: 'Submit Artist', email: 'submit-artist@example.com',
       portfolio: 'https://example.com/portfolio', work_title: 'Submit Test Work',
@@ -384,8 +369,8 @@ async function run() {
       db.close();
     }
     assert(!!submitWork, '/api/submit created a work row');
-    assert(submitWork.review_status === 'pending', `a new /api/submit submission is review_status=pending — got ${submitWork.review_status}`);
-    console.log('PASS - a new /api/submit submission gets review_status=pending, same as /hand-in');
+    assert(submitWork.review_status === 'pending', `a new /api/submit submission is review_status=pending, got ${submitWork.review_status}`);
+    console.log('PASS - a new /api/submit submission gets review_status=pending');
 
     {
       const mail = emailRequests.find(m => m.subject === 'Your work is in, Get Inspired Society' && m.html.includes('Submit Test Work'));
@@ -393,7 +378,7 @@ async function run() {
       assert(!mail.html.includes(`${SITE_URL}/work/`), 'the confirmation email does not link to a not-yet-live work page — got ' + mail.html);
       assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
         'the confirmation email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
-      assert(mail.html.startsWith('<p>Hi Submit Artist,</p>') && CONFIRM.test(mail.html), 'the /api/submit confirmation greets "Hi {artist}," and has the same build-up as /hand-in — got ' + mail.html);
+      assert(mail.html.startsWith('<p>Hi Submit Artist,</p>') && CONFIRM.test(mail.html), 'the /api/submit confirmation greets "Hi {artist}," and has the standard build-up, got ' + mail.html);
       assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
         'the confirmation email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
     }

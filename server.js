@@ -82,7 +82,8 @@ try { db.exec("ALTER TABLE tokens ADD COLUMN artist_email TEXT NOT NULL DEFAULT 
 try { db.exec("ALTER TABLE tokens ADD COLUMN used INTEGER NOT NULL DEFAULT 0"); } catch {}
 try { db.exec("ALTER TABLE tokens ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))"); } catch {}
 
-// Tokens table for hand-in links
+// No longer used: the /hand-in flow was removed. The table and these
+// migrations stay so existing databases are left untouched (no DROP).
 db.exec(`
   CREATE TABLE IF NOT EXISTS tokens (
     token        TEXT PRIMARY KEY,
@@ -165,6 +166,17 @@ function shuffle(arr) {
 // approved by the review-step migration (they predate any pending period),
 // so COALESCE falls back to created_at for exactly those, preserving their
 // original archive timing.
+// Every visitor- or database-derived value that goes into an HTML mail or page
+// passes through this; SITE_URL and slugs are ours and need no escaping.
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function archiveOldWorks() {
   // view_count_at_archive is set in this same UPDATE, from view_count as it
   // reads within this very statement, so no later view can land in the gap
@@ -178,8 +190,8 @@ async function archiveOldWorks() {
     await sendEmail({
       to:      row.email,
       subject: 'Your work has come down from On View',
-      html:    `<p>Hi ${row.artist},</p>`
-             + `<p>"${row.title}" was on the wall for seven days. It comes down today.</p>`
+      html:    `<p>Hi ${escapeHtml(row.artist)},</p>`
+             + `<p>"${escapeHtml(row.title)}" was on the wall for seven days. It comes down today.</p>`
              + `<p>The page stays online: <a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
              + `<p>On View runs every week. Submit again: <a href="${SITE_URL}/submit">${SITE_URL}/submit</a></p>`
              + `<p>Creative regards,<br>Get Inspired Society</p>`,
@@ -270,7 +282,8 @@ const resend = RESEND_KEY ? new Resend(RESEND_KEY) : null;
 
 async function sendEmail({ to, subject, html, text }) {
   if (!resend) { console.warn('[email] Resend not configured — skipped:', subject); return; }
-  try { await resend.emails.send({ from: FROM_EMAIL, to, subject, ...(html ? { html } : { text }) }); }
+  const safeSubject = String(subject).replace(/[\r\n]+/g, ' ');
+  try { await resend.emails.send({ from: FROM_EMAIL, to, subject: safeSubject, ...(html ? { html } : { text }) }); }
   catch (e) { console.error('[email] send error:', e.message); }
 }
 
@@ -517,76 +530,20 @@ app.post('/api/contact', async (req, res) => {
   await sendEmail({
     to:      ADMIN_EMAIL,
     subject: `GIS contact from ${email}`,
-    html:    `<p><b>From:</b> ${email}</p><p>${message.replace(/\n/g, '<br>')}`,
+    html:    `<p><b>From:</b> ${escapeHtml(email)}</p><p>${escapeHtml(message).replace(/\r?\n/g, '<br>')}</p>`,
   });
   res.json({ ok: true });
 });
 
-app.get('/api/tokens/:token', (req, res) => {
-  const row = db.prepare('SELECT artist_name, used FROM tokens WHERE token=?').get(req.params.token);
-  if (!row || row.used) return res.status(404).json({ error: 'Invalid or already used.' });
-  res.json({ artist_name: row.artist_name });
-});
-
-// ── Hand-in ───────────────────────────────────────────────────────────────────
-
-app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
+// A portfolio link is only accepted, stored and shown when it is a real http(s)
+// URL: a javascript: or data: value in an href would run script for the admin.
+function isHttpUrl(value) {
+  if (typeof value !== 'string') return false;
   try {
-    const tokenRow = db.prepare('SELECT * FROM tokens WHERE token=?').get(req.params.token);
-    if (!tokenRow || tokenRow.used) return res.status(404).json({ error: 'Invalid or already used link.' });
-
-    const { work_title } = req.body || {};
-    if (!work_title?.trim()) return res.status(400).json({ error: 'Please enter a title.' });
-    if (!req.file)           return res.status(400).json({ error: 'No image uploaded.' });
-
-    const filename = crypto.randomUUID() + '.webp';
-    try {
-      await sharp(req.file.buffer)
-        .rotate()
-        .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 82 })
-        .toFile(path.join(UPLOAD_DIR, filename));
-    } catch (e) {
-      console.error('[hand-in] sharp error:', e.message);
-      return res.status(400).json({ error: 'Could not process image.' });
-    }
-
-    const title    = work_title.trim();
-    const name     = tokenRow.artist_name;
-    const email    = tokenRow.artist_email;
-    const baseSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'work';
-    let slug = baseSlug;
-    let suffix = 1;
-    while (db.prepare('SELECT id FROM works WHERE slug=?').get(slug)) {
-      slug = baseSlug + '-' + (suffix++);
-    }
-
-    db.prepare('INSERT INTO works (slug,title,artist,email,portfolio,image_url,status,review_status,round_number) VALUES (?,?,?,?,?,?,?,?,?)')
-      .run(slug, title, name, email, '#', '/uploads/' + filename, 'previous', 'pending', currentRoundNumber());
-
-    db.prepare('UPDATE tokens SET used=1 WHERE token=?').run(req.params.token);
-
-    console.log('[hand-in] received:', name, email, slug);
-
-    await Promise.all([
-      sendEmail({
-        to:      ADMIN_EMAIL,
-        subject: `Pending approval: "${title}" by ${name}`,
-        html:    `<p>${name} (${email}) handed in a work, pending your approval.<br>Title: ${title}<br><br>Review it: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
-      }),
-      sendEmail({
-        to:      email,
-        subject: 'Your work is in, Get Inspired Society',
-        html:    `<p>Hi ${name},</p><p>We have received your work "<b>${title}</b>". We will let you know when it goes on the wall.</p><p>Creative regards,<br>Get Inspired Society</p>`,
-      }),
-    ]);
-
-    res.json({ ok: true });
-  } catch (e) {
-    console.error('[hand-in] unexpected error:', e.message);
-    res.status(500).json({ error: 'Server error. Please try again.' });
-  }
-});
+    const { protocol } = new URL(value.trim());
+    return protocol === 'http:' || protocol === 'https:';
+  } catch { return false; }
+}
 
 // ── Submit ────────────────────────────────────────────────────────────────────
 
@@ -603,7 +560,7 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
 
     if (!name?.trim() || !email?.trim())            return res.status(400).json({ error: 'Name and email are required.' });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address.' });
-    if (!portfolio?.trim())                          return res.status(400).json({ error: 'Portfolio URL is required.' });
+    if (!isHttpUrl(portfolio))                      return res.status(400).json({ error: 'Please enter a portfolio link starting with http:// or https://.' });
     if (!req.file)                                  return res.status(400).json({ error: 'No image uploaded.' });
 
     // Duplicate check: an unresolved submission (pending or approved, and
@@ -643,12 +600,12 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
       sendEmail({
         to:      ADMIN_EMAIL,
         subject: `Pending approval: "${title}" by ${name}`,
-        html:    `<p>${name} (${email}) submitted a work, pending your approval.<br>Portfolio: ${portfolio}<br>Title: ${title}<br><br>Review it: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
+        html:    `<p>${escapeHtml(name)} (${escapeHtml(email)}) submitted a work, pending your approval.<br>Portfolio: ${escapeHtml(portfolio)}<br>Title: ${escapeHtml(title)}<br><br>Review it: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
       }),
       sendEmail({
         to:      email.trim(),
         subject: 'Your work is in, Get Inspired Society',
-        html:    `<p>Hi ${name},</p><p>We have received your work "<b>${title}</b>". We will let you know when it goes on the wall.</p><p>Creative regards,<br>Get Inspired Society</p>`,
+        html:    `<p>Hi ${escapeHtml(name)},</p><p>We have received your work "<b>${escapeHtml(title)}</b>". We will let you know when it goes on the wall.</p><p>Creative regards,<br>Get Inspired Society</p>`,
       }),
     ]);
 
@@ -713,10 +670,10 @@ app.post('/api/admin/works/:id/approve', requireAdmin, async (req, res) => {
     await sendEmail({
       to:      row.email,
       subject: 'Your work is on the wall, Get Inspired Society',
-      html:    `<p>Hi ${row.artist},</p><p>"${row.title}" is now on the wall.<br><a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
+      html:    `<p>Hi ${escapeHtml(row.artist)},</p><p>"${escapeHtml(row.title)}" is now on the wall.<br><a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
              + `<p>It stays up for seven days.</p>`
              + shareLine
-             + `<p>Example: "My work &quot;${row.title}&quot; is on the wall at Get Inspired Society this week. ${SITE_URL}/work/${row.slug}"</p>`
+             + `<p>Example: "My work &quot;${escapeHtml(row.title)}&quot; is on the wall at Get Inspired Society this week. ${SITE_URL}/work/${row.slug}"</p>`
              + `<p>Suggested hashtag: #GetInspiredSociety</p>`
              + `<p>Creative regards,<br>Get Inspired Society</p>`,
     });
@@ -733,7 +690,7 @@ app.post('/api/admin/works/:id/reject', requireAdmin, async (req, res) => {
     await sendEmail({
       to:      row.email,
       subject: 'Your submission, Get Inspired Society',
-      html:    `<p>Hi ${row.artist},</p><p>Thanks for sharing your work. We're not able to feature it on On View this time. We'd love to see what you submit next.</p>`
+      html:    `<p>Hi ${escapeHtml(row.artist)},</p><p>Thanks for sharing your work. We're not able to feature it on On View this time. We'd love to see what you submit next.</p>`
              + `<p>Creative regards,<br>Get Inspired Society</p>`,
     });
   }
@@ -802,20 +759,16 @@ app.post('/api/admin/rounds/:round_number/announce-winner', requireAdmin, (req, 
   res.json({ ok: true, winner });
 });
 
-app.post('/api/admin/tokens', requireAdmin, (req, res) => {
-  const { artist_name, artist_email } = req.body || {};
-  if (!artist_name?.trim() || !artist_email?.trim()) return res.status(400).json({ error: 'Name and email required.' });
-  const token = crypto.randomUUID();
-  db.prepare('INSERT INTO tokens (token, artist_name, artist_email) VALUES (?,?,?)')
-    .run(token, artist_name.trim(), artist_email.trim());
-  res.json({ token, url: `${SITE_URL}/hand-in/${token}` });
-});
-
 // ── Page routes ───────────────────────────────────────────────────────────────
 
 // /submit is public now — old shared-token links still work via a redirect,
 // for any token value (the token itself is no longer checked or needed).
 app.get('/submit/:token', (req, res) => {
+  res.redirect(301, '/submit');
+});
+
+// The invitation flow is gone; old hand-in links land on the public form.
+app.get(['/hand-in', '/hand-in/:token'], (req, res) => {
   res.redirect(301, '/submit');
 });
 
@@ -825,15 +778,6 @@ app.get('/submit/:token', (req, res) => {
 
 const WORK_TEMPLATE  = fs.readFileSync(path.join(__dirname, 'public', 'work', 'index.html'), 'utf8');
 const OG_DESCRIPTION = 'A weekly work on Get Inspired Society';
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 // ── OG image — on-the-fly JPEG conversion, cached on disk ──────────────────────
 // WhatsApp's link-preview crawler has long-standing, widely reported problems
@@ -959,11 +903,6 @@ app.get('/work/:slug', (req, res) => {
   res.send(renderWorkPage(row, req.params.slug));
 });
 
-app.get('/hand-in', (req, res) => res.status(404).send('Not found'));
-
-app.get('/hand-in/:token', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'hand-in', 'index.html'));
-});
 
 const httpServer = app.listen(PORT, () => console.log(`GIS server on port ${PORT}`));
 

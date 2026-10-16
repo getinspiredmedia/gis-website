@@ -236,7 +236,7 @@ function renderPending(rows){
     return '<tr><td>'+thumb(w,'thumb-lg')+'</td><td><b>'+esc(w.title)+'</b><br><small style="color:var(--muted)">'+esc(w.slug)+'</small></td>'+
       '<td>'+esc(w.artist)+'</td>'+
       '<td><small style="color:var(--muted)">'+esc(w.email||'')+'</small></td>'+
-      '<td><a href="'+esc(w.portfolio)+'" target="_blank" rel="noopener"><small>'+esc(w.portfolio)+'</small></a></td>'+
+      '<td>'+portfolioCell(w.portfolio)+'</td>'+
       '<td><small style="color:var(--muted)">'+esc((w.created_at||'').slice(0,10))+'</small></td>'+
       '<td><div style="display:flex;gap:6px;flex-wrap:wrap">'+
       '<button class="btn-sm primary" onclick="approveWork('+w.id+')">Approve</button>'+
@@ -363,6 +363,11 @@ window.announceWinner=function(roundNumber){
 function refreshAll(){
   loadWorks();
   loadRounds();
+}
+
+function portfolioCell(p){
+  var t=esc(p||'');
+  return /^https?:\/\//i.test(p||'')?'<a href="'+t+'" target="_blank" rel="noopener"><small>'+t+'</small></a>':'<small>'+t+'</small>';
 }
 
 function esc(s){
