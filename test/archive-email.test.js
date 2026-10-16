@@ -131,11 +131,13 @@ async function run() {
       'body links to the work\'s permanent /work/:slug page — got ' + mail.html);
     assert(mail.html.includes(`${SITE_URL}/submit`) && !mail.html.includes(`${SITE_URL}/submit/`),
       'body links to the public /submit CTA (no token) — got ' + mail.html);
-    assert(mail.html.includes('Thank you for showing your work.'),
-      'body includes the closing line — got ' + mail.html);
+    assert(mail.html.startsWith('<p>Hi Test Artist,</p>'),
+      'body starts with a "Hi {artist}," greeting as its own paragraph — got ' + mail.html);
+    assert(!mail.html.includes('Thank you for showing your work.'),
+      'body has no separate thank-you line, only the standard sign-off — got ' + mail.html);
     assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
       'body ends with "Creative regards, Get Inspired Society" like every other maker-facing email — got ' + mail.html);
-    console.log('PASS - the mail has the correct recipient, subject, title, /work/:slug link, /submit CTA and sign-off');
+    console.log('PASS - the mail has the correct recipient, subject, greeting, title, /work/:slug link, /submit CTA and sign-off');
 
     child.kill();
     child = null;

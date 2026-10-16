@@ -122,7 +122,7 @@ async function run() {
 
     // The whole mail apart from the share line, identical for every case.
     const expectedFor = (slug, shareLine) =>
-      `<p>Artist ${slug},</p><p>"Title ${slug}" is now on the wall.<br><a href="${SITE_URL}/work/${slug}">${SITE_URL}/work/${slug}</a></p>`
+      `<p>Hi Artist ${slug},</p><p>"Title ${slug}" is now on the wall.<br><a href="${SITE_URL}/work/${slug}">${SITE_URL}/work/${slug}</a></p>`
       + `<p>It stays up for seven days.</p>`
       + shareLine
       + `<p>Example: "My work &quot;Title ${slug}&quot; is on the wall at Get Inspired Society this week. ${SITE_URL}/work/${slug}"</p>`

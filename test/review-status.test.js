@@ -117,6 +117,8 @@ async function apiSubmit({ name, email, portfolio, work_title }, imageBuf) {
   return fetch(`${BASE}/api/submit`, { method: 'POST', body: form });
 }
 
+const CONFIRM = /^<p>Hi (.+),<\/p><p>We have received your work "<b>(.+)<\/b>"\. We will let you know when it goes on the wall\.<\/p><p>Creative regards,<br>Get Inspired Society<\/p>$/;
+
 async function run() {
   cleanupFiles();
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -220,6 +222,7 @@ async function run() {
       assert(!mail.html.includes(`${SITE_URL}/work/`), 'the confirmation email does not link to a not-yet-live work page — got ' + mail.html);
       assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
         'the confirmation email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+      assert(mail.html.startsWith('<p>Hi Pending Artist,</p>') && CONFIRM.test(mail.html), 'the /hand-in confirmation greets "Hi {artist}," and has the shared build-up — got ' + mail.html);
       assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
         'the confirmation email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
     }
@@ -275,6 +278,7 @@ async function run() {
         'the approval email suggests the #GetInspiredSociety hashtag — got ' + mail.html);
       assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
         'the approval email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+      assert(mail.html.startsWith('<p>Hi Pending Artist,</p>'), 'the approval email greets "Hi {artist}," — got ' + mail.html);
       assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
         'the approval email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
       assert(!/railway/i.test(mail.html), 'the approval email contains no Railway domain — got ' + mail.html);
@@ -334,6 +338,7 @@ async function run() {
         'the reject email uses the agreed text exactly — got ' + mail.html);
       assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
         'the reject email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+      assert(mail.html.startsWith('<p>Hi Rejected Artist,</p>'), 'the reject email greets "Hi {artist}," — got ' + mail.html);
       assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
         'the reject email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
     }
@@ -388,6 +393,7 @@ async function run() {
       assert(!mail.html.includes(`${SITE_URL}/work/`), 'the confirmation email does not link to a not-yet-live work page — got ' + mail.html);
       assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
         'the confirmation email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
+      assert(mail.html.startsWith('<p>Hi Submit Artist,</p>') && CONFIRM.test(mail.html), 'the /api/submit confirmation greets "Hi {artist}," and has the same build-up as /hand-in — got ' + mail.html);
       assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
         'the confirmation email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
     }
