@@ -700,16 +700,22 @@ app.delete('/api/admin/works/:id', requireAdmin, (req, res) => {
 
 app.post('/api/admin/works/:id/approve', requireAdmin, async (req, res) => {
   const row = db.prepare(
-    "UPDATE works SET review_status='approved', approved_at=datetime('now') WHERE id=? RETURNING slug, title, artist, email"
+    "UPDATE works SET review_status='approved', approved_at=datetime('now') WHERE id=? RETURNING slug, title, artist, email, round_number"
   ).get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Not found.' });
   if (row.email) {
+    // The contest only exists for work of the round that is running right now.
+    const activeRound = currentRoundNumber();
+    const inActiveRound = activeRound !== null && row.round_number === activeRound;
+    const shareLine = inActiveRound
+      ? `<p>This week's wall is also a contest. The work with the most views on its page by the end of the week wins a t-shirt. Sharing your link is one way to get more views.</p>`
+      : `<p>Want people to see it? Share your link.</p>`;
     await sendEmail({
       to:      row.email,
       subject: 'Your work is on the wall, Get Inspired Society',
       html:    `<p>${row.artist},</p><p>"${row.title}" is now on the wall.<br><a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
              + `<p>It stays up for seven days.</p>`
-             + `<p>This week's wall is also a contest. The work with the most views on its page by the end of the week wins a t-shirt. Sharing your link is one way to get more views.</p>`
+             + shareLine
              + `<p>Example: "My work &quot;${row.title}&quot; is on the wall at Get Inspired Society this week. ${SITE_URL}/work/${row.slug}"</p>`
              + `<p>Suggested hashtag: #GetInspiredSociety</p>`
              + `<p>Creative regards,<br>Get Inspired Society</p>`,
