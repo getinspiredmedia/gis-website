@@ -28,6 +28,7 @@
     "test:approve-email": "node test/approve-email.test.js",
     "test:society-redirect": "node test/society-redirect.test.js",
     "test:homepage-hero-variant": "node test/homepage-hero-variant.test.js",
+    "test:on-view-closing": "node test/on-view-closing.test.js",
     "start": "exec node server.js"
   },
   "engines": {

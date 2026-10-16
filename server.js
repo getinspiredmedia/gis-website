@@ -470,6 +470,25 @@ app.get('/api/on-view/round', (req, res) => {
   res.json({ round_number: row.round_number, starts_at: iso(row.starts_at), ends_at: iso(row.ends_at) });
 });
 
+// How long the homepage shows the "round closed" hero after the latest round
+// ended. Fixed here, not configurable.
+const CLOSING_WINDOW_DAYS = 7;
+
+// The round that closed most recently, while it is still inside the closing
+// window and no round is active: { round_number, ends_at, show_until } (ISO 8601,
+// UTC), otherwise null. Drives the homepage "closing" hero; the page decides
+// whether a winner is also available.
+app.get('/api/on-view/closing', (req, res) => {
+  if (currentRoundNumber() !== null) return res.json(null);
+  const row = db.prepare(
+    "SELECT round_number, ends_at, datetime(ends_at, ?) AS show_until FROM rounds " +
+    "WHERE ends_at <= datetime('now') ORDER BY ends_at DESC LIMIT 1"
+  ).get(`+${CLOSING_WINDOW_DAYS} days`);
+  if (!row || !(db.prepare("SELECT datetime('now') < ? AS open").get(row.show_until).open)) return res.json(null);
+  const iso = t => t.replace(' ', 'T') + 'Z';
+  res.json({ round_number: row.round_number, ends_at: iso(row.ends_at), show_until: iso(row.show_until) });
+});
+
 // The most recently announced round winner for the homepage hero: the highest
 // round number that has an announced winner (not necessarily the round that
 // just ended). Only public fields, no view counts; null when nobody has been
