@@ -22,7 +22,7 @@ a{color:inherit;text-decoration:none}
 .lede{font-size:clamp(1rem,1.5vw,1.2rem);line-height:1.55;max-width:34ch}
 
 /* Hero: the open call while a round is active (.callout), the current selection otherwise (.open). The script in this page picks one per load. */
-.callout[hidden],.open[hidden]{display:none}
+.callout[hidden],.open[hidden],.closing[hidden]{display:none}
 .callout{background:var(--ink);color:#fff;min-height:100svh;display:flex;flex-direction:column;padding:clamp(150px,20vh,200px) 28px 0}
 .callout-main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,500px);grid-template-rows:1fr 1fr;grid-template-areas:"head tee" "actions tee";column-gap:clamp(32px,6vw,96px);padding-bottom:clamp(40px,7vh,72px)}
 .callout-head{grid-area:head;align-self:end}
@@ -67,6 +67,19 @@ a{color:inherit;text-decoration:none}
 .open.is-empty figure,.open.is-empty .veil,.open.is-empty .caption-row{display:none}
 .open.is-empty .caption{align-items:center;padding:0 28px;width:auto;animation-delay:200ms}
 .open.is-empty .caption .btn{align-self:center}
+
+/* round just closed (no active round, closed less than 7 days ago, winner announced): winner card left, status and submit button right */
+.closing{background:var(--ink);color:#fff;min-height:100svh;display:grid;grid-template-columns:minmax(0,1fr);align-content:center;gap:32px;padding:110px 22px 56px}
+.closing .winner{display:block}
+.closing-text .eyebrow{display:block;margin-bottom:18px;color:rgba(255,255,255,.72)}
+.closing-text h1{font-weight:700;font-size:clamp(2rem,3.6vw,3.25rem);line-height:.96;letter-spacing:-.02em;font-variation-settings:'wdth' 116}
+.closing-text p{margin-top:18px;font-size:15px;line-height:1.6;color:rgba(255,255,255,.72)}
+.closing-text .btn{margin-top:28px;justify-content:center;width:100%}
+.closing-text .btn:hover{background:#fff;color:var(--ink);gap:16px}
+@media(min-width:861px){
+  .closing{grid-template-columns:minmax(0,460fr) minmax(0,680fr);column-gap:clamp(28px,3vw,40px);align-items:center;padding:clamp(150px,20vh,200px) max(28px,calc((100% - 1180px) / 2)) 72px}
+  .closing-text .btn{width:auto;justify-content:flex-start}
+}
 
 /* previous round winner: shown next to (desktop) or below (mobile) the open call once a winner has been announced */
 .winner{display:none;position:relative;background:#1c1f29;color:#fff}
@@ -243,6 +256,20 @@ a{color:inherit;text-decoration:none}
   </div>
 </section>
 
+<section class="closing" id="closing" hidden>
+  <a class="winner" id="closing-winner" href="/">
+    <img id="closing-winner-img" alt="">
+    <span class="winner-top"><span class="eyebrow" id="closing-winner-round"></span></span>
+    <span class="winner-bottom"><span class="winner-title" id="closing-winner-title"></span><span class="winner-artist" id="closing-winner-artist"></span></span>
+  </a>
+  <div class="closing-text">
+    <span class="eyebrow">On view open call</span>
+    <h1 id="closing-title"></h1>
+    <p id="closing-status"></p>
+    <a class="btn" href="/submit">Submit your work &rarr;</a>
+  </div>
+</section>
+
 <section class="claim rv">
   <div class="inner">
     <div class="reveal"><p class="statement">No algorithm<br>decides<br>what's here.</p></div>
@@ -373,24 +400,50 @@ if(room && !reduce){
       if (wallSection) wallSection.style.display = 'none';
     });
 })();
-// Which hero this page load shows: the open call while a round is active (the
-// round endpoint answers with an object), the current selection in every other
-// case (null, an error, or no answer in time).
-function chooseHeroVariant(round) {
-  return round !== null && typeof round === 'object' && !Array.isArray(round) && 'round_number' in round
-    ? 'open-call'
-    : 'current';
+// Which hero this page load shows, a pure function of what the API answered
+// (null for a failed, late or malformed answer):
+//   open-call  an active round (the round endpoint answers with an object);
+//   closing    no active round, the latest round closed less than 7 days ago
+//              (closing is an object) and a winner has been announced (winner is
+//              an object);
+//   current    everything else: the current selection, or the plain ink hero.
+function chooseHeroVariant(round, closing, winner) {
+  var isObject = function(x){ return x !== null && typeof x === 'object' && !Array.isArray(x) && 'round_number' in x; };
+  if (isObject(round)) return 'open-call';
+  if (isObject(closing) && isObject(winner)) return 'closing';
+  return 'current';
 }
 
-// Hero chooser. Both heroes stay hidden until the choice is made and the chosen
-// one is ready; the dark open-call section holds the place meanwhile, so there is
-// never a visible switch from one hero to the other and no layout shift.
+// Hero chooser. All four endpoints are requested at once on page load and share
+// one deadline of 2.5s; an answer that is late, failed or malformed counts as
+// null. All heroes stay hidden until the choice is made and the chosen one is
+// ready; the dark open-call section holds the place meanwhile, so there is never
+// a visible switch from one hero to another and no layout shift.
 (function(){
   var callout = document.getElementById('callout');
   var heroOpen = document.getElementById('open');
-  if (!callout || !heroOpen) return;
+  var heroClosing = document.getElementById('closing');
+  if (!callout || !heroOpen || !heroClosing) return;
   var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var decided = false;
+
+  var deadline = new Promise(function(resolve){ setTimeout(resolve, 2500); });
+  function soft(promise) {
+    return Promise.race([promise, deadline.then(function(){ return null; })]);
+  }
+  function getJson(url, valid) {
+    return soft(fetch(url)
+      .then(function(r){ if (!r.ok) throw new Error(url); return r.json(); })
+      .then(function(v){ return valid(v) ? v : null; })
+      .catch(function(){ return null; }));
+  }
+  function isObject(v, keys) {
+    return v !== null && typeof v === 'object' && !Array.isArray(v) && keys.every(function(k){ return v[k] !== undefined && v[k] !== null; });
+  }
+
+  var roundP   = getJson('/api/on-view/round',          function(v){ return isObject(v, ['round_number']); });
+  var closingP = getJson('/api/on-view/closing',        function(v){ return isObject(v, ['round_number', 'ends_at', 'show_until']); });
+  var winnerP  = getJson('/api/on-view/previous-winner', function(v){ return isObject(v, ['round_number', 'slug', 'title', 'image_url']) && !!v.image_url; });
+  var worksP   = getJson('/api/works',                   function(v){ return Array.isArray(v); });
 
   function formatRange(s, e) {
     var sameYear = s.getUTCFullYear() === e.getUTCFullYear();
@@ -401,17 +454,38 @@ function chooseHeroVariant(round) {
     return s.getUTCDate() + ' ' + MONTHS[s.getUTCMonth()] + y(s) + ' to ' + e.getUTCDate() + ' ' + MONTHS[e.getUTCMonth()] + y(e);
   }
 
+  // Preloads the winner image: calls done(img) once it has loaded, done(null) if it
+  // fails. Loading is not awaited past the deadline (see callers).
+  function preload(url, done) {
+    var img = new Image();
+    img.onload  = function(){ done(img); };
+    img.onerror = function(){ done(null); };
+    img.src = url;
+    return img;
+  }
+
+  function fillWinner(prefix, winner, img) {
+    var link = document.getElementById(prefix);
+    link.href = '/work/' + encodeURIComponent(winner.slug);
+    link.setAttribute('aria-label', 'Round ' + winner.round_number + ' winner: ' + winner.title + (winner.artist ? ' by ' + winner.artist : ''));
+    var shown = document.getElementById(prefix + '-img');
+    shown.src = img.src;
+    if (img.naturalWidth) { shown.width = img.naturalWidth; shown.height = img.naturalHeight; }
+    document.getElementById(prefix + '-round').textContent  = 'Round ' + winner.round_number + ' winner';
+    document.getElementById(prefix + '-title').textContent  = winner.title;
+    document.getElementById(prefix + '-artist').textContent = winner.artist && winner.artist !== winner.title ? winner.artist : '';
+  }
+
   // ── Variant a: the open call (active round) ──────────────────────────────
   // The Submissions cell comes from the active round (UTC). It keeps its space
   // until filled; if the dates are unusable only that cell is hidden. The shirt
-  // is only requested here, so the other variant never loads it. The hero is
-  // revealed once the winner (or its absence) and the shirt have settled, or
-  // after 2.5s; the winner column then makes the layout two columns once.
+  // is only requested here, so the other variants never load it. The hero is
+  // revealed once the winner (or its absence) and the shirt have settled, or at
+  // the deadline; the winner column then makes the layout two columns once.
   function showOpenCall(round) {
     var cell   = document.getElementById('fact-submissions');
     var value  = document.getElementById('fact-submissions-value');
     var detail = document.getElementById('fact-submissions-detail');
-    var link   = document.getElementById('winner');
     var tee    = document.getElementById('tee-img');
     var winnerDone = false, teeDone = false;
 
@@ -435,44 +509,29 @@ function chooseHeroVariant(round) {
       if (winnerDone) return;
       winnerDone = true;
       if (winner) {
-        link.href = '/work/' + encodeURIComponent(winner.slug);
-        link.setAttribute('aria-label', 'Round ' + winner.round_number + ' winner: ' + winner.title + (winner.artist ? ' by ' + winner.artist : ''));
-        var shown = document.getElementById('winner-img');
-        shown.src = img.src;
-        shown.width = img.naturalWidth;
-        shown.height = img.naturalHeight;
-        document.getElementById('winner-round').textContent  = 'Round ' + winner.round_number + ' winner';
-        document.getElementById('winner-title').textContent  = winner.title;
-        document.getElementById('winner-artist').textContent = winner.artist && winner.artist !== winner.title ? winner.artist : '';
-        link.hidden = false;
+        fillWinner('winner', winner, img);
+        document.getElementById('winner').hidden = false;
         callout.classList.add('has-winner');
       }
       maybeReveal();
     }
 
-    setTimeout(function(){ settle(null); teeDone = true; maybeReveal(); }, 2500);
-
-    fetch('/api/on-view/previous-winner')
-      .then(function(r){ if (!r.ok) throw new Error('winner'); return r.json(); })
-      .then(function(winner){
-        if (!winner || !winner.image_url) { settle(null); return; }
-        var img = new Image();
-        img.onload  = function(){ settle(winner, img); };
-        img.onerror = function(){ settle(null); };
-        img.src = winner.image_url;
-      })
-      .catch(function(){ settle(null); });
+    deadline.then(function(){ settle(null); teeDone = true; maybeReveal(); });
+    winnerP.then(function(winner){
+      if (!winner) { settle(null); return; }
+      preload(winner.image_url, function(img){ settle(img ? winner : null, img); });
+    });
   }
 
   // ── Variant b: the current selection (no active round) ───────────────────
   // The work with status "current" from GET /api/works, full-screen, with the
   // submit button in the caption. Without a current work: a plain ink hero with
-  // only the button. Revealed once the image has loaded or after 2.5s. The nav
-  // logo stays white; a dark scrim over the top and bottom of the plate keeps it
-  // and the caption legible on bright work instead of sampling the image.
+  // only the button. Revealed once the image has loaded or at the deadline. The
+  // nav logo stays white; a dark scrim over the top and bottom of the plate keeps
+  // it and the caption legible on bright work instead of sampling the image.
   function showCurrent() {
     var plate = document.getElementById('hero-plate');
-    var finished = false, work = null;
+    var finished = false;
 
     function paint(w, img) {
       document.getElementById('hero-label').textContent  = 'On view';
@@ -497,48 +556,56 @@ function chooseHeroVariant(round) {
       heroOpen.hidden = false;
     }
 
-    function load(w) {
-      work = w;
-      var img = new Image();
-      img.onload  = function(){ finish(w, img); };
-      img.onerror = function(){ finish(w, null); };
-      if (w.image) img.src = w.image; else finish(w, null);
+    worksP.then(function(list){
+      var w = null;
+      if (list) {
+        w = list.find(function(x){ return x.current; }) || null;
+      } else {
+        // The API failed or was late: fall back to the work remembered from an earlier visit, if any.
+        try { var cached = JSON.parse(sessionStorage.getItem('gis_hero')); if (cached && cached.artist) w = cached; } catch(e){}
+      }
+      if (!w) { finish(null); return; }
+      if (!w.image) { finish(w, null); return; }
+      var img = preload(w.image, function(loaded){ finish(w, loaded); });
+      deadline.then(function(){ finish(w, img); });
+    });
+  }
+
+  // ── Variant c: the round just closed (no active round, closed < 7 days ago,
+  // a winner announced) ─────────────────────────────────────────────────────
+  // The latest announced winner on the left (the existing .winner component),
+  // the status of the closed round and the submit button on the right. If the
+  // winner image fails the winner is unusable and the current selection is shown;
+  // at the deadline the hero is shown with the image still loading. No shirt, no
+  // leaderboard link, no facts.
+  function showClosing(closing, winner) {
+    var finished = false;
+
+    function finish(img) {
+      if (finished) return;
+      finished = true;
+      fillWinner('closing-winner', winner, img);
+      document.getElementById('closing-title').textContent  = 'Round ' + closing.round_number + ' is closed.';
+      document.getElementById('closing-status').textContent = Number(winner.round_number) === Number(closing.round_number)
+        ? 'On View stays open.'
+        : 'Winner announced soon. On View stays open.';
+      callout.hidden = true;
+      heroClosing.hidden = false;
     }
 
-    setTimeout(function(){
-      if (!work) { finish(null); return; }
-      var img = new Image();
-      if (work.image) img.src = work.image;
-      finish(work, img);
-    }, 2500);
-
-    fetch('/api/works')
-      .then(function(r){ if (!r.ok) throw new Error('works'); return r.json(); })
-      .then(function(list){
-        var cur = list.find(function(w){ return w.current; });
-        if (cur) load(cur); else finish(null);
-      })
-      .catch(function(){
-        // The API failed: fall back to the work remembered from an earlier visit, if any.
-        var cached = null;
-        try { cached = JSON.parse(sessionStorage.getItem('gis_hero')); } catch(e){}
-        if (cached && cached.artist) load(cached); else finish(null);
-      });
+    var img = preload(winner.image_url, function(loaded){
+      if (loaded) { finish(loaded); } else if (!finished) { finished = true; showCurrent(); }
+    });
+    deadline.then(function(){ finish(img); });
   }
 
-  function decide(round) {
-    if (decided) return;
-    decided = true;
-    clearTimeout(timer);
-    if (chooseHeroVariant(round) === 'open-call') showOpenCall(round); else showCurrent();
-  }
-
-  var timer = setTimeout(function(){ decide(null); }, 2500);
-
-  fetch('/api/on-view/round')
-    .then(function(r){ if (!r.ok) throw new Error('round'); return r.json(); })
-    .then(decide)
-    .catch(function(){ decide(null); });
+  roundP.then(function(round){
+    if (chooseHeroVariant(round, null, null) === 'open-call') { showOpenCall(round); return; }
+    return Promise.all([closingP, winnerP]).then(function(r){
+      var closing = r[0], winner = r[1];
+      if (chooseHeroVariant(round, closing, winner) === 'closing') showClosing(closing, winner); else showCurrent();
+    });
+  });
 })();
 </script>
 </body>
