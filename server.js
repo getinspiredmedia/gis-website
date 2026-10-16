@@ -170,7 +170,7 @@ async function archiveOldWorks() {
   // reads within this very statement, so no later view can land in the gap
   // between the status flip and the freeze.
   const rows = db.prepare(
-    "UPDATE works SET status='archived', view_count_at_archive=view_count WHERE status='previous' AND review_status='approved' AND datetime(COALESCE(approved_at, created_at), '+7 days') <= datetime('now') RETURNING slug, title, email"
+    "UPDATE works SET status='archived', view_count_at_archive=view_count WHERE status='previous' AND review_status='approved' AND datetime(COALESCE(approved_at, created_at), '+7 days') <= datetime('now') RETURNING slug, title, artist, email"
   ).all();
   if (rows.length > 0) console.log(`[archive] archived ${rows.length} work(s)`);
   for (const row of rows) {
@@ -178,10 +178,10 @@ async function archiveOldWorks() {
     await sendEmail({
       to:      row.email,
       subject: 'Your work has come down from On View',
-      html:    `<p>"${row.title}" was on the wall for seven days. It comes down today.</p>`
+      html:    `<p>Hi ${row.artist},</p>`
+             + `<p>"${row.title}" was on the wall for seven days. It comes down today.</p>`
              + `<p>The page stays online: <a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
              + `<p>On View runs every week. Submit again: <a href="${SITE_URL}/submit">${SITE_URL}/submit</a></p>`
-             + `<p>Thank you for showing your work.</p>`
              + `<p>Creative regards,<br>Get Inspired Society</p>`,
     });
   }
@@ -572,12 +572,12 @@ app.post('/hand-in/:token', upload.single('image'), async (req, res) => {
       sendEmail({
         to:      ADMIN_EMAIL,
         subject: `Pending approval: "${title}" by ${name}`,
-        html:    `<p>${name} (${email}) handed in a work — pending your approval.<br>Title: ${title}<br><br>Review it: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
+        html:    `<p>${name} (${email}) handed in a work, pending your approval.<br>Title: ${title}<br><br>Review it: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
       }),
       sendEmail({
         to:      email,
         subject: 'Your work is in, Get Inspired Society',
-        html:    `<p>${name},</p><p>We have received your work "<b>${title}</b>".</p><p>We will let you know when it goes on the wall.</p><p>Creative regards,<br>Get Inspired Society</p>`,
+        html:    `<p>Hi ${name},</p><p>We have received your work "<b>${title}</b>". We will let you know when it goes on the wall.</p><p>Creative regards,<br>Get Inspired Society</p>`,
       }),
     ]);
 
@@ -643,7 +643,7 @@ app.post('/api/submit', upload.single('image'), async (req, res) => {
       sendEmail({
         to:      ADMIN_EMAIL,
         subject: `Pending approval: "${title}" by ${name}`,
-        html:    `<p>${name} (${email}) submitted a work — pending your approval.<br>Portfolio: ${portfolio}<br>Title: ${title}<br><br>Review it: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
+        html:    `<p>${name} (${email}) submitted a work, pending your approval.<br>Portfolio: ${portfolio}<br>Title: ${title}<br><br>Review it: <a href="${SITE_URL}/admin">${SITE_URL}/admin</a></p>`,
       }),
       sendEmail({
         to:      email.trim(),
@@ -713,7 +713,7 @@ app.post('/api/admin/works/:id/approve', requireAdmin, async (req, res) => {
     await sendEmail({
       to:      row.email,
       subject: 'Your work is on the wall, Get Inspired Society',
-      html:    `<p>${row.artist},</p><p>"${row.title}" is now on the wall.<br><a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
+      html:    `<p>Hi ${row.artist},</p><p>"${row.title}" is now on the wall.<br><a href="${SITE_URL}/work/${row.slug}">${SITE_URL}/work/${row.slug}</a></p>`
              + `<p>It stays up for seven days.</p>`
              + shareLine
              + `<p>Example: "My work &quot;${row.title}&quot; is on the wall at Get Inspired Society this week. ${SITE_URL}/work/${row.slug}"</p>`
@@ -733,7 +733,7 @@ app.post('/api/admin/works/:id/reject', requireAdmin, async (req, res) => {
     await sendEmail({
       to:      row.email,
       subject: 'Your submission, Get Inspired Society',
-      html:    `<p>${row.artist},</p><p>Thanks for sharing your work. We're not able to feature it on On View this time. We'd love to see what you submit next.</p>`
+      html:    `<p>Hi ${row.artist},</p><p>Thanks for sharing your work. We're not able to feature it on On View this time. We'd love to see what you submit next.</p>`
              + `<p>Creative regards,<br>Get Inspired Society</p>`,
     });
   }
@@ -911,7 +911,7 @@ function renderWorkPage(work, slug) {
 
   return WORK_TEMPLATE
     .replace('<!-- @meta:og -->', ogTags)
-    .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)} — Get Inspired Society</title>`);
+    .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)} · Get Inspired Society</title>`);
 }
 
 // Known link-preview/OG-scraper user-agent substrings, checked case-insensitively.

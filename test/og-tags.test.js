@@ -129,6 +129,7 @@ async function run() {
     {
       const html = await fetch(`${BASE}/work/test-current-work`).then(r => r.text());
       assert(extractMeta(html, 'property', 'og:title') === 'Test Current Work by Current Artist', 'og:title correct for current work');
+      assert(html.includes('<title>Test Current Work by Current Artist · Get Inspired Society</title>'), 'the page <title> ends in " · Get Inspired Society", like the rest of the site');
       assert(extractMeta(html, 'property', 'og:description') === OG_DESCRIPTION, 'og:description is the exact fixed sentence');
       const image = extractMeta(html, 'property', 'og:image');
       assert(image === 'https://getinspiredsociety.com/og-image/test-current-work', 'og:image points at /og-image/:slug, not the raw upload: ' + image);

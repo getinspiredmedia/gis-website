@@ -307,11 +307,11 @@ var ROUND_STATUS_BADGE={ongoing:'badge-pending',ready_for_winner:'badge-current'
 
 function renderRounds(rows,works){
   var tbody=document.getElementById('rounds-body');
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No rounds yet — create one via SQL, see CLAUDE.md.</td></tr>';return;}
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No rounds yet. Create one via SQL, see CLAUDE.md.</td></tr>';return;}
   tbody.innerHTML=rows.map(function(r){
     var winnerCell=r.winner
       ?('<b>'+esc(r.winner.title)+'</b><br><small style="color:var(--muted)">'+esc(r.winner.artist)+' · '+(r.winner.view_count||0)+' views</small>')
-      :'<small style="color:var(--muted)">—</small>';
+      :'<small style="color:var(--muted)">-</small>';
     var actionCell='';
     if(r.status==='ready_for_winner'){
       // Frozen count (view_count_at_archive) if the work has archived, else
