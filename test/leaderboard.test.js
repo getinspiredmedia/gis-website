@@ -1,12 +1,12 @@
 'use strict';
 /*
- * Public top-10 leaderboard for the active round (GET /api/on-view/leaderboard),
- * the last piece before anything about the contest is visible publicly. Shows
- * up to 10 approved works from whichever round's [starts_at, ends_at) window
- * covers now, in a server-shuffled order so the response never reveals the
- * view_count ranking behind it — the response also omits view_count entirely,
- * belt-and-braces against a curious visitor reading the network tab. No active
- * round: [] (not a 404), so the page can render a quiet empty state.
+ * Public leaderboard (GET /api/on-view/leaderboard): { round_number, status,
+ * winner, works } or null. The round is the running one, otherwise the most
+ * recently closed one (by ends_at, no time limit), otherwise none. Up to 10
+ * approved works, shuffled server-side, never a view_count or rank. A running
+ * round selects on the live view_count, a closed round on the frozen
+ * COALESCE(view_count_at_archive, view_count). The announced winner of the
+ * round is included when there is one.
  */
 const { spawn } = require('child_process');
 const path = require('path');
@@ -52,17 +52,29 @@ function startServer() {
   });
 }
 
-function insertWork(db, { slug, title, artist, roundNumber, reviewStatus, viewCount }) {
-  db.prepare(
-    "INSERT INTO works (slug,title,artist,portfolio,image_url,status,review_status,round_number,view_count,approved_at) " +
-    "VALUES (?,?,?,?,?,?,?,?,?,CASE WHEN ?='approved' THEN datetime('now') ELSE NULL END)"
-  ).run(slug, title, artist, '#', `/uploads/${slug}.webp`, 'previous', reviewStatus, roundNumber, viewCount, reviewStatus);
+function insertWork(db, { slug, title, artist, roundNumber, reviewStatus = 'approved', viewCount, status = 'previous', viewCountAtArchive = null }) {
+  return db.prepare(
+    "INSERT INTO works (slug,title,artist,portfolio,image_url,status,review_status,round_number,view_count,view_count_at_archive,approved_at) " +
+    "VALUES (?,?,?,?,?,?,?,?,?,?,CASE WHEN ?='approved' THEN datetime('now') ELSE NULL END)"
+  ).run(slug, title, artist, '#', `/uploads/${slug}.webp`, status, reviewStatus, roundNumber, viewCount, viewCountAtArchive, reviewStatus).lastInsertRowid;
 }
 
 async function leaderboard() {
   const r = await fetch(`${BASE}/api/on-view/leaderboard`);
-  assert(r.status === 200, `GET /api/on-view/leaderboard responds 200 — got ${r.status}`);
+  assert(r.status === 200, `GET /api/on-view/leaderboard responds 200, got ${r.status}`);
   return r.json();
+}
+
+function assertNoNumbers(data) {
+  assert(JSON.stringify(Object.keys(data).sort()) === JSON.stringify(['round_number', 'status', 'winner', 'works']),
+    'the response has exactly round_number, status, winner and works, got ' + JSON.stringify(Object.keys(data)));
+  for (const w of data.works) {
+    assert(!('view_count' in w) && !('view_count_at_archive' in w) && !('rank' in w), 'a work carries no count or rank, got keys ' + Object.keys(w));
+    assert(JSON.stringify(Object.keys(w).sort()) === JSON.stringify(['artist', 'image', 'slug', 'title']), 'a work exposes only slug/title/artist/image, got ' + JSON.stringify(Object.keys(w)));
+  }
+  if (data.winner) {
+    assert(JSON.stringify(Object.keys(data.winner).sort()) === JSON.stringify(['artist', 'slug', 'title']), 'the winner exposes only slug/title/artist, got ' + JSON.stringify(Object.keys(data.winner)));
+  }
 }
 
 async function run() {
@@ -74,89 +86,131 @@ async function run() {
     child = startServer();
     await waitForServer(30);
 
-    // ── No active round: empty state, not a 404 ─────────────────────────
+    // ── No rounds at all: null, not a 404 ───────────────────────────────
     {
-      const rows = await leaderboard();
-      assert(Array.isArray(rows) && rows.length === 0, `no active round returns an empty array — got ${JSON.stringify(rows)}`);
+      const data = await leaderboard();
+      assert(data === null, 'without any round the response is null, got ' + JSON.stringify(data));
     }
-    console.log('PASS - no active round returns an empty array (quiet empty state), not a 404');
+    console.log('PASS - without any round the response is null (not a 404)');
 
-    // ── Seed round 1 (active now) plus a past round and a future round ──
     const db = new Database(DB_PATH);
-    db.prepare("INSERT INTO rounds (round_number, starts_at, ends_at) VALUES (1, datetime('now','-2 days'), datetime('now','+5 days'))").run();
-    db.prepare("INSERT INTO rounds (round_number, starts_at, ends_at) VALUES (0, datetime('now','-20 days'), datetime('now','-10 days'))").run();
 
-    insertWork(db, { slug: 'r1-approved-high', title: 'High', artist: 'Artist High', roundNumber: 1, reviewStatus: 'approved', viewCount: 50 });
-    insertWork(db, { slug: 'r1-approved-mid', title: 'Mid', artist: 'Artist Mid', roundNumber: 1, reviewStatus: 'approved', viewCount: 30 });
-    insertWork(db, { slug: 'r1-approved-low', title: 'Low', artist: 'Artist Low', roundNumber: 1, reviewStatus: 'approved', viewCount: 10 });
+    // ── Only a future round: still null ─────────────────────────────────
+    db.prepare("INSERT INTO rounds (round_number, starts_at, ends_at) VALUES (7, datetime('now','+3 days'), datetime('now','+10 days'))").run();
+    {
+      const data = await leaderboard();
+      assert(data === null, 'a round that has not started is no round to show, got ' + JSON.stringify(data));
+    }
+    console.log('PASS - with only a future round the response is still null');
+
+    // ── Closed rounds: the most recent end wins, not the highest number ──
+    // Round 9 ended 20 days ago, round 4 ended 2 days ago.
+    db.prepare("INSERT INTO rounds (round_number, starts_at, ends_at) VALUES (9, datetime('now','-27 days'), datetime('now','-20 days'))").run();
+    db.prepare("INSERT INTO rounds (round_number, starts_at, ends_at) VALUES (4, datetime('now','-9 days'), datetime('now','-2 days'))").run();
+    insertWork(db, { slug: 'r9-work', title: 'Round Nine', artist: 'Artist Nine', roundNumber: 9, viewCount: 500, status: 'archived', viewCountAtArchive: 500 });
+
+    // Round 4: eleven archived works with frozen counts 10..20, one archived work
+    // whose live count (1000) rose far above its frozen count (0), plus works
+    // that must never appear.
+    for (let i = 0; i <= 10; i++) {
+      insertWork(db, { slug: `r4-w${i}`, title: `R4 Work ${i}`, artist: `Artist ${i}`, roundNumber: 4, viewCount: 10 + i + 5, status: 'archived', viewCountAtArchive: 10 + i });
+    }
+    const lateGainerId = insertWork(db, { slug: 'r4-late-gainer', title: 'Late Gainer', artist: 'Artist Late', roundNumber: 4, viewCount: 1000, status: 'archived', viewCountAtArchive: 0 });
+    insertWork(db, { slug: 'r4-pending', title: 'Pending', artist: 'Artist Pending', roundNumber: 4, reviewStatus: 'pending', viewCount: 999 });
+    insertWork(db, { slug: 'r4-rejected', title: 'Rejected', artist: 'Artist Rejected', roundNumber: 4, reviewStatus: 'rejected', viewCount: 999 });
+    insertWork(db, { slug: 'no-round', title: 'No Round', artist: 'Artist None', roundNumber: null, viewCount: 999 });
+
+    {
+      const data = await leaderboard();
+      assert(data && data.status === 'closed' && data.round_number === 4, `with no running round the most recently ended round (4, not 9) is shown as closed, got ${JSON.stringify(data && { r: data.round_number, s: data.status })}`);
+      assertNoNumbers(data);
+      assert(data.works.length === 10, `a closed round shows 10 works even though they are all archived, got ${data.works.length}`);
+      assert(data.winner === null, 'without an announced winner, winner is null, got ' + JSON.stringify(data.winner));
+      const slugs = new Set(data.works.map(w => w.slug));
+      for (const bad of ['r9-work', 'r4-pending', 'r4-rejected', 'no-round']) assert(!slugs.has(bad), `${bad} is not in the closed round's list`);
+      assert(!slugs.has('r4-late-gainer'), 'a work whose views grew after archiving does not climb: its frozen count of 0 keeps it out of the top 10');
+      assert(!slugs.has('r4-w0'), 'the lowest frozen count (10) of eleven candidates drops out, leaving the ten highest frozen counts');
+    }
+    console.log('PASS - without a running round the most recently ended round is shown (by ends_at), as closed, with archived works');
+    console.log('PASS - a closed round selects on the frozen view_count_at_archive, so late views do not change the top 10');
+
+    // ── Winner ──────────────────────────────────────────────────────────
+    {
+      // announced but the chosen work is unapproved: no winner shown
+      const pendingId = db.prepare("SELECT id FROM works WHERE slug='r4-pending'").get().id;
+      db.prepare("UPDATE rounds SET winner_work_id=?, announced_at=datetime('now') WHERE round_number=4").run(pendingId);
+      let data = await leaderboard();
+      assert(data.winner === null, 'a winner whose work is not approved is not shown, got ' + JSON.stringify(data.winner));
+
+      // chosen but not announced: no winner shown
+      const w3 = db.prepare("SELECT id FROM works WHERE slug='r4-w3'").get().id;
+      db.prepare("UPDATE rounds SET winner_work_id=?, announced_at=NULL WHERE round_number=4").run(w3);
+      data = await leaderboard();
+      assert(data.winner === null, 'a chosen but not yet announced winner is not shown, got ' + JSON.stringify(data.winner));
+
+      db.prepare("UPDATE rounds SET announced_at=datetime('now') WHERE round_number=4").run();
+      data = await leaderboard();
+      assertNoNumbers(data);
+      assert(data.winner && data.winner.slug === 'r4-w3' && data.winner.title === 'R4 Work 3' && data.winner.artist === 'Artist 3', 'an announced winner is returned as slug/title/artist, got ' + JSON.stringify(data.winner));
+    }
+    console.log('PASS - the announced winner of the round is included; unannounced or unapproved winners are not');
+
+    // ── Shuffle on a closed round ───────────────────────────────────────
+    {
+      let sawDifferentOrder = false;
+      const first = JSON.stringify((await leaderboard()).works.map(w => w.slug));
+      for (let i = 0; i < 30 && !sawDifferentOrder; i++) {
+        sawDifferentOrder = JSON.stringify((await leaderboard()).works.map(w => w.slug)) !== first;
+      }
+      assert(sawDifferentOrder, 'across 31 requests the order of a closed round changes, shuffling is happening');
+    }
+    console.log('PASS - the order of a closed round varies between requests');
+
+    // ── Running round takes over from the closed one ────────────────────
+    db.prepare("INSERT INTO rounds (round_number, starts_at, ends_at) VALUES (1, datetime('now','-2 days'), datetime('now','+5 days'))").run();
+    insertWork(db, { slug: 'r1-approved-high', title: 'High', artist: 'Artist High', roundNumber: 1, viewCount: 50 });
+    insertWork(db, { slug: 'r1-approved-mid', title: 'Mid', artist: 'Artist Mid', roundNumber: 1, viewCount: 30 });
+    insertWork(db, { slug: 'r1-approved-low', title: 'Low', artist: 'Artist Low', roundNumber: 1, viewCount: 10 });
     insertWork(db, { slug: 'r1-pending', title: 'Pending', artist: 'Artist Pending', roundNumber: 1, reviewStatus: 'pending', viewCount: 999 });
     insertWork(db, { slug: 'r1-rejected', title: 'Rejected', artist: 'Artist Rejected', roundNumber: 1, reviewStatus: 'rejected', viewCount: 999 });
-    insertWork(db, { slug: 'r0-approved', title: 'Old Round', artist: 'Artist Old', roundNumber: 0, reviewStatus: 'approved', viewCount: 999 });
-    db.close();
 
-    // ── Only approved works from the active round appear ────────────────
     {
-      const rows = await leaderboard();
-      const slugs = rows.map(w => w.slug).sort();
-      assert(
-        JSON.stringify(slugs) === JSON.stringify(['r1-approved-high', 'r1-approved-low', 'r1-approved-mid']),
-        `only the 3 approved works from the active round appear, no pending/rejected/other-round work — got ${JSON.stringify(slugs)}`
-      );
+      const data = await leaderboard();
+      assert(data.status === 'running' && data.round_number === 1, `a running round is shown as running and wins over the closed ones, got ${data.status} ${data.round_number}`);
+      assertNoNumbers(data);
+      const slugs = data.works.map(w => w.slug).sort();
+      assert(JSON.stringify(slugs) === JSON.stringify(['r1-approved-high', 'r1-approved-low', 'r1-approved-mid']),
+        'only the 3 approved works of the running round appear, got ' + JSON.stringify(slugs));
+      assert(data.works.length === 3, 'fewer than 10 works: no padding');
+      assert(data.winner === null, 'a running round has no winner');
     }
-    console.log('PASS - only approved works from the active round appear; pending, rejected, and other-round works are excluded');
+    console.log('PASS - a running round is shown as running with only its approved works, no padding, no winner');
 
-    // ── Response never carries a number (view_count or rank) ────────────
-    {
-      const rows = await leaderboard();
-      for (const w of rows) {
-        assert(!('view_count' in w), `response item has no view_count field — got keys ${Object.keys(w)}`);
-        assert(!('rank' in w), `response item has no rank field — got keys ${Object.keys(w)}`);
-        const values = Object.keys(w).sort();
-        assert(JSON.stringify(values) === JSON.stringify(['artist', 'image', 'slug', 'title']), `response item exposes only slug/title/artist/image — got ${JSON.stringify(values)}`);
-      }
-    }
-    console.log('PASS - nothing in the response reveals view_count or a rank number');
-
-    // ── Order is shuffled, not a stable view_count-descending sort ───────
     {
       const sortedDesc = JSON.stringify(['r1-approved-high', 'r1-approved-mid', 'r1-approved-low']);
       let sawDifferentOrder = false;
       for (let i = 0; i < 30; i++) {
-        const rows = await leaderboard();
-        const order = JSON.stringify(rows.map(w => w.slug));
+        const order = JSON.stringify((await leaderboard()).works.map(w => w.slug));
         if (order !== sortedDesc) { sawDifferentOrder = true; break; }
       }
-      assert(sawDifferentOrder, 'across 30 requests, at least one response order differs from the view_count-descending order — shuffling is not happening');
+      assert(sawDifferentOrder, 'across 30 requests at least one order differs from the view_count-descending order');
     }
-    console.log('PASS - the order varies across requests, never consistently sorted by view_count');
+    console.log('PASS - the order of a running round varies, never consistently sorted by view_count');
 
-    // ── Fewer than 10 approved works: no padding ─────────────────────────
-    {
-      const rows = await leaderboard();
-      assert(rows.length === 3, `with 3 approved works in the round, exactly 3 are returned, no padding — got ${rows.length}`);
-    }
-    console.log('PASS - fewer than 10 approved works in the round: exactly that many are returned, no padding');
-
-    // ── More than 10 approved works: capped at the top 10 by view_count ──
-    {
-      const db2 = new Database(DB_PATH);
-      for (let i = 0; i < 12; i++) {
-        insertWork(db2, { slug: `r1-extra-${i}`, title: `Extra ${i}`, artist: `Artist ${i}`, roundNumber: 1, reviewStatus: 'approved', viewCount: i });
-      }
-      db2.close();
+    for (let i = 0; i < 12; i++) {
+      insertWork(db, { slug: `r1-extra-${i}`, title: `Extra ${i}`, artist: `Artist ${i}`, roundNumber: 1, viewCount: i });
     }
     {
-      const rows = await leaderboard();
-      assert(rows.length === 10, `at most 10 works are returned even with 15 approved works in the round — got ${rows.length}`);
-      const slugs = new Set(rows.map(w => w.slug));
-      // The 15 approved works have view_count 50,30,10,0..11 — the top 10 are
-      // 50,30,11,10,10,9,8,7,6,5 by count, i.e. everything except extras 0-4.
+      const data = await leaderboard();
+      assert(data.works.length === 10, `at most 10 works are returned, got ${data.works.length}`);
+      const slugs = new Set(data.works.map(w => w.slug));
       for (const excluded of ['r1-extra-0', 'r1-extra-1', 'r1-extra-2', 'r1-extra-3', 'r1-extra-4']) {
-        assert(!slugs.has(excluded), `the lowest-viewed works are not among the top 10 — unexpectedly found ${excluded}`);
+        assert(!slugs.has(excluded), `the lowest-viewed works are not among the top 10, found ${excluded}`);
       }
     }
-    console.log('PASS - with more than 10 approved works, only the top 10 by view_count are eligible (order still shuffled)');
+    console.log('PASS - a running round with more than 10 approved works is cut to the top 10 by live view_count');
 
+    db.close();
     console.log('\nALL PASS');
   } finally {
     if (child) {

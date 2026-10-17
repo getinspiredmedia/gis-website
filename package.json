@@ -19,6 +19,7 @@
     "test:submit-public": "node test/submit-public.test.js",
     "test:rounds": "node test/rounds.test.js",
     "test:leaderboard": "node test/leaderboard.test.js",
+    "test:leaderboard-og": "node test/leaderboard-og.test.js",
     "test:on-view-round": "node test/on-view-round.test.js",
     "test:on-view-tiles": "node test/on-view-tiles.test.js",
     "test:previous-winner": "node test/previous-winner.test.js",
