@@ -121,7 +121,9 @@ async function run() {
     {
       const orders = new Set();
       for (let i = 0; i < 20; i++) {
-        const rows = await (await fetch(`${BASE}/api/on-view/leaderboard`)).json();
+        const data = await (await fetch(`${BASE}/api/on-view/leaderboard`)).json();
+        assert(data && data.status === 'running', `the public leaderboard answers for the running round, got ${JSON.stringify(data && data.status)}`);
+        const rows = data.works;
         assert(rows.length === 10, `public leaderboard still returns 10 works — got ${rows.length}`);
         for (const w of rows) {
           assert(!('view_count' in w) && !('views' in w) && !('rank' in w), `public leaderboard exposes no counts or rank — got ${JSON.stringify(w)}`);

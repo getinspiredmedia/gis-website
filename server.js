@@ -377,6 +377,70 @@ app.use('/uploads', express.static(UPLOAD_DIR));
 // Non-strict routing makes this match both /society and /society/.
 app.get('/society', (req, res) => res.redirect(301, '/'));
 
+// The round the public leaderboard shows: the running one, otherwise the most
+// recently closed one (no time limit, it stays until a new round starts),
+// otherwise none. The API and the server-rendered OG tags share this choice.
+function leaderboardRound() {
+  const running = currentRoundNumber();
+  if (running !== null) return { round_number: running, status: 'running' };
+  const closed = db.prepare(
+    "SELECT round_number FROM rounds WHERE ends_at <= datetime('now') ORDER BY ends_at DESC, round_number DESC LIMIT 1"
+  ).get();
+  return closed ? { round_number: closed.round_number, status: 'closed' } : null;
+}
+
+// Up to 10 approved works of that round plus the announced winner, shuffled
+// and without any count. A closed round selects on the frozen
+// view_count_at_archive (as the admin leaderboard does), so views collected
+// after archiving cannot change who is in the top 10; a running round has no
+// frozen counts yet and selects on the live view_count.
+function leaderboardData() {
+  const round = leaderboardRound();
+  if (!round) return null;
+  const count = round.status === 'closed' ? 'COALESCE(view_count_at_archive, view_count)' : 'view_count';
+  const works = db.prepare(
+    "SELECT slug, title, artist, image_url AS image FROM works " +
+    "WHERE round_number = ? AND review_status = 'approved' " +
+    `ORDER BY ${count} DESC, created_at ASC, id ASC LIMIT 10`
+  ).all(round.round_number);
+  const winner = db.prepare(
+    "SELECT w.slug, w.title, w.artist FROM rounds r JOIN works w ON w.id = r.winner_work_id " +
+    "WHERE r.round_number = ? AND r.announced_at IS NOT NULL AND w.review_status = 'approved'"
+  ).get(round.round_number) || null;
+  return { round_number: round.round_number, status: round.status, winner, works: shuffle(works) };
+}
+
+function leaderboardLede(data) {
+  return data.status === 'running'
+    ? 'The ten most viewed works of this round, in no particular order.'
+    : `The ten most viewed works of round ${data.round_number}, in no particular order.`;
+}
+
+// Served here, ahead of express.static, so a shared link gets Open Graph tags
+// in the raw HTML (crawlers do not run JS), same approach as /work/:slug.
+const LEADERBOARD_TEMPLATE = fs.readFileSync(path.join(__dirname, 'public', 'on-view', 'leaderboard', 'index.html'), 'utf8');
+
+app.get('/on-view/leaderboard', (req, res) => {
+  const data = leaderboardData();
+  const hasWorks = !!data && data.works.length > 0;
+  const title = hasWorks ? `Round ${data.round_number}'s top 10` : 'On View';
+  const ogTags = [
+    `<meta property="og:title" content="${escapeHtml(title + ' · Get Inspired Society')}">`,
+    `<meta property="og:description" content="${escapeHtml(hasWorks ? leaderboardLede(data) : OG_DESCRIPTION)}">`,
+    `<meta property="og:type" content="website">`,
+    `<meta property="og:url" content="${escapeHtml(SITE_URL + '/on-view/leaderboard')}">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
+  ];
+  if (hasWorks) {
+    // works are shuffled, so [0] is a random one of the top 10
+    const imageSlug = data.winner ? data.winner.slug : data.works[0].slug;
+    ogTags.push(`<meta property="og:image" content="${escapeHtml(SITE_URL + '/og-image/' + imageSlug)}">`);
+  }
+  res.send(LEADERBOARD_TEMPLATE
+    .replace('<!-- @meta:og -->', () => ogTags.join('\n'))
+    .replace(/<title>[^<]*<\/title>/, () => `<title>${escapeHtml(title)} · Get Inspired Society</title>`));
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Plausible analytics proxy ───────────────────────────────────────────────────
@@ -441,21 +505,13 @@ app.get('/api/works/:slug', (req, res) => {
   res.json({ ...row, current: row.status === 'current' });
 });
 
-// Public top-10 of the active round for the "in the running" leaderboard
-// (public/on-view/leaderboard/index.html). Deliberately excludes view_count
-// from the response entirely and shuffles the order server-side — the
-// business requirement is a public standings page that keeps the suspense,
-// so nothing in the payload may reveal the ranking behind it. No active
-// round: empty array, not a 404 — the page renders a quiet empty state.
+// Public top 10 for the leaderboard page (public/on-view/leaderboard/index.html):
+// { round_number, status: 'running' | 'closed', winner, works }, or null when
+// no round exists. Deliberately carries no view_count and no rank, and the
+// works are shuffled server-side: the page is a standing without a ranking, so
+// nothing in the payload may reveal the order behind it. See leaderboardData().
 app.get('/api/on-view/leaderboard', (req, res) => {
-  const roundNumber = currentRoundNumber();
-  if (roundNumber === null) return res.json([]);
-  const rows = db.prepare(
-    "SELECT slug, title, artist, image_url AS image FROM works " +
-    "WHERE round_number = ? AND review_status = 'approved' " +
-    "ORDER BY view_count DESC LIMIT 10"
-  ).all(roundNumber);
-  res.json(shuffle(rows));
+  res.json(leaderboardData());
 });
 
 // Shuffled selection of up to 4 works for the homepage "Currently on view"

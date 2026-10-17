@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>In the running · Get Inspired Society</title>
+<!-- @meta:og -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
@@ -134,6 +135,11 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,4.4rem);line-height:.96;letter-s
 @media(max-width:760px){.tiles{grid-template-columns:repeat(2,1fr)}}
 
 .empty{color:rgba(255,255,255,.55);font-size:15px;padding:16px 0}
+h1.has-lede{margin-bottom:16px}
+.lede{color:rgba(255,255,255,.7);font-size:15px;line-height:1.5;margin-bottom:8px}
+.lede a{color:#fff;text-decoration:underline;text-underline-offset:3px}
+.lede a:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.ledes{margin-bottom:32px}
 
 /* ── Footer ── */
 footer {
@@ -166,7 +172,8 @@ footer {
 <main id="main">
   <a class="back" href="/on-view">&#8592; On View</a>
   <span class="eyebrow">Get Inspired Society &nbsp;<span style="font-weight:400;opacity:.55">On View</span></span>
-  <h1>This round's top 10.</h1>
+  <h1 id="title">This round's top 10.</h1>
+  <div class="ledes" id="ledes"></div>
   <div id="content"></div>
 </main>
 
@@ -177,6 +184,10 @@ footer {
   'use strict';
 
   var content = document.getElementById('content');
+  var title = document.getElementById('title');
+  var ledes = document.getElementById('ledes');
+  // Hidden until the answer is in, so a closed round never flashes the running heading.
+  title.style.visibility = 'hidden';
 
   function esc(str) {
     return String(str)
@@ -189,10 +200,39 @@ footer {
 
   function renderEmpty() {
     content.innerHTML = '<p class="empty">No round is running right now.</p>';
+    title.style.visibility = '';
+  }
+
+  function addLede(node) {
+    var p = document.createElement('p');
+    p.className = 'lede';
+    p.appendChild(node);
+    ledes.appendChild(p);
+  }
+
+  function renderClosedIntro(data) {
+    title.textContent = 'Round ' + data.round_number + "'s top 10.";
+    title.className = 'has-lede';
+    addLede(document.createTextNode('The ten most viewed works of round ' + data.round_number + ', in no particular order.'));
+    if (data.winner) {
+      var wrap = document.createElement('span');
+      wrap.appendChild(document.createTextNode('Round ' + data.round_number + ' winner: '));
+      var a = document.createElement('a');
+      a.href = '/work/' + encodeURIComponent(data.winner.slug);
+      a.textContent = data.winner.title + ' by ' + data.winner.artist;
+      wrap.appendChild(a);
+      addLede(wrap);
+    }
+  }
+
+  function renderBoard(data) {
+    if (!data || !data.works || !data.works.length) { renderEmpty(); return; }
+    if (data.status === 'closed') renderClosedIntro(data);
+    title.style.visibility = '';
+    renderTiles(data.works);
   }
 
   function renderTiles(works) {
-    if (!works.length) { renderEmpty(); return; }
     content.innerHTML = '<div class="tiles">' + works.map(function (w) {
       return '<a class="tile" href="/work/' + esc(w.slug) + '">' +
         '<span class="art" style="background-image:url(\'' + esc(w.image) + '\')"></span>' +
@@ -203,7 +243,7 @@ footer {
 
   fetch('/api/on-view/leaderboard')
     .then(function (r) { return r.json(); })
-    .then(renderTiles)
+    .then(renderBoard)
     .catch(renderEmpty);
 }());
 </script>
