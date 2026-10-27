@@ -84,7 +84,6 @@ function run() {
         'public/on-view/index.html',
         'public/work/index.html',
         'public/submit/index.html',
-        'public/on-view/leaderboard/index.html',
         ...listReaderPages(),
       ];
       for (const copyPath of expectedCopies) {

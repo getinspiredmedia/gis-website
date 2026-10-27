@@ -2,8 +2,7 @@
 /*
  * GET /api/admin/rounds/:round_number/leaderboard is an internal, admin-only
  * overview: every approved work of a round with its exact view_count, most
- * views first, earliest created_at first on a tie. The public
- * /api/on-view/leaderboard must stay as it was: top 10, shuffled, no counts.
+ * views first, earliest created_at first on a tie.
  */
 const { spawn } = require('child_process');
 const path = require('path');
@@ -114,28 +113,6 @@ async function run() {
       assert(r.status === 404, `unknown round is a 404 — got ${r.status}`);
     }
     console.log('PASS - an unknown round is a 404');
-
-    // Public leaderboard unchanged: round 1 gets 12 more approved works with
-    // views 1..12, plus other-round (97): the top 10 are views 97 and 4..12.
-    for (let v = 1; v <= 12; v++) add('pub' + v, 1, 'approved', v, '-1 days');
-    {
-      const orders = new Set();
-      for (let i = 0; i < 20; i++) {
-        const data = await (await fetch(`${BASE}/api/on-view/leaderboard`)).json();
-        assert(data && data.status === 'running', `the public leaderboard answers for the running round, got ${JSON.stringify(data && data.status)}`);
-        const rows = data.works;
-        assert(rows.length === 10, `public leaderboard still returns 10 works — got ${rows.length}`);
-        for (const w of rows) {
-          assert(!('view_count' in w) && !('views' in w) && !('rank' in w), `public leaderboard exposes no counts or rank — got ${JSON.stringify(w)}`);
-        }
-        const slugs = rows.map(w => w.slug);
-        assert(!slugs.includes('pub1') && !slugs.includes('pub2') && !slugs.includes('pub3'), 'the least viewed works fall outside the top 10');
-        assert(slugs.includes('other-round') && slugs.filter(s => s.startsWith('pub')).length === 9, 'top 10 by views: other-round plus pub4..pub12');
-        orders.add(slugs.join());
-      }
-      assert(orders.size > 1, 'the public order is shuffled: it varies across 20 requests');
-    }
-    console.log('PASS - the public leaderboard is unchanged: top 10, shuffled, no view counts');
 
     db.close();
     console.log('\nALL PASS');

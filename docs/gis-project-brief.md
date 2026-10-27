@@ -118,7 +118,7 @@ How it works today:
 - Approved work is on view for seven days, counted from approval.
 - In an open call round the most viewed work wins a t-shirt. Views are counted once per visitor per work within 24 hours. The raw count is never public.
 - Tiebreak on equal views: earliest created_at wins.
-- The public leaderboard shows the top ten of the round in shuffled order, no numbers.
+- There is no public leaderboard anymore: it was removed after round 4, and /on-view/leaderboard redirects to /on-view. While it existed it showed the top ten of the round in shuffled order, no numbers.
 - The winner is notified by hand, not automated.
 - Views decide the prize only. They never decide what is public, and nobody is removed from the wall for having fewer views.
 

@@ -144,8 +144,8 @@ function roundStats(roundNumber) {
   return { approvedCount: row.n, ready };
 }
 
-// Fisher-Yates, in place on a copy — used to hide the view_count ranking
-// behind the public leaderboard (see GET /api/on-view/leaderboard).
+// Fisher-Yates, on a copy — used by GET /api/on-view/tiles so no work is
+// structurally favoured by its position.
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -377,69 +377,10 @@ app.use('/uploads', express.static(UPLOAD_DIR));
 // Non-strict routing makes this match both /society and /society/.
 app.get('/society', (req, res) => res.redirect(301, '/'));
 
-// The round the public leaderboard shows: the running one, otherwise the most
-// recently closed one (no time limit, it stays until a new round starts),
-// otherwise none. The API and the server-rendered OG tags share this choice.
-function leaderboardRound() {
-  const running = currentRoundNumber();
-  if (running !== null) return { round_number: running, status: 'running' };
-  const closed = db.prepare(
-    "SELECT round_number FROM rounds WHERE ends_at <= datetime('now') ORDER BY ends_at DESC, round_number DESC LIMIT 1"
-  ).get();
-  return closed ? { round_number: closed.round_number, status: 'closed' } : null;
-}
-
-// Up to 10 approved works of that round plus the announced winner, shuffled
-// and without any count. A closed round selects on the frozen
-// view_count_at_archive (as the admin leaderboard does), so views collected
-// after archiving cannot change who is in the top 10; a running round has no
-// frozen counts yet and selects on the live view_count.
-function leaderboardData() {
-  const round = leaderboardRound();
-  if (!round) return null;
-  const count = round.status === 'closed' ? 'COALESCE(view_count_at_archive, view_count)' : 'view_count';
-  const works = db.prepare(
-    "SELECT slug, title, artist, image_url AS image FROM works " +
-    "WHERE round_number = ? AND review_status = 'approved' " +
-    `ORDER BY ${count} DESC, created_at ASC, id ASC LIMIT 10`
-  ).all(round.round_number);
-  const winner = db.prepare(
-    "SELECT w.slug, w.title, w.artist FROM rounds r JOIN works w ON w.id = r.winner_work_id " +
-    "WHERE r.round_number = ? AND r.announced_at IS NOT NULL AND w.review_status = 'approved'"
-  ).get(round.round_number) || null;
-  return { round_number: round.round_number, status: round.status, winner, works: shuffle(works) };
-}
-
-function leaderboardLede(data) {
-  return data.status === 'running'
-    ? 'The ten most viewed works of this round, in no particular order.'
-    : `The ten most viewed works of round ${data.round_number}, in no particular order.`;
-}
-
-// Served here, ahead of express.static, so a shared link gets Open Graph tags
-// in the raw HTML (crawlers do not run JS), same approach as /work/:slug.
-const LEADERBOARD_TEMPLATE = fs.readFileSync(path.join(__dirname, 'public', 'on-view', 'leaderboard', 'index.html'), 'utf8');
-
-app.get('/on-view/leaderboard', (req, res) => {
-  const data = leaderboardData();
-  const hasWorks = !!data && data.works.length > 0;
-  const title = hasWorks ? `Round ${data.round_number}'s top 10` : 'On View';
-  const ogTags = [
-    `<meta property="og:title" content="${escapeHtml(title + ' · Get Inspired Society')}">`,
-    `<meta property="og:description" content="${escapeHtml(hasWorks ? leaderboardLede(data) : OG_DESCRIPTION)}">`,
-    `<meta property="og:type" content="website">`,
-    `<meta property="og:url" content="${escapeHtml(SITE_URL + '/on-view/leaderboard')}">`,
-    `<meta name="twitter:card" content="summary_large_image">`,
-  ];
-  if (hasWorks) {
-    // works are shuffled, so [0] is a random one of the top 10
-    const imageSlug = data.winner ? data.winner.slug : data.works[0].slug;
-    ogTags.push(`<meta property="og:image" content="${escapeHtml(SITE_URL + '/og-image/' + imageSlug)}">`);
-  }
-  res.send(LEADERBOARD_TEMPLATE
-    .replace('<!-- @meta:og -->', () => ogTags.join('\n'))
-    .replace(/<title>[^<]*<\/title>/, () => `<title>${escapeHtml(title)} · Get Inspired Society</title>`));
-});
+// The public leaderboard is gone (the open call ended after round 4); links
+// that were shared on social media land on /on-view. Non-strict routing makes
+// this match both /on-view/leaderboard and /on-view/leaderboard/.
+app.get('/on-view/leaderboard', (req, res) => res.redirect(301, '/on-view'));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -505,17 +446,8 @@ app.get('/api/works/:slug', (req, res) => {
   res.json({ ...row, current: row.status === 'current' });
 });
 
-// Public top 10 for the leaderboard page (public/on-view/leaderboard/index.html):
-// { round_number, status: 'running' | 'closed', winner, works }, or null when
-// no round exists. Deliberately carries no view_count and no rank, and the
-// works are shuffled server-side: the page is a standing without a ranking, so
-// nothing in the payload may reveal the order behind it. See leaderboardData().
-app.get('/api/on-view/leaderboard', (req, res) => {
-  res.json(leaderboardData());
-});
-
 // Shuffled selection of up to 4 works for the homepage "Currently on view"
-// tiles. Same pattern as the leaderboard above: query the whole eligible set
+// tiles: query the whole eligible set
 // (approved, not archived — exactly what /on-view rotates through), shuffle
 // server-side, slice after. A fixed "newest first" order would structurally
 // favour those works with more views, which is unfair now that views decide
@@ -775,8 +707,7 @@ app.get('/api/admin/rounds', requireAdmin, (req, res) => {
 });
 
 // Internal view leaderboard: every approved work of the round, most views
-// first, earliest submission first on a tie. Admin only, unlike the public
-// /api/on-view/leaderboard (shuffled, no counts). Works with round_number
+// first, earliest submission first on a tie. Admin only. Works with round_number
 // NULL belong to no round and are not listed here.
 // view_count here is COALESCE(view_count_at_archive, view_count): an
 // archived work's views are frozen at its archive moment (see
