@@ -6,10 +6,9 @@
  * The admin round-leaderboard and the announce-winner winner selection sort
  * and display COALESCE(view_count_at_archive, view_count) instead of the
  * raw, still-growing view_count — an early-archived work can no longer
- * outrank a later one purely by collecting views after it came down. The
- * public /on-view/leaderboard and /work/:slug's own counter are untouched by
- * this and are not the concern of this file (see admin-round-leaderboard.test.js
- * and view-count.test.js).
+ * outrank a later one purely by collecting views after it came down.
+ * /work/:slug's own counter is untouched by this and is not the concern of
+ * this file (see view-count.test.js).
  */
 const { spawn } = require('child_process');
 const path = require('path');

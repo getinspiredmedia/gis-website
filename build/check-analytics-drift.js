@@ -3,7 +3,7 @@
  * Pages outside the build pipeline (see CLAUDE.md) carry a
  * hand-maintained copy of build/partials/analytics.html's Plausible script
  * tags: public/on-view/index.html, public/work/index.html, public/submit/
- * index.html, public/on-view/leaderboard/index.html, and every magazine
+ * index.html, and every magazine
  * reader page (found by glob, see readers.js).
  * This guards against any of them silently
  * drifting from the partial — e.g. if the script hash, domain, or init
@@ -29,7 +29,6 @@ const HAND_MAINTAINED_COPIES = [
   'public/on-view/index.html',
   'public/work/index.html',
   'public/submit/index.html',
-  'public/on-view/leaderboard/index.html',
   ...listReaderPages(),
 ];
 

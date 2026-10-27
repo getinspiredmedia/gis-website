@@ -17,7 +17,6 @@ npm start
 |---|---|
 | `/` | Home |
 | `/on-view` | On View |
-| `/on-view/leaderboard` | Tussenstand van de lopende ronde (top 10, willekeurige volgorde) |
 | `/magazine` | Magazine |
 | `/gallery` | Gallery |
 | `/about` | About |
@@ -28,8 +27,8 @@ npm start
 
 De hero op `/` kiest bij elke pageload zelf uit drie varianten (`build/pages/index.html`, geen deploy of handmatige actie nodig). De pagina vraagt `/api/on-view/round`, `/api/on-view/closing`, `/api/on-view/previous-winner` en `/api/works` tegelijk op, met één gezamenlijke deadline van 2,5 seconde; een antwoord dat faalt, te laat komt of de verkeerde vorm heeft telt als `null`.
 
-1. **Actieve ronde:** de open-call hero (sectie `.callout`: "Show one work." / "Win a t-shirt.", knop naar `/submit`, link naar het leaderboard, shirt, feitenstrook). Is er een winnaar aangekondigd, dan komt daar op desktop een tweede kolom bij, op mobiel een kaart eronder, klikbaar naar `/work/:slug`; beeld nooit gecropt.
-2. **Net gesloten ronde** (sectie `.closing`): geen actieve ronde, de laatst gesloten ronde is minder dan 7 dagen geleden gesloten (`GET /api/on-view/closing`) en er is een aangekondigde winnaar. Links de winnaarskaart ("Round M winner", titel, maker, de hele kaart linkt naar `/work/:slug`), rechts "Round N is closed.", "Winner announced soon. On View stays open." en de knop "Submit your work →" naar `/submit`. Is de aangekondigde winnaar die van de gesloten ronde zelf (M gelijk aan N), dan staat er alleen "On View stays open.". Een winnaar van een eerdere ronde (bijvoorbeeld ronde 3 terwijl ronde 4 net gesloten is) telt ook. Geen shirt, geen leaderboard-link, geen feitenstrook.
+1. **Actieve ronde:** de open-call hero (sectie `.callout`: "Show one work." / "Win a t-shirt.", knop naar `/submit`, shirt, feitenstrook). Is er een winnaar aangekondigd, dan komt daar op desktop een tweede kolom bij, op mobiel een kaart eronder, klikbaar naar `/work/:slug`; beeld nooit gecropt.
+2. **Net gesloten ronde** (sectie `.closing`): geen actieve ronde, de laatst gesloten ronde is minder dan 7 dagen geleden gesloten (`GET /api/on-view/closing`) en er is een aangekondigde winnaar. Links de winnaarskaart ("Round M winner", titel, maker, de hele kaart linkt naar `/work/:slug`), rechts "Round N is closed.", "Winner announced soon. On View stays open." en de knop "Submit your work →" naar `/submit`. Is de aangekondigde winnaar die van de gesloten ronde zelf (M gelijk aan N), dan staat er alleen "On View stays open.". Een winnaar van een eerdere ronde (bijvoorbeeld ronde 3 terwijl ronde 4 net gesloten is) telt ook. Geen shirt, geen feitenstrook.
 3. **Anders** (sectie `.open`): de current-selection hero. Het werk met status `current` schermvullend met caption, plus de knop "Submit your work →" naar `/submit`. Is er geen current werk, dan is het een effen ink hero met alleen die knop.
 
 De keuze zit in de pure functie `chooseHeroVariant(round, closing, winner)`: een object met een ronde geeft variant 1, een closing-object plus een winnaar-object geeft variant 2, al het andere variant 3. Het venster van 7 dagen is de constante `CLOSING_WINDOW_DAYS` in `server.js`; na die 7 dagen valt de hero vanzelf terug op variant 3. De varianten wisselen nooit zichtbaar: alle blijven verborgen tot de keuze is gemaakt. Wordt er later weer een ronde aangemaakt, dan staat de open-call hero er vanzelf weer. `build/archive/hero-current-selection.html` is alleen nog een historisch exemplaar; `build/pages/index.html` is leidend.

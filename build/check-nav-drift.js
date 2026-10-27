@@ -21,7 +21,6 @@ const ROOT = path.resolve(__dirname, '..');
 const HAND_MAINTAINED_COPIES = [
   'public/on-view/index.html',
   'public/work/index.html',
-  'public/on-view/leaderboard/index.html',
   ...listReaderPages(),
 ];
 
