@@ -18,8 +18,15 @@ const ROOT = path.resolve(__dirname, '..');
 // magazine spread (artist photo + a page of bio/poem text on white), and the
 // exhibition band needs just the photo — the crop below is the left page's
 // artwork only, picked by hand against the source file.
+// bloom-hero: public/assets/covers/bloom-master.jpg (1414x2000) is the issue
+// 04 cover photo shoot at full resolution, but still carries the cover's own
+// masthead/tagline/title text in its top ~45%. The hero needs the photo
+// only (crown shadow, hand, tulips), so this crop drops everything above
+// y=900, the lowest point that still fully excludes the text (checked by
+// hand against the source) while keeping the whole crown shadow in frame.
 const JOBS = [
   { src: 'public/assets/covers/bloom.webp',        outDir: 'public/assets/responsive', base: 'bloom-cover',        widths: [375, 500, 750, 900, 1125] },
+  { src: 'public/assets/covers/bloom-master.jpg',   outDir: 'public/assets/responsive', base: 'bloom-hero',         widths: [640, 960, 1280, 1414], extract: { left: 0, top: 900, width: 1414, height: 1100 } },
   { src: 'public/assets/covers/chasing-light.webp', outDir: 'public/assets/responsive', base: 'chasing-light-cover', widths: [250, 500] },
   { src: 'public/assets/covers/no-algorithm.webp',  outDir: 'public/assets/responsive', base: 'no-algorithm-cover',  widths: [250, 500] },
   { src: 'public/assets/covers/origins.webp',       outDir: 'public/assets/responsive', base: 'origins-cover',       widths: [250, 500] },

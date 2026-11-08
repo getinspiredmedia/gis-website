@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
-<link rel="preload" as="image" href="/assets/responsive/bloom-cover-500.webp" fetchpriority="high">
+<link rel="preload" as="image" href="/assets/responsive/bloom-hero-1414.webp" imagesrcset="/assets/responsive/bloom-hero-640.webp 640w, /assets/responsive/bloom-hero-960.webp 960w, /assets/responsive/bloom-hero-1280.webp 1280w, /assets/responsive/bloom-hero-1414.webp 1414w" imagesizes="100vw" fetchpriority="high">
 <!-- @include: analytics -->
 <style>
 /* Opt in to the browser's native cross-document View Transition on internal
@@ -37,9 +37,16 @@ a{color:inherit;text-decoration:none}
 /* ── Hero: cold open on the Bloom cover ── */
 .hero{position:relative;height:100svh;min-height:600px;background:var(--ink);overflow:hidden;display:flex;align-items:flex-end;color:#fff}
 .hero-media{position:absolute;inset:0;overflow:hidden}
-.hero-media picture,.hero-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 78%;transform:scale(1.15);animation:heroZoom 2400ms var(--ease) forwards}
+.hero-media picture,.hero-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 3%;transform:scale(1.15);animation:heroZoom 2400ms var(--ease) forwards}
 @keyframes heroZoom{to{transform:scale(1)}}
 .hero-media::after{content:'';position:absolute;inset:0;background:linear-gradient(rgba(11,12,16,.08) 0,rgba(11,12,16,.12) 40%,rgba(11,12,16,.82) 100%)}
+@media(max-width:860px){
+  /* Narrow viewports crop the hero photo horizontally, not vertically (it's
+     wider than the viewport once scaled to cover it); the crown shadow and
+     hand sit right of centre in the source, so the anchor shifts right to
+     keep them in frame instead of cropping them off like "center" does. */
+  .hero-media picture,.hero-media img{object-position:72% 10%}
+}
 .hero-copy{position:relative;z-index:2;padding:0 28px clamp(56px,10vh,110px);max-width:620px;opacity:0;animation:heroCopyIn 900ms var(--ease) 2000ms forwards}
 @keyframes heroCopyIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 .hero-copy .eyebrow{display:block;margin-bottom:16px;color:rgba(255,255,255,.72)}
@@ -133,9 +140,9 @@ a{color:inherit;text-decoration:none}
 <section class="hero" id="hero">
   <div class="hero-media">
     <picture>
-      <source type="image/avif" srcset="/assets/responsive/bloom-cover-375.avif 375w, /assets/responsive/bloom-cover-500.avif 500w" sizes="100vw">
-      <source type="image/webp" srcset="/assets/responsive/bloom-cover-375.webp 375w, /assets/responsive/bloom-cover-500.webp 500w" sizes="100vw">
-      <img src="/assets/responsive/bloom-cover-500.jpg" srcset="/assets/responsive/bloom-cover-375.jpg 375w, /assets/responsive/bloom-cover-500.jpg 500w" sizes="100vw" alt="Cover of issue 04, Bloom, by Dina Belenko" width="500" height="707" fetchpriority="high">
+      <source type="image/avif" srcset="/assets/responsive/bloom-hero-640.avif 640w, /assets/responsive/bloom-hero-960.avif 960w, /assets/responsive/bloom-hero-1280.avif 1280w, /assets/responsive/bloom-hero-1414.avif 1414w" sizes="100vw">
+      <source type="image/webp" srcset="/assets/responsive/bloom-hero-640.webp 640w, /assets/responsive/bloom-hero-960.webp 960w, /assets/responsive/bloom-hero-1280.webp 1280w, /assets/responsive/bloom-hero-1414.webp 1414w" sizes="100vw">
+      <img src="/assets/responsive/bloom-hero-1414.jpg" srcset="/assets/responsive/bloom-hero-640.jpg 640w, /assets/responsive/bloom-hero-960.jpg 960w, /assets/responsive/bloom-hero-1280.jpg 1280w, /assets/responsive/bloom-hero-1414.jpg 1414w" sizes="100vw" alt="Tulips and a crown-shaped shadow from issue 04, Bloom, by Dina Belenko" width="1414" height="1100" fetchpriority="high">
     </picture>
   </div>
   <div class="hero-copy" id="hero-copy">
