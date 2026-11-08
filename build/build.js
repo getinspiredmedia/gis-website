@@ -1,7 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const pages = require('./pages.config');
+const { pages, ISSUE_CALL_URL } = require('./pages.config');
 
 const ROOT = path.resolve(__dirname, '..');
 const PARTIALS = path.join(__dirname, 'partials');
@@ -51,6 +51,12 @@ function injectAnalytics(html) {
   return html.replace('<!-- @include: analytics -->', partial);
 }
 
+// André's own issue 05 submission form (see pages.config.js) — only the
+// homepage references the {{ISSUE_CALL_URL}} token.
+function injectIssueCallUrl(html) {
+  return html.split('{{ISSUE_CALL_URL}}').join(ISSUE_CALL_URL);
+}
+
 const { checkNavDrift } = require('./check-nav-drift');
 const navDriftErrors = checkNavDrift();
 if (navDriftErrors.length) {
@@ -86,6 +92,7 @@ pages.forEach(config => {
   html = injectFooter(html, config.nav, config.footer);
   if (config.wipe !== false) html = injectWipe(html);
   html = injectAnalytics(html);
+  html = injectIssueCallUrl(html);
   const outPath = path.join(ROOT, config.output);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, html, 'utf8');

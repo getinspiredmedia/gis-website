@@ -73,7 +73,7 @@ async function run() {
     assert(!fs.existsSync(path.join(ROOT, 'build', 'pages', 'society.html')), 'build/pages/society.html no longer exists');
     console.log('PASS - the Society page and its source are gone');
 
-    const buildOutputs = require('../build/pages.config').map(c => c.output);
+    const buildOutputs = require('../build/pages.config').pages.map(c => c.output);
     const pages = [...buildOutputs, 'public/on-view/index.html', 'public/work/index.html', ...listReaderPages()];
     for (const rel of pages) {
       const { nav, footer } = navAndFooter(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
@@ -84,9 +84,9 @@ async function run() {
         assert(!/Log in/i.test(part), `${rel}: the ${name} has no Log in`);
       }
       const items = [...nav.matchAll(/<div class="menu"[^>]*>([\s\S]*?)<\/div>/g)][0][1].match(/<a [^>]*>([^<]*)<\/a>/g).map(a => a.replace(/<[^>]*>/g, ''));
-      assert(JSON.stringify(items) === JSON.stringify(['On view', 'Magazine', 'Gallery']), `${rel}: the nav items are On view, Magazine, Gallery — got ${JSON.stringify(items)}`);
+      assert(JSON.stringify(items) === JSON.stringify(['Magazine', 'Gallery']), `${rel}: the nav items are Magazine, Gallery — got ${JSON.stringify(items)}`);
     }
-    console.log(`PASS - nav and footer of ${pages.length} pages have no Society link, no Circle link and no Log in; the nav is On view, Magazine, Gallery`);
+    console.log(`PASS - nav and footer of ${pages.length} pages have no Society link, no Circle link and no Log in; the nav is Magazine, Gallery`);
 
     console.log('\nALL PASS');
   } finally {

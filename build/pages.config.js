@@ -1,6 +1,11 @@
 'use strict';
 
-module.exports = [
+// André's own form for issue 05 submissions — separate from the weekly
+// On View /submit flow. Used by the homepage's issue-05 card and its
+// "Show your work." door.
+const ISSUE_CALL_URL = 'https://tally.com/temp';
+
+const pages = [
   {
     input:  'build/pages/index.html',
     output: 'public/index.html',
@@ -48,3 +53,5 @@ module.exports = [
     footer: {},
   },
 ];
+
+module.exports = { pages, ISSUE_CALL_URL };
