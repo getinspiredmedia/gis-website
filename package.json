@@ -27,7 +27,7 @@
     "test:round-closed-email": "node test/round-closed-email.test.js",
     "test:approve-email": "node test/approve-email.test.js",
     "test:society-redirect": "node test/society-redirect.test.js",
-    "test:homepage-hero-variant": "node test/homepage-hero-variant.test.js",
+    "test:homepage": "node test/homepage.test.js",
     "test:on-view-closing": "node test/on-view-closing.test.js",
     "test:mail-escaping": "node test/mail-escaping.test.js",
     "start": "exec node server.js"
@@ -38,6 +38,8 @@
   "dependencies": {
     "better-sqlite3": "^9.6.0",
     "express": "^4.18.2",
+    "gsap": "^3.15.1",
+    "lenis": "^1.3.27",
     "multer": "^1.4.5-lts.1",
     "resend": "^3.2.0",
     "sharp": "^0.33.4"

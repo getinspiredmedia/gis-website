@@ -84,10 +84,32 @@ pages.forEach(config => {
   let html = read(inputPath);
   html = injectNav(html, config.nav);
   html = injectFooter(html, config.nav, config.footer);
-  html = injectWipe(html);
+  if (config.wipe !== false) html = injectWipe(html);
   html = injectAnalytics(html);
   const outPath = path.join(ROOT, config.output);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, html, 'utf8');
   console.log(`Built: ${config.output}`);
+});
+
+// Responsive image variants (AVIF/WebP/JPEG) for the homepage — idempotent,
+// only encodes a size that isn't already on disk.
+require('./generate-responsive-images').run().then(() => {
+  // Self-hosted GSAP + Lenis: copied from node_modules into public/js/vendor
+  // so the homepage never loads them from a third-party CDN. Copied, not
+  // symlinked, so public/ stays a plain static tree Railway can serve as-is.
+  const VENDOR_FILES = [
+    ['gsap/dist/gsap.min.js', 'gsap.min.js'],
+    ['gsap/dist/ScrollTrigger.min.js', 'ScrollTrigger.min.js'],
+    ['lenis/dist/lenis.min.js', 'lenis.min.js'],
+  ];
+  const vendorDir = path.join(ROOT, 'public', 'js', 'vendor');
+  fs.mkdirSync(vendorDir, { recursive: true });
+  VENDOR_FILES.forEach(([from, to]) => {
+    fs.copyFileSync(path.join(ROOT, 'node_modules', from), path.join(vendorDir, to));
+    console.log(`Vendored: public/js/vendor/${to}`);
+  });
+}).catch(e => {
+  console.error('[build] Aborting — could not generate responsive images or vendor files:', e.message);
+  process.exit(1);
 });

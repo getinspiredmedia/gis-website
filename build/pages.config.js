@@ -6,6 +6,10 @@ module.exports = [
     output: 'public/index.html',
     nav:    { active: null, variant: 'dark' },
     footer: { tagline: 'Seventeen years of looking.' },
+    // The homepage owns its own wipe/view-transition navigation via
+    // public/js/motion.js (see CLAUDE.md) instead of the shared wipe
+    // partial, so the two don't both intercept the same clicks.
+    wipe: false,
   },
   {
     input:  'build/pages/magazine.html',
