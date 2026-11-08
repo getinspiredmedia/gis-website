@@ -30,6 +30,7 @@
 ### 6. Rapporteer gewijzigde bestanden
 - Geef aan het einde van elke taak een overzicht van welke bestanden zijn gewijzigd.
 - Vermeld kort waarom elk bestand gewijzigd is.
+- Lever dit altijd als een apart `# Eindrapport`-markdown-codeblok (in één klik te kopiëren), met minimaal: (1) status van de taak (afgerond, of op welk punt gestopt); (2) gewijzigde/toegevoegde/verwijderde bestanden met reden; (3) uitgevoerde tests en hun uitkomst; (4) of er gecommit/gepusht is, met commit hash, of anders de huidige `git status`; (5) resterende risico's of openstaande punten.
 
 ### 7. Controleer security, performance en onderhoudbaarheid
 - Vermijd veelvoorkomende kwetsbaarheden: XSS, SQL-injectie, command injection, etc.
