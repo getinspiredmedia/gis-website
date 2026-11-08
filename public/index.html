@@ -10,7 +10,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
-<link rel="preload" as="image" href="/assets/responsive/bloom-hero-1235.webp" imagesrcset="/assets/responsive/bloom-hero-640.webp 640w, /assets/responsive/bloom-hero-960.webp 960w, /assets/responsive/bloom-hero-1235.webp 1235w" imagesizes="100vw" fetchpriority="high">
+<!-- Two art-directed hero photos (not one photo cropped two ways): the mobile
+     preload fires only in the same (max-width:860px) and (orientation:portrait)
+     case the <picture> below switches on, its exact negation preloads the
+     desktop photo everywhere else, so only one hero image is ever fetched. -->
+<link rel="preload" as="image" media="(max-width: 860px) and (orientation: portrait)" href="/assets/responsive/bloom-hero-mobile-1024.webp" imagesrcset="/assets/responsive/bloom-hero-mobile-512.webp 512w, /assets/responsive/bloom-hero-mobile-768.webp 768w, /assets/responsive/bloom-hero-mobile-1024.webp 1024w" imagesizes="100vw" fetchpriority="high">
+<link rel="preload" as="image" media="(min-width: 861px), (orientation: landscape)" href="/assets/responsive/bloom-hero-desktop-1536.webp" imagesrcset="/assets/responsive/bloom-hero-desktop-768.webp 768w, /assets/responsive/bloom-hero-desktop-1152.webp 1152w, /assets/responsive/bloom-hero-desktop-1536.webp 1536w" imagesizes="100vw" fetchpriority="high">
 <!-- Privacy-friendly analytics by Plausible — proxied via own domain so adblockers don't skew the numbers -->
 <script async src="/js/pa-MH-OTeJcc74k86JrwLa7k.js"></script>
 <script>
@@ -43,15 +48,15 @@ a{color:inherit;text-decoration:none}
 /* ── Hero: cold open on the Bloom cover ── */
 .hero{position:relative;height:100svh;min-height:600px;background:var(--ink);overflow:hidden;display:flex;align-items:flex-end;color:#fff}
 .hero-media{position:absolute;inset:0;overflow:hidden}
-.hero-media picture,.hero-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 0%;transform:scale(1.15);animation:heroZoom 2400ms var(--ease) forwards}
+.hero-media picture,.hero-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;transform:scale(1.15);animation:heroZoom 2400ms var(--ease) forwards}
 @keyframes heroZoom{to{transform:scale(1)}}
 .hero-media::after{content:'';position:absolute;inset:0;background:linear-gradient(rgba(11,12,16,.08) 0,rgba(11,12,16,.12) 40%,rgba(11,12,16,.82) 100%)}
-@media(max-width:860px){
-  /* Narrow viewports crop the hero photo horizontally, not vertically (it's
-     wider than the viewport once scaled to cover it); the crown shadow and
-     hand sit right of centre in the source, so the anchor shifts right to
-     keep them in frame instead of cropping them off like "center" does. */
-  .hero-media picture,.hero-media img{object-position:72% 10%}
+@media(max-width:860px) and (orientation:portrait){
+  /* The mobile source (bloom-hero-mobile.png) has the magazine high in
+     frame with the dark ground reserved for the title at the bottom, so a
+     lower anchor than the desktop photo keeps the magazine fully in frame
+     while still leaving that dark ground under the hero copy. */
+  .hero-media picture,.hero-media img{object-position:center 30%}
 }
 .hero-copy{position:relative;z-index:2;padding:0 28px clamp(56px,10vh,110px);max-width:620px;opacity:0;animation:heroCopyIn 900ms var(--ease) 2000ms forwards}
 @keyframes heroCopyIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -268,9 +273,12 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
 <section class="hero" id="hero">
   <div class="hero-media">
     <picture>
-      <source type="image/avif" srcset="/assets/responsive/bloom-hero-640.avif 640w, /assets/responsive/bloom-hero-960.avif 960w, /assets/responsive/bloom-hero-1235.avif 1235w" sizes="100vw">
-      <source type="image/webp" srcset="/assets/responsive/bloom-hero-640.webp 640w, /assets/responsive/bloom-hero-960.webp 960w, /assets/responsive/bloom-hero-1235.webp 1235w" sizes="100vw">
-      <img src="/assets/responsive/bloom-hero-1235.jpg" srcset="/assets/responsive/bloom-hero-640.jpg 640w, /assets/responsive/bloom-hero-960.jpg 960w, /assets/responsive/bloom-hero-1235.jpg 1235w" sizes="100vw" alt="Tulips and a crown-shaped shadow from issue 04, Bloom, by Dina Belenko" width="1235" height="995" fetchpriority="high">
+      <source media="(max-width: 860px) and (orientation: portrait)" type="image/avif" srcset="/assets/responsive/bloom-hero-mobile-512.avif 512w, /assets/responsive/bloom-hero-mobile-768.avif 768w, /assets/responsive/bloom-hero-mobile-1024.avif 1024w" sizes="100vw">
+      <source media="(max-width: 860px) and (orientation: portrait)" type="image/webp" srcset="/assets/responsive/bloom-hero-mobile-512.webp 512w, /assets/responsive/bloom-hero-mobile-768.webp 768w, /assets/responsive/bloom-hero-mobile-1024.webp 1024w" sizes="100vw">
+      <source media="(max-width: 860px) and (orientation: portrait)" srcset="/assets/responsive/bloom-hero-mobile-512.jpg 512w, /assets/responsive/bloom-hero-mobile-768.jpg 768w, /assets/responsive/bloom-hero-mobile-1024.jpg 1024w" sizes="100vw">
+      <source type="image/avif" srcset="/assets/responsive/bloom-hero-desktop-768.avif 768w, /assets/responsive/bloom-hero-desktop-1152.avif 1152w, /assets/responsive/bloom-hero-desktop-1536.avif 1536w" sizes="100vw">
+      <source type="image/webp" srcset="/assets/responsive/bloom-hero-desktop-768.webp 768w, /assets/responsive/bloom-hero-desktop-1152.webp 1152w, /assets/responsive/bloom-hero-desktop-1536.webp 1536w" sizes="100vw">
+      <img src="/assets/responsive/bloom-hero-desktop-1536.jpg" srcset="/assets/responsive/bloom-hero-desktop-768.jpg 768w, /assets/responsive/bloom-hero-desktop-1152.jpg 1152w, /assets/responsive/bloom-hero-desktop-1536.jpg 1536w" sizes="100vw" alt="Issue 04, Bloom: the printed cover, photograph by Dina Belenko." width="1536" height="1024" fetchpriority="high">
     </picture>
   </div>
   <div class="hero-copy" id="hero-copy">

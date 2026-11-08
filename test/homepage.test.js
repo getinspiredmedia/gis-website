@@ -130,34 +130,44 @@ assert(/src="\/js\/vendor\/gsap\.min\.js"/.test(html), 'GSAP is self-hosted, not
 assert(!/cdn\.jsdelivr|cdnjs\.cloudflare|unpkg\.com/.test(html), 'no external CDN script is referenced');
 console.log('PASS - motion.js and GSAP/Lenis are self-hosted, no external CDN');
 
-// The generated hero JPEG has no white page margin and no covertext at its
-// very edges: sample the four corners and the midpoint of each edge, and
-// assert none of them is a plain-white background pixel (RGB sum under
-// 700 — the Bloom photo itself is always much darker than that at these
-// positions; white page margin or white cover type would read near 765).
+// The two generated hero JPEGs (desktop and mobile) are art-directed studio
+// photos, not a crop: the thing a regression could plausibly break is the
+// dark ground the hero-copy (.hero{display:flex;align-items:flex-end}, no
+// justify-content, so the title/lede/button always render bottom-left)
+// sits on, not the whole frame. Checked by hand (pixel-sampled) that for
+// the desktop photo specifically the top-right corner is NOT dark: it's
+// the lit chandelier-shadow glow in the background, intentional art
+// direction, RGB sum ~387. Every other corner on both photos, and a point
+// on the dark ground directly behind where the hero-copy sits, is well
+// under 100. So this checks bottom-left and bottom-right on both photos
+// (the full-width strip the title/button can land on, per the brief:
+// "links donker" for desktop, "onderste derde donker" for mobile) plus
+// top-left, deliberately excluding the desktop's top-right.
 (async () => {
-  const heroPath = path.join(ROOT, 'public', 'assets', 'responsive', 'bloom-hero-1235.jpg');
-  const { data, info } = await sharp(heroPath).raw().toBuffer({ resolveWithObject: true });
-  const { width, height, channels } = info;
-  function pixelSum(x, y) {
-    const idx = (y * width + x) * channels;
-    return data[idx] + data[idx + 1] + data[idx + 2];
+  async function checkCorners(relPath, corners) {
+    const imgPath = path.join(ROOT, 'public', 'assets', 'responsive', relPath);
+    const { data, info } = await sharp(imgPath).raw().toBuffer({ resolveWithObject: true });
+    const { width, height, channels } = info;
+    function pixelSum(x, y) {
+      const idx = (y * width + x) * channels;
+      return data[idx] + data[idx + 1] + data[idx + 2];
+    }
+    for (const [label, [x, y]] of Object.entries(corners(width, height))) {
+      const sum = pixelSum(x, y);
+      assert(sum < 200, `${relPath}'s ${label} is dark ground, not a bright patch behind the title (RGB sum < 200) — got ${sum} at (${x},${y})`);
+    }
   }
-  const points = {
-    'top-left corner':    [0, 0],
-    'top-right corner':   [width - 1, 0],
-    'bottom-left corner': [0, height - 1],
-    'bottom-right corner': [width - 1, height - 1],
-    'top edge midpoint':    [Math.floor(width / 2), 0],
-    'bottom edge midpoint': [Math.floor(width / 2), height - 1],
-    'left edge midpoint':   [0, Math.floor(height / 2)],
-    'right edge midpoint':  [width - 1, Math.floor(height / 2)],
-  };
-  for (const [label, [x, y]] of Object.entries(points)) {
-    const sum = pixelSum(x, y);
-    assert(sum < 700, `bloom-hero-1235.jpg's ${label} is not a white margin/covertext pixel (RGB sum < 700) — got ${sum} at (${x},${y})`);
-  }
-  console.log('PASS - the generated hero JPEG has no white margin or covertext at any corner or edge midpoint');
+  await checkCorners('bloom-hero-desktop-1536.jpg', (w, h) => ({
+    'top-left corner': [0, 0],
+    'bottom-left corner': [0, h - 1],
+    'bottom-right corner': [w - 1, h - 1],
+  }));
+  await checkCorners('bloom-hero-mobile-1024.jpg', (w, h) => ({
+    'top-left corner': [0, 0],
+    'bottom-left corner': [0, h - 1],
+    'bottom-right corner': [w - 1, h - 1],
+  }));
+  console.log('PASS - the desktop and mobile hero JPEGs have dark ground at every corner that can sit behind the title (desktop top-right excluded: intentional background glow)');
 
   console.log('\nALL PASS');
 })();
