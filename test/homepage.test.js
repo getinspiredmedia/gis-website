@@ -20,6 +20,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 
 const ROOT = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'public', 'index.html'), 'utf8').replace(/\r\n/g, '\n');
@@ -129,4 +130,34 @@ assert(/src="\/js\/vendor\/gsap\.min\.js"/.test(html), 'GSAP is self-hosted, not
 assert(!/cdn\.jsdelivr|cdnjs\.cloudflare|unpkg\.com/.test(html), 'no external CDN script is referenced');
 console.log('PASS - motion.js and GSAP/Lenis are self-hosted, no external CDN');
 
-console.log('\nALL PASS');
+// The generated hero JPEG has no white page margin and no covertext at its
+// very edges: sample the four corners and the midpoint of each edge, and
+// assert none of them is a plain-white background pixel (RGB sum under
+// 700 — the Bloom photo itself is always much darker than that at these
+// positions; white page margin or white cover type would read near 765).
+(async () => {
+  const heroPath = path.join(ROOT, 'public', 'assets', 'responsive', 'bloom-hero-1235.jpg');
+  const { data, info } = await sharp(heroPath).raw().toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  function pixelSum(x, y) {
+    const idx = (y * width + x) * channels;
+    return data[idx] + data[idx + 1] + data[idx + 2];
+  }
+  const points = {
+    'top-left corner':    [0, 0],
+    'top-right corner':   [width - 1, 0],
+    'bottom-left corner': [0, height - 1],
+    'bottom-right corner': [width - 1, height - 1],
+    'top edge midpoint':    [Math.floor(width / 2), 0],
+    'bottom edge midpoint': [Math.floor(width / 2), height - 1],
+    'left edge midpoint':   [0, Math.floor(height / 2)],
+    'right edge midpoint':  [width - 1, Math.floor(height / 2)],
+  };
+  for (const [label, [x, y]] of Object.entries(points)) {
+    const sum = pixelSum(x, y);
+    assert(sum < 700, `bloom-hero-1235.jpg's ${label} is not a white margin/covertext pixel (RGB sum < 700) — got ${sum} at (${x},${y})`);
+  }
+  console.log('PASS - the generated hero JPEG has no white margin or covertext at any corner or edge midpoint');
+
+  console.log('\nALL PASS');
+})();
