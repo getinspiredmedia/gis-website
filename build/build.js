@@ -1,7 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { pages, ISSUE_CALL_URL } = require('./pages.config');
+const { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE } = require('./pages.config');
 
 const ROOT = path.resolve(__dirname, '..');
 const PARTIALS = path.join(__dirname, 'partials');
@@ -51,10 +51,14 @@ function injectAnalytics(html) {
   return html.replace('<!-- @include: analytics -->', partial);
 }
 
-// André's own issue 05 submission form (see pages.config.js) — only the
-// homepage references the {{ISSUE_CALL_URL}} token.
+// The issue 05 open call's link and copy (see pages.config.js) — only the
+// homepage references these tokens. All three are swapped together, in
+// pages.config.js alone, once the real form exists.
 function injectIssueCallUrl(html) {
-  return html.split('{{ISSUE_CALL_URL}}').join(ISSUE_CALL_URL);
+  return html
+    .split('{{ISSUE_CALL_URL}}').join(ISSUE_CALL_URL)
+    .split('{{ISSUE_CALL_CARD_LINE}}').join(ISSUE_CALL_CARD_LINE)
+    .split('{{ISSUE_CALL_DOOR_LINE}}').join(ISSUE_CALL_DOOR_LINE);
 }
 
 const { checkNavDrift } = require('./check-nav-drift');

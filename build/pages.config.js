@@ -1,9 +1,15 @@
 'use strict';
 
-// André's own form for issue 05 submissions — separate from the weekly
-// On View /submit flow. Used by the homepage's issue-05 card and its
-// "Show your work." door.
-const ISSUE_CALL_URL = 'https://tally.com/temp';
+// André's own form for issue 05 submissions, separate from the weekly
+// On View /submit flow, will replace this once it exists. Until then this
+// points at /magazine, a real page, instead of a dead placeholder link,
+// and the copy says the open call hasn't started yet (it opens 9 November)
+// rather than claiming it's already open. All three are meant to be swapped
+// together, in this one file, the moment the real form is ready. Used by
+// the homepage's issue-05 card and its "Show your work." door.
+const ISSUE_CALL_URL = '/magazine';
+const ISSUE_CALL_CARD_LINE = 'Open call opens 9 November.';
+const ISSUE_CALL_DOOR_LINE = 'Issue 05 opens for submissions on 9 November.';
 
 const pages = [
   {
@@ -54,4 +60,4 @@ const pages = [
   },
 ];
 
-module.exports = { pages, ISSUE_CALL_URL };
+module.exports = { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE };
