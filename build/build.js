@@ -62,15 +62,26 @@ function injectIssueCallUrl(html) {
 }
 
 // The WONDER open call's Tally form link (see pages.config.js), used only
-// by build/pages/submit.html. Aborting the build on a
-// malformed value (not a real https://tally.so/ link) is cheaper than
-// shipping a submit page whose three buttons silently go nowhere useful.
+// by build/pages/submit.html. Aborting the build on a malformed value is
+// cheaper than shipping a submit page whose three buttons silently go
+// nowhere useful. Two checks, not one: the shape must be a real Tally
+// form link (https://tally.so/r/<id>, not just any https://tally.so/...
+// path), and it must not carry a leftover placeholder word, since a
+// value that happens to match the shape (e.g. https://tally.so/r/REPLACE_ME)
+// would otherwise pass the shape check alone.
+const TALLY_URL_PATTERN = /^https:\/\/tally\.so\/r\/[A-Za-z0-9]+$/;
+const TALLY_URL_PLACEHOLDER_WORDS = /REPLACE|TODO|TEMP|EXAMPLE|PLACEHOLDER/i;
+
 function injectTallyUrl(html) {
   return html.split('{{TALLY_URL}}').join(TALLY_URL);
 }
 
-if (!TALLY_URL.startsWith('https://tally.so/')) {
-  console.error(`[build] Aborting — TALLY_URL in build/pages.config.js must start with https://tally.so/, got: ${TALLY_URL}`);
+if (!TALLY_URL_PATTERN.test(TALLY_URL)) {
+  console.error(`[build] Aborting — TALLY_URL in build/pages.config.js must match https://tally.so/r/<id>, got: ${TALLY_URL}`);
+  process.exit(1);
+}
+if (TALLY_URL_PLACEHOLDER_WORDS.test(TALLY_URL)) {
+  console.error(`[build] Aborting — TALLY_URL in build/pages.config.js still looks like a placeholder, got: ${TALLY_URL}`);
   process.exit(1);
 }
 

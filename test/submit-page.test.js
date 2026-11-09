@@ -96,22 +96,42 @@ function run() {
   assert(JSON.stringify(positions) === JSON.stringify(['closing', 'hero', 'how-to-submit']), `the three buttons sit at hero, how-to-submit and closing — got ${JSON.stringify(positions)}`);
   console.log('PASS - exactly three "Submit your work" buttons, each opening TALLY_URL in a new tab with rel="noopener"');
 
-  // 3. The build aborts when TALLY_URL does not start with https://tally.so/.
+  // 3. The build guard: a real-looking tally.so/r/<id> link with no
+  // leftover placeholder word succeeds; a wrong domain, a wrong shape, and
+  // the exact old placeholder (https://tally.so/r/REPLACE_ME, a value that
+  // matches the URL shape and would have slipped past a shape-only check)
+  // all fail the build.
   {
     const original = fs.readFileSync(CONFIG_PATH, 'utf8');
     assert(original.includes("const TALLY_URL = 'https://tally.so/"), 'fixture assumption: pages.config.js has the expected TALLY_URL declaration shape');
-    const mutated = original.replace(/const TALLY_URL = '[^']*';/, "const TALLY_URL = 'https://example.com/not-tally';");
-    assert(mutated !== original, 'mutation actually changed the file content');
-    fs.writeFileSync(CONFIG_PATH, mutated, 'utf8');
-    try {
-      const result = spawnSync('node', ['build/build.js'], { cwd: ROOT });
-      assert(result.status !== 0, `the build exits non-zero when TALLY_URL does not start with https://tally.so/ — got exit ${result.status}`);
-      assert(/TALLY_URL/.test(result.stderr.toString()), `the build's error output names TALLY_URL — got: ${result.stderr}`);
-    } finally {
-      fs.writeFileSync(CONFIG_PATH, original, 'utf8');
+
+    function buildWith(url) {
+      const mutated = original.replace(/const TALLY_URL = '[^']*';/, `const TALLY_URL = '${url}';`);
+      assert(mutated !== original || url === TALLY_URL, 'mutation actually changed the file content');
+      fs.writeFileSync(CONFIG_PATH, mutated, 'utf8');
+      try {
+        return spawnSync('node', ['build/build.js'], { cwd: ROOT });
+      } finally {
+        fs.writeFileSync(CONFIG_PATH, original, 'utf8');
+      }
     }
+
+    const shouldFail = [
+      'https://tally.so/r/REPLACE_ME',
+      'https://example.com/not-tally',
+      'https://tally.so/not-a-form-link',
+    ];
+    for (const url of shouldFail) {
+      const result = buildWith(url);
+      assert(result.status !== 0, `the build exits non-zero for TALLY_URL="${url}" — got exit ${result.status}`);
+      assert(/TALLY_URL/.test(result.stderr.toString()), `the build's error output for "${url}" names TALLY_URL — got: ${result.stderr}`);
+    }
+    console.log('PASS - the build aborts for a placeholder, a wrong domain and a malformed Tally link');
+
+    const okResult = buildWith('https://tally.so/r/xVj29E');
+    assert(okResult.status === 0, `the build succeeds for a real tally.so/r/<id> link — got exit ${okResult.status}: ${okResult.stderr}`);
+    console.log('PASS - the build succeeds for a real tally.so/r/<id> link');
   }
-  console.log('PASS - the build aborts when TALLY_URL does not start with https://tally.so/');
 
   // Rebuild once more with the restored, valid config so the repo is left
   // in the same generated state this test found it in.

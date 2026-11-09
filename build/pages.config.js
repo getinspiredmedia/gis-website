@@ -8,12 +8,12 @@ const ISSUE_CALL_URL = '/submit';
 const ISSUE_CALL_CARD_LINE = 'Free to enter. Deadline 6 December 2026.';
 const ISSUE_CALL_DOOR_LINE = 'Free to enter. Deadline 6 December 2026.';
 
-// The Tally form WONDER submissions go through. A placeholder (not a real
-// Tally form) until André supplies the real one, swap this one value and
-// rebuild, nothing else needs to change. build/build.js aborts the build if
-// this doesn't start with https://tally.so/, so a stray typo here can't
-// ship a broken submit link.
-const TALLY_URL = 'https://tally.so/r/REPLACE_ME';
+// The Tally form WONDER submissions go through, André's real one (live
+// since the open call launched 9 November 2026). build/build.js checks
+// this against a strict pattern (a real /r/<id> link, no leftover
+// placeholder word), so a stray typo or an unreplaced placeholder here
+// can't ship a broken submit link, same as a malformed value can't.
+const TALLY_URL = 'https://tally.so/r/xVj29E';
 
 const pages = [
   {
