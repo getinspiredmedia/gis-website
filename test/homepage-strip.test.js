@@ -2,23 +2,47 @@
 /*
  * Bugfix regression test for the homepage issue strip's active-card
  * highlight on desktop (>860px): the card nearest the viewport's centre
- * must get .is-active, exactly one card at a time, kept correct while
- * scrolling in both directions, including all the way back to the top.
+ * must get .is-active, exactly one card at a time, in both scroll
+ * directions, across a range of real desktop sizes and zoom levels, plus
+ * hover/focus.
  *
- * The bug: .is-active was only recomputed from ScrollTrigger's onUpdate,
- * which GSAP stops firing once scroll leaves the pinned trigger's own
- * start/end window. Scrolling back above the strip left .is-active frozen
- * on whichever card was nearest centre at the last onUpdate call, which
- * (because the untransformed track doesn't actually centre card 0 at every
- * viewport width) wasn't reliably card 0 (Bloom) either. Fixed by
- * recomputing from real getBoundingClientRect() positions on every
- * animation frame (gsap.ticker) for as long as the desktop/motion
- * matchMedia context is active, with an explicit Bloom-active override
- * above the pin's own start (build/pages/index.html).
+ * Two bugs, found in that order:
+ *  1. .is-active was only recomputed inside the pinned ScrollTrigger's own
+ *     onUpdate, which GSAP stops firing once scroll leaves that trigger's
+ *     start/end window, so it froze on whichever card was nearest centre
+ *     at the last onUpdate call when scrolling back above the strip.
+ *  2. At wide viewports (reported: "02 No Algorithm lights up and stays
+ *     put", reproduced here at 1920px and up) the track's travel distance
+ *     (track.scrollWidth - innerWidth) undershoots badly, because .card
+ *     has a fixed max-width that stops scaling with the viewport past
+ *     ~533px while the track's side padding keeps growing: content barely
+ *     overflows the viewport at 1920px and not at all at 2560px+. Worse,
+ *     because that travel animated from x:0 (never a card's true
+ *     exact-centre point at any tested viewport width) only leftward,
+ *     card 0 and sometimes card 1 could never become nearest-centre at
+ *     all, however the nearest-centre rule was implemented or recomputed.
+ *     An earlier version of this test used the exact same nearest-centre
+ *     formula, duplicated, as its "expected" value, so it could not have
+ *     caught either bug (bug 2 isn't a flaw in that formula, bug 1 was,
+ *     but a duplicated formula is still a dependent, not independent,
+ *     check). This version computes the expected answer itself, in Node,
+ *     from raw card rects fetched out of the page, sharing no code with
+ *     build/pages/index.html at all.
  *
- * Runs in Chromium always; Firefox and WebKit too if their Playwright
- * browser binaries are installed in this environment (skipped, not
- * failed, otherwise).
+ * Fix: build/pages/index.html now animates the track from startX() (card
+ * 0's own exact-centre translateX) to endX() (the last card's), both
+ * measured live from offsetLeft/offsetWidth; every card's own exact-centre
+ * point necessarily falls somewhere in that range, in order, since the
+ * cards are evenly spaced, on any viewport width. The active-card
+ * recompute itself only runs (gsap.ticker) while the pin is active
+ * (onEnter/onEnterBack/onLeave/onLeaveBack), not for the whole page.
+ * Hover/focus overrides the scroll-driven card immediately and hands back
+ * control on mouseleave/blur (skipped entirely without a real hover
+ * capability, i.e. touch).
+ *
+ * Runs in Chromium at every size in "SIZES" below, always; Firefox and
+ * WebKit too if their Playwright browser binaries are installed in this
+ * environment (skipped, not failed, otherwise).
  */
 const { spawn } = require('child_process');
 const path = require('path');
@@ -29,6 +53,21 @@ const DB_PATH = path.join(ROOT, 'test', '.homepage-strip-test.db');
 const UPLOAD_DIR = path.join(ROOT, 'test', '.homepage-strip-test-uploads');
 const PORT = 3209;
 const BASE = `http://127.0.0.1:${PORT}`;
+
+// width, height, deviceScaleFactor, CSS zoom (1 = none). Matches the sizes
+// and zoom levels named in the task brief; André's own report was on an
+// ordinary desktop display, which the 1920x1080 entries cover.
+const SIZES = [
+  { width: 1280, height: 720, dsf: 1 },
+  { width: 1366, height: 768, dsf: 1 },
+  { width: 1536, height: 864, dsf: 1 },
+  { width: 1920, height: 1080, dsf: 1 },
+  { width: 1920, height: 1080, dsf: 2 },
+  { width: 1920, height: 1080, dsf: 1, zoom: 0.9 },
+  { width: 1920, height: 1080, dsf: 1, zoom: 1.1 },
+  { width: 2560, height: 1440, dsf: 1 },
+  { width: 2560, height: 1440, dsf: 2 },
+];
 
 function assert(cond, msg) {
   if (!cond) throw new Error('ASSERTION FAILED: ' + msg);
@@ -60,26 +99,44 @@ function startServer() {
   });
 }
 
-// Independently recomputes, from the cards' real on-screen positions right
-// now, which card the nearest-centre rule should pick (same formula the
-// fix uses, reimplemented here rather than imported, so this test would
-// also catch a regression in the page's own copy of that formula).
-async function expectedActiveIndex(page) {
-  return page.evaluate(() => {
-    const cards = Array.from(document.querySelectorAll('.card'));
-    const center = innerWidth / 2;
-    let bestIdx = -1, bestDist = Infinity;
-    cards.forEach((c, i) => {
+// Raw rects straight out of the DOM, no distance math done in the page at
+// all; the "nearest centre" computation below happens entirely in Node.
+async function cardRects(page) {
+  return page.evaluate(() => ({
+    innerWidth: window.innerWidth,
+    rects: Array.from(document.querySelectorAll('.card')).map(c => {
       const r = c.getBoundingClientRect();
-      const d = Math.abs((r.left + r.right) / 2 - center);
-      if (d < bestDist) { bestDist = d; bestIdx = i; }
-    });
-    return bestIdx;
-  });
+      return { left: r.left, right: r.right };
+    }),
+    activeIdx: Array.from(document.querySelectorAll('.card')).map((c, i) => (c.classList.contains('is-active') ? i : null)).filter(x => x !== null),
+  }));
 }
 
-async function activeIndices(page) {
-  return page.evaluate(() => Array.from(document.querySelectorAll('.card')).map((c, i) => (c.classList.contains('is-active') ? i : null)).filter(x => x !== null));
+// The independent ground truth: which card's centre is nearest
+// innerWidth/2, computed here in the test process from raw numbers, never
+// by calling back into any page-side function.
+function nearestCenterIndex(innerWidthPx, rects) {
+  const center = innerWidthPx / 2;
+  let bestIdx = -1, bestDist = Infinity;
+  rects.forEach((r, i) => {
+    const d = Math.abs((r.left + r.right) / 2 - center);
+    if (d < bestDist) { bestDist = d; bestIdx = i; }
+  });
+  return bestIdx;
+}
+
+async function checkOneStep(page, label, { aboveStart, belowEnd } = {}) {
+  const { innerWidth, rects, activeIdx } = await cardRects(page);
+  assert(activeIdx.length === 1, `${label}: exactly one .is-active card — got ${JSON.stringify(activeIdx)}`);
+  if (aboveStart) {
+    assert(activeIdx[0] === 0, `${label}: above the pin's own start, card 0 (Bloom) is active — got index ${activeIdx[0]}`);
+  } else if (belowEnd) {
+    assert(activeIdx[0] === rects.length - 1, `${label}: below the pin's own end, the last card is active — got index ${activeIdx[0]}`);
+  } else {
+    const expected = nearestCenterIndex(innerWidth, rects);
+    assert(activeIdx[0] === expected, `${label}: the card nearest the viewport centre (computed independently in Node from raw rects) is active — expected index ${expected}, got ${activeIdx[0]}`);
+  }
+  return activeIdx[0];
 }
 
 async function stripBounds(page) {
@@ -89,16 +146,103 @@ async function stripBounds(page) {
   });
 }
 
-async function checkOneStep(page, label, { aboveStart } = {}) {
-  const active = await activeIndices(page);
-  assert(active.length === 1, `${label}: exactly one .is-active card — got ${JSON.stringify(active)}`);
-  if (aboveStart) {
-    assert(active[0] === 0, `${label}: above the pin's own start, card 0 (Bloom) is active — got index ${active[0]}`);
-  } else {
-    const expected = await expectedActiveIndex(page);
-    assert(active[0] === expected, `${label}: the card nearest the viewport centre is active — expected index ${expected}, got ${active[0]}`);
+async function checkSize(browserType, label, size) {
+  const page = await browserType.newPage({
+    viewport: { width: size.width, height: size.height },
+    deviceScaleFactor: size.dsf || 1,
+  });
+  const consoleErrors = [];
+  page.on('pageerror', e => consoleErrors.push('pageerror: ' + e.message));
+  page.on('console', msg => {
+    if (msg.type() !== 'error') return;
+    if (/502|Bad Gateway/.test(msg.text())) return; // unrelated sandbox network noise, not from this app
+    consoleErrors.push('console.error: ' + msg.text());
+  });
+
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  if (size.zoom) await page.evaluate((z) => { document.documentElement.style.zoom = z; }, size.zoom);
+  await page.waitForTimeout(400);
+
+  const bounds = await stripBounds(page);
+  assert(bounds, `${label}: the strip's pinned ScrollTrigger exists`);
+  const span = bounds.end - bounds.start;
+
+  // Down through the whole pin, fine-grained (a card's own "nearest"
+  // window can be narrow at some sizes), then back up. The acceptance
+  // criterion is a clean, strictly ordered 0,1,2,3,4 then 4,3,2,1,0, not
+  // just "every step individually correct" (which a step that revisits an
+  // earlier index could also satisfy) — both are checked.
+  const steps = 60;
+  const seenDown = [];
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(120);
+  const topStart = await checkOneStep(page, `${label} down start (above pin)`, { aboveStart: true });
+  seenDown.push(topStart);
+
+  for (let i = 1; i <= steps; i++) {
+    const y = bounds.start + span * (i / steps);
+    await page.evaluate((yy) => window.scrollTo(0, yy), y);
+    await page.waitForTimeout(40);
+    const idx = await checkOneStep(page, `${label} down ${i}/${steps}`, {});
+    if (seenDown[seenDown.length - 1] !== idx) seenDown.push(idx);
   }
-  return active[0];
+  await page.evaluate((yy) => window.scrollTo(0, yy), bounds.end + 300);
+  await page.waitForTimeout(120);
+  const bottomIdx = await checkOneStep(page, `${label} past the end (below pin)`, { belowEnd: true });
+  if (seenDown[seenDown.length - 1] !== bottomIdx) seenDown.push(bottomIdx);
+
+  const expectedCardCount = (await page.evaluate(() => document.querySelectorAll('.card').length));
+  const expectedDown = Array.from({ length: expectedCardCount }, (_, i) => i);
+  assert(JSON.stringify(seenDown) === JSON.stringify(expectedDown), `${label}: scrolling down visits ${JSON.stringify(expectedDown)} in order with nothing skipped or repeated — got ${JSON.stringify(seenDown)}`);
+
+  const seenUp = [];
+  for (let i = steps; i >= 0; i--) {
+    const y = bounds.start + span * (i / steps);
+    await page.evaluate((yy) => window.scrollTo(0, yy), y);
+    await page.waitForTimeout(40);
+    const idx = await checkOneStep(page, `${label} up ${i}/${steps}`, {});
+    if (seenUp[seenUp.length - 1] !== idx) seenUp.push(idx);
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(150);
+  const topEnd = await checkOneStep(page, `${label} back at the very top`, { aboveStart: true });
+  if (seenUp[seenUp.length - 1] !== topEnd) seenUp.push(topEnd);
+
+  const expectedUp = expectedDown.slice().reverse();
+  assert(JSON.stringify(seenUp) === JSON.stringify(expectedUp), `${label}: scrolling back up visits ${JSON.stringify(expectedUp)} in order, ending on Bloom — got ${JSON.stringify(seenUp)}`);
+
+  // Hover and focus: scroll to roughly the middle of the pin first so the
+  // scroll-driven state isn't already card 0, then confirm hover/focus on
+  // a different card overrides it, and mouseleave/blur hands control back
+  // to whatever the scroll position says right now (not a stale value).
+  await page.evaluate((y) => window.scrollTo(0, y), bounds.start + span * 0.5);
+  await page.waitForTimeout(150);
+  const scrollDriven = (await cardRects(page)).activeIdx[0];
+  const hoverTargetIdx = scrollDriven === 0 ? 1 : 0;
+  const cardHandles = await page.$$('.card');
+  await cardHandles[hoverTargetIdx].hover();
+  await page.waitForTimeout(120);
+  let hoverActive = (await cardRects(page)).activeIdx;
+  assert(JSON.stringify(hoverActive) === JSON.stringify([hoverTargetIdx]), `${label}: hovering card ${hoverTargetIdx} lights it up immediately — got ${JSON.stringify(hoverActive)}`);
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(120);
+  let afterLeave = (await cardRects(page)).activeIdx;
+  assert(JSON.stringify(afterLeave) === JSON.stringify([scrollDriven]), `${label}: mouseleave hands control back to the scroll position (expected ${scrollDriven}) — got ${JSON.stringify(afterLeave)}`);
+
+  const focusTargetIdx = scrollDriven === cardHandles.length - 1 ? cardHandles.length - 2 : cardHandles.length - 1;
+  await cardHandles[focusTargetIdx].focus();
+  await page.waitForTimeout(120);
+  let focusActive = (await cardRects(page)).activeIdx;
+  assert(JSON.stringify(focusActive) === JSON.stringify([focusTargetIdx]), `${label}: focusing card ${focusTargetIdx} lights it up immediately — got ${JSON.stringify(focusActive)}`);
+  await page.evaluate(() => document.activeElement && document.activeElement.blur());
+  await page.waitForTimeout(120);
+  let afterBlur = (await cardRects(page)).activeIdx;
+  assert(JSON.stringify(afterBlur) === JSON.stringify([scrollDriven]), `${label}: blur hands control back to the scroll position (expected ${scrollDriven}) — got ${JSON.stringify(afterBlur)}`);
+
+  assert(consoleErrors.length === 0, `${label}: no console errors — got ${JSON.stringify(consoleErrors)}`);
+
+  await page.close();
+  console.log(`PASS - ${label}: 0..${expectedCardCount - 1} in order both directions, hover/focus override and release correctly, no console errors`);
 }
 
 async function runInBrowser(browserType, label) {
@@ -110,52 +254,10 @@ async function runInBrowser(browserType, label) {
     return;
   }
   try {
-    const page = await launched.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.goto(BASE + '/', { waitUntil: 'load' });
-    await page.waitForTimeout(400);
-
-    const bounds = await stripBounds(page);
-    assert(bounds, `${label}: the strip's pinned ScrollTrigger exists`);
-
-    // Scroll from well above the strip down past its end, in steps, and
-    // back up again, checking every single step: exactly one active card,
-    // and it is the correct one (begin, middle and end are all covered by
-    // checking every step, not just three isolated points).
-    const span = bounds.end - bounds.start;
-    const steps = 16;
-    const seenDown = [];
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(150);
-    seenDown.push(await checkOneStep(page, `${label} down start`, { aboveStart: true }));
-
-    for (let i = 1; i <= steps; i++) {
-      const y = bounds.start - 200 + (span + 400) * (i / steps);
-      await page.evaluate((yy) => window.scrollTo(0, yy), Math.max(0, y));
-      await page.waitForTimeout(90);
-      seenDown.push(await checkOneStep(page, `${label} down step ${i}/${steps}`, { aboveStart: y < bounds.start }));
+    for (const size of SIZES) {
+      const sizeLabel = `${label} ${size.width}x${size.height} dsf${size.dsf || 1}${size.zoom ? ' zoom' + Math.round(size.zoom * 100) + '%' : ''}`;
+      await checkSize(launched, sizeLabel, size);
     }
-    // Each step above already asserts the active card matches the
-    // independently recomputed nearest-centre card (the real, begin/
-    // middle/end-covering check); the track's own geometry (padding,
-    // scrollWidth vs. viewport) decides which card index that lands on at
-    // the bottom of the pin, which doesn't have to be the last card and
-    // isn't part of this bugfix, so it's not re-asserted here.
-    assert(seenDown[seenDown.length - 1] === seenDown[seenDown.length - 2], `${label}: the active card has settled by the bottom of the pin (two consecutive steps agree) — got ${JSON.stringify(seenDown.slice(-2))}`);
-
-    const seenUp = [];
-    for (let i = steps; i >= 0; i--) {
-      const y = bounds.start - 200 + (span + 400) * (i / steps);
-      await page.evaluate((yy) => window.scrollTo(0, yy), Math.max(0, y));
-      await page.waitForTimeout(90);
-      seenUp.push(await checkOneStep(page, `${label} up step ${i}/${steps}`, { aboveStart: y < bounds.start }));
-    }
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(150);
-    const top = await checkOneStep(page, `${label} back at the very top`, { aboveStart: true });
-    assert(top === 0, `${label}: scrolled all the way back up, Bloom (card 0) is active again — got index ${top}`);
-
-    console.log(`PASS - ${label}: exactly one correct .is-active card at every step, both directions, Bloom restored at the top`);
-    await page.close();
   } finally {
     await launched.close();
   }
