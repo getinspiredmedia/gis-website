@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE, TALLY_URL } = require('./pages.config');
+const { CORRIDOR_ARTISTS } = require('./corridor-artists');
 
 const ROOT = path.resolve(__dirname, '..');
 const PARTIALS = path.join(__dirname, 'partials');
@@ -76,6 +77,29 @@ function injectTallyUrl(html) {
   return html.split('{{TALLY_URL}}').join(TALLY_URL);
 }
 
+// The homepage corridor's five artist works, rendered server-side from the
+// shared build/corridor-artists.js so the plain-HTML fallback (no JS, see
+// CLAUDE.md's corridor entry) needs no client-side rendering at all — the
+// same markup is simply repositioned/animated by the page's own inline
+// script when JS and motion are available.
+function injectCorridorWorks(html) {
+  const room = n => String(n).padStart(2, '0');
+  const figures = CORRIDOR_ARTISTS.map(a => {
+    const base = `/assets/responsive/corridor-${a.slug}`;
+    const sizes = '(min-width:861px) 26vw, 68vw';
+    return `    <figure class="corr-work" data-room="${a.room}">
+      <span class="spot" aria-hidden="true"></span>
+      <picture>
+        <source type="image/avif" srcset="${base}-450.avif 450w, ${base}-900.avif 900w" sizes="${sizes}">
+        <source type="image/webp" srcset="${base}-450.webp 450w, ${base}-900.webp 900w" sizes="${sizes}">
+        <img src="${base}-900.jpg" srcset="${base}-450.jpg 450w, ${base}-900.jpg 900w" sizes="${sizes}" alt="Work by ${a.name}, Room ${room(a.room)}" loading="lazy" decoding="async" width="${a.width}" height="${a.height}">
+      </picture>
+      <figcaption class="plaque"><b>${a.name}</b><span>Room ${room(a.room)}</span></figcaption>
+    </figure>`;
+  }).join('\n');
+  return html.replace('    <!-- {{CORRIDOR_WORKS}} -->', figures);
+}
+
 if (!TALLY_URL_PATTERN.test(TALLY_URL)) {
   console.error(`[build] Aborting — TALLY_URL in build/pages.config.js must match https://tally.so/r/<id>, got: ${TALLY_URL}`);
   process.exit(1);
@@ -122,6 +146,7 @@ pages.forEach(config => {
   html = injectAnalytics(html);
   html = injectIssueCallUrl(html);
   html = injectTallyUrl(html);
+  if (config.input === 'build/pages/index.html') html = injectCorridorWorks(html);
   const outPath = path.join(ROOT, config.output);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, html, 'utf8');

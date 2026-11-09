@@ -33,6 +33,15 @@ const JOBS = [
   { src: 'public/assets/covers/no-algorithm.webp',  outDir: 'public/assets/responsive', base: 'no-algorithm-cover',  widths: [250, 500] },
   { src: 'public/assets/covers/origins.webp',       outDir: 'public/assets/responsive', base: 'origins-cover',       widths: [250, 500] },
   { src: 'public/assets/spreads/bloom/02.webp',     outDir: 'public/assets/responsive', base: 'bloom-exhibition',    widths: [500, 697], extract: { left: 48, top: 330, width: 697, height: 392 } },
+  // The homepage corridor ("de gang"): one photo-only crop per Bloom artist,
+  // picked by hand from their reader spread (public/assets/spreads/bloom/),
+  // excluding the facing text page and the page border. base matches each
+  // artist's `slug` in build/corridor-artists.js.
+  { src: 'public/assets/spreads/bloom/02.webp', outDir: 'public/assets/responsive', base: 'corridor-room-01', widths: [450, 900], extract: { left: 48, top: 125, width: 698, height: 870 } },
+  { src: 'public/assets/spreads/bloom/05.webp', outDir: 'public/assets/responsive', base: 'corridor-room-02', widths: [450, 900], extract: { left: 841, top: 212, width: 697, height: 697 } },
+  { src: 'public/assets/spreads/bloom/08.webp', outDir: 'public/assets/responsive', base: 'corridor-room-03', widths: [450, 900], extract: { left: 90, top: 358, width: 612, height: 407 } },
+  { src: 'public/assets/spreads/bloom/11.webp', outDir: 'public/assets/responsive', base: 'corridor-room-04', widths: [450, 900], extract: { left: 903, top: 138, width: 575, height: 846 } },
+  { src: 'public/assets/spreads/bloom/14.webp', outDir: 'public/assets/responsive', base: 'corridor-room-05', widths: [450, 900], extract: { left: 48, top: 125, width: 698, height: 870 } },
 ];
 
 async function run() {

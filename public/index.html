@@ -129,19 +129,63 @@ a{color:inherit;text-decoration:none}
 .claim .statement{transform:translateY(105%);transition:transform 1100ms var(--ease)}
 .claim.is-in .statement{transform:none}
 
-/* ── Exhibition band ── */
-.exhibit{background:var(--ink);color:#fff;display:grid;grid-template-columns:1fr;gap:0}
-.exhibit-media{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--band)}
-.exhibit-media picture,.exhibit-media img{position:absolute;left:0;top:-12%;width:100%;height:124%;object-fit:cover}
-.exhibit-copy{padding:clamp(48px,8vh,88px) 28px}
-.exhibit-copy .eyebrow{color:rgba(255,255,255,.66)}
-.exhibit-copy h2{margin:16px 0 16px;font-size:clamp(1.8rem,4vw,3rem);font-weight:700;line-height:1.05;letter-spacing:-.02em;font-variation-settings:'wdth' 112}
-.exhibit-copy p{color:rgba(255,255,255,.72);font-size:15px;line-height:1.6;max-width:34ch}
-.exhibit-copy .btn:hover{background:#fff;color:var(--ink);gap:16px}
+/* ── Corridor ("the gang"): a scroll-driven walk past the five Bloom
+   artists, ending at a door into the gallery. Default (no JS, or JS that
+   hasn't run yet) is the lightest possible version: the five works stacked
+   vertically, then the door as a plain poster+copy block, exactly the
+   previous "exhibition band" layout, renamed. The page's own inline script
+   (after gis-motion:ready) upgrades this to one of two modes by adding a
+   class to #corridor: .corridor--row (mobile, or reduced motion: a
+   horizontal scroll-snap row, no pin, no 3D) or .corridor--3d (desktop,
+   motion allowed: the pinned CSS-3D version). Only transform/opacity are
+   animated anywhere in 3d mode, for 60fps. ── */
+.corridor{background:var(--ink);color:#fff}
+.corridor-works{display:flex;flex-direction:column;gap:32px;padding:56px 28px}
+.corr-work{position:relative;display:flex;flex-direction:column;gap:10px;flex:0 0 auto}
+.corr-work img{display:block;width:100%;height:auto;border:8px solid #fff;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.corr-work .plaque{font-size:12px;letter-spacing:.04em;color:rgba(255,255,255,.62)}
+.corr-work .plaque b{display:block;margin-bottom:2px;color:#fff;font-size:14px;font-weight:600;letter-spacing:-.01em}
+.corridor-door{background:var(--ink);display:grid;grid-template-columns:1fr}
+.corridor-door-media{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--band)}
+.corridor-door-media picture,.corridor-door-media img{position:absolute;left:0;top:-12%;width:100%;height:124%;object-fit:cover}
+.corridor-door-copy{padding:clamp(48px,8vh,88px) 28px}
+.corridor-door-copy .eyebrow{color:rgba(255,255,255,.66)}
+.corridor-door-copy h2{margin:16px 0 16px;font-size:clamp(1.8rem,4vw,3rem);font-weight:700;line-height:1.05;letter-spacing:-.02em;font-variation-settings:'wdth' 112}
+.corridor-door-copy p{color:rgba(255,255,255,.72);font-size:15px;line-height:1.6;max-width:34ch}
+.corridor-door-copy .btn:hover{background:#fff;color:var(--ink);gap:16px}
 @media(min-width:861px){
-  .exhibit{grid-template-columns:1.2fr 1fr;align-items:center}
-  .exhibit-copy{padding:0 clamp(40px,6vw,80px)}
+  .corridor-door{grid-template-columns:1.2fr 1fr;align-items:center}
+  .corridor-door-copy{padding:0 clamp(40px,6vw,80px)}
 }
+
+/* Mobile row / reduced-motion row (JS-added .corridor--row): a horizontal
+   scroll-snap strip instead of the stacked default, no pin, no 3D. */
+.corridor--row .corridor-works{flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;gap:20px;padding:28px 22px;scrollbar-width:none}
+.corridor--row .corridor-works::-webkit-scrollbar{display:none}
+.corridor--row .corr-work{width:68vw;scroll-snap-align:center}
+
+/* Desktop 3D pin (JS-added .corridor--3d, ≥861px + no-preference motion
+   only). No separate "scene" element: .corridor-works itself becomes the
+   transformed 3D container (its five .corr-work children get their one-time
+   placement transform from JS at init), and .corridor-door is a plain
+   sibling inside the same perspective ancestor (.corridor-stage) rather
+   than part of that transform, playing the "light at the end of the hall"
+   simply via its small centred size and its own scale/opacity reveal. */
+.corridor--3d .corridor-pin{position:relative;height:100svh;overflow:hidden}
+.corridor--3d .corridor-stage{position:absolute;inset:0;perspective:2000px;perspective-origin:50% 42%;background:linear-gradient(to bottom,var(--band) 0%,var(--ink) 18%,var(--ink) 82%,var(--band) 100%)}
+.corridor--3d .corridor-works{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;will-change:transform;display:block;padding:0;gap:0}
+.corridor--3d .corr-work{position:absolute;top:50%;left:50%;width:min(26vw,320px);margin:0;filter:grayscale(1) brightness(.4);transition:filter .5s var(--ease);will-change:transform,filter}
+.corridor--3d .corr-work.is-near{filter:none}
+.corridor--3d .corr-work .plaque{margin-top:8px}
+.corridor--3d .corr-work .spot{position:absolute;inset:-40% -60%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.14),transparent 70%);opacity:0;transition:opacity .5s var(--ease);pointer-events:none;z-index:-1}
+.corridor--3d .corr-work.is-near .spot{opacity:1}
+.corridor--3d .corridor-door{position:absolute;inset:0;display:block;transform:scale(.06);opacity:0;will-change:transform,opacity}
+.corridor--3d .corridor-door-media{position:absolute;inset:0;aspect-ratio:auto}
+.corridor--3d .corridor-door-copy{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 clamp(28px,6vw,90px);opacity:0;transform:translateY(16px);transition:opacity .6s var(--ease),transform .6s var(--ease);will-change:transform,opacity}
+.corridor--3d .corridor-door.is-open .corridor-door-copy{opacity:1;transform:none}
+.corridor-progress{display:none}
+.corridor--3d .corridor-progress{display:block;position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(255,255,255,.14);z-index:2}
+.corridor--3d .corridor-progress span{display:block;height:100%;width:0;background:var(--blue)}
 
 /* ── Doors: the whole half is the link, no separate button ── */
 .doors{display:grid;grid-template-columns:1fr 1fr}
@@ -397,19 +441,73 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
   </div>
 </section>
 
-<section class="exhibit">
-  <div class="exhibit-media" data-cursor="Enter" id="exhibit-media">
-    <picture>
-      <source type="image/avif" srcset="/assets/responsive/bloom-exhibition-500.avif 500w, /assets/responsive/bloom-exhibition-697.avif 697w" sizes="(min-width:861px) 55vw, 100vw">
-      <source type="image/webp" srcset="/assets/responsive/bloom-exhibition-500.webp 500w, /assets/responsive/bloom-exhibition-697.webp 697w" sizes="(min-width:861px) 55vw, 100vw">
-      <img src="/assets/responsive/bloom-exhibition-697.jpg" srcset="/assets/responsive/bloom-exhibition-500.jpg 500w, /assets/responsive/bloom-exhibition-697.jpg 697w" sizes="(min-width:861px) 55vw, 100vw" alt="Artwork by Dina Belenko from issue 04, Bloom" loading="lazy" decoding="async" width="697" height="392">
-    </picture>
-  </div>
-  <div class="exhibit-copy rv" data-reveal-group="exhibit">
-    <span class="eyebrow">Exhibition no. 4</span>
-    <h2>Walk through<br>Bloom.</h2>
-    <p>The fourth issue, hung in a room you can move through.</p>
-    <a class="btn" href="/gallery">Enter the room &rarr;</a>
+<section class="corridor" id="corridor">
+  <div class="corridor-pin" id="corridor-pin">
+    <div class="corridor-stage" id="corridor-stage">
+      <div class="corridor-works" id="corridor-works">
+    <figure class="corr-work" data-room="1">
+      <span class="spot" aria-hidden="true"></span>
+      <picture>
+        <source type="image/avif" srcset="/assets/responsive/corridor-room-01-450.avif 450w, /assets/responsive/corridor-room-01-900.avif 900w" sizes="(min-width:861px) 26vw, 68vw">
+        <source type="image/webp" srcset="/assets/responsive/corridor-room-01-450.webp 450w, /assets/responsive/corridor-room-01-900.webp 900w" sizes="(min-width:861px) 26vw, 68vw">
+        <img src="/assets/responsive/corridor-room-01-900.jpg" srcset="/assets/responsive/corridor-room-01-450.jpg 450w, /assets/responsive/corridor-room-01-900.jpg 900w" sizes="(min-width:861px) 26vw, 68vw" alt="Work by Dina Belenko, Room 01" loading="lazy" decoding="async" width="698" height="870">
+      </picture>
+      <figcaption class="plaque"><b>Dina Belenko</b><span>Room 01</span></figcaption>
+    </figure>
+    <figure class="corr-work" data-room="2">
+      <span class="spot" aria-hidden="true"></span>
+      <picture>
+        <source type="image/avif" srcset="/assets/responsive/corridor-room-02-450.avif 450w, /assets/responsive/corridor-room-02-900.avif 900w" sizes="(min-width:861px) 26vw, 68vw">
+        <source type="image/webp" srcset="/assets/responsive/corridor-room-02-450.webp 450w, /assets/responsive/corridor-room-02-900.webp 900w" sizes="(min-width:861px) 26vw, 68vw">
+        <img src="/assets/responsive/corridor-room-02-900.jpg" srcset="/assets/responsive/corridor-room-02-450.jpg 450w, /assets/responsive/corridor-room-02-900.jpg 900w" sizes="(min-width:861px) 26vw, 68vw" alt="Work by Kylli Sparre, Room 02" loading="lazy" decoding="async" width="697" height="697">
+      </picture>
+      <figcaption class="plaque"><b>Kylli Sparre</b><span>Room 02</span></figcaption>
+    </figure>
+    <figure class="corr-work" data-room="3">
+      <span class="spot" aria-hidden="true"></span>
+      <picture>
+        <source type="image/avif" srcset="/assets/responsive/corridor-room-03-450.avif 450w, /assets/responsive/corridor-room-03-900.avif 900w" sizes="(min-width:861px) 26vw, 68vw">
+        <source type="image/webp" srcset="/assets/responsive/corridor-room-03-450.webp 450w, /assets/responsive/corridor-room-03-900.webp 900w" sizes="(min-width:861px) 26vw, 68vw">
+        <img src="/assets/responsive/corridor-room-03-900.jpg" srcset="/assets/responsive/corridor-room-03-450.jpg 450w, /assets/responsive/corridor-room-03-900.jpg 900w" sizes="(min-width:861px) 26vw, 68vw" alt="Work by Sara Fraysse, Room 03" loading="lazy" decoding="async" width="612" height="407">
+      </picture>
+      <figcaption class="plaque"><b>Sara Fraysse</b><span>Room 03</span></figcaption>
+    </figure>
+    <figure class="corr-work" data-room="4">
+      <span class="spot" aria-hidden="true"></span>
+      <picture>
+        <source type="image/avif" srcset="/assets/responsive/corridor-room-04-450.avif 450w, /assets/responsive/corridor-room-04-900.avif 900w" sizes="(min-width:861px) 26vw, 68vw">
+        <source type="image/webp" srcset="/assets/responsive/corridor-room-04-450.webp 450w, /assets/responsive/corridor-room-04-900.webp 900w" sizes="(min-width:861px) 26vw, 68vw">
+        <img src="/assets/responsive/corridor-room-04-900.jpg" srcset="/assets/responsive/corridor-room-04-450.jpg 450w, /assets/responsive/corridor-room-04-900.jpg 900w" sizes="(min-width:861px) 26vw, 68vw" alt="Work by Martina Dorigatti, Room 04" loading="lazy" decoding="async" width="575" height="846">
+      </picture>
+      <figcaption class="plaque"><b>Martina Dorigatti</b><span>Room 04</span></figcaption>
+    </figure>
+    <figure class="corr-work" data-room="5">
+      <span class="spot" aria-hidden="true"></span>
+      <picture>
+        <source type="image/avif" srcset="/assets/responsive/corridor-room-05-450.avif 450w, /assets/responsive/corridor-room-05-900.avif 900w" sizes="(min-width:861px) 26vw, 68vw">
+        <source type="image/webp" srcset="/assets/responsive/corridor-room-05-450.webp 450w, /assets/responsive/corridor-room-05-900.webp 900w" sizes="(min-width:861px) 26vw, 68vw">
+        <img src="/assets/responsive/corridor-room-05-900.jpg" srcset="/assets/responsive/corridor-room-05-450.jpg 450w, /assets/responsive/corridor-room-05-900.jpg 900w" sizes="(min-width:861px) 26vw, 68vw" alt="Work by Clemens Maurer, Room 05" loading="lazy" decoding="async" width="698" height="870">
+      </picture>
+      <figcaption class="plaque"><b>Clemens Maurer</b><span>Room 05</span></figcaption>
+    </figure>
+      </div>
+      <div class="corridor-door" id="corridor-door" data-cursor="Enter">
+        <div class="corridor-door-media">
+          <picture>
+            <source type="image/avif" srcset="/assets/responsive/bloom-exhibition-500.avif 500w, /assets/responsive/bloom-exhibition-697.avif 697w" sizes="(min-width:861px) 55vw, 100vw">
+            <source type="image/webp" srcset="/assets/responsive/bloom-exhibition-500.webp 500w, /assets/responsive/bloom-exhibition-697.webp 697w" sizes="(min-width:861px) 55vw, 100vw">
+            <img src="/assets/responsive/bloom-exhibition-697.jpg" srcset="/assets/responsive/bloom-exhibition-500.jpg 500w, /assets/responsive/bloom-exhibition-697.jpg 697w" sizes="(min-width:861px) 55vw, 100vw" alt="Artwork by Dina Belenko from issue 04, Bloom" loading="lazy" decoding="async" width="697" height="392">
+          </picture>
+        </div>
+        <div class="corridor-door-copy rv" data-reveal-group="corridor-door">
+          <span class="eyebrow">Exhibition no. 4</span>
+          <h2>Walk through<br>Bloom.</h2>
+          <p>The fourth issue, hung in a room you can move through.</p>
+          <a class="btn" href="/gallery">Enter the room &rarr;</a>
+        </div>
+      </div>
+    </div>
+    <div class="corridor-progress" id="corridor-progress"><span id="corridor-progress-fill"></span></div>
   </div>
 </section>
 
@@ -605,16 +703,121 @@ document.addEventListener('gis-motion:ready', function () {
     };
   });
 
-  // Exhibition poster: slow parallax, yPercent -8 to 8 across the section.
-  // Motion-gated only, not width-gated (the band isn't pinned at any size).
-  mm.add('(prefers-reduced-motion: no-preference)', function () {
-    var exhibitImg = document.querySelector('.exhibit-media img');
-    if (!exhibitImg) return;
-    gsap.fromTo(exhibitImg, { yPercent: -8 }, {
-      yPercent: 8,
-      ease: 'none',
-      scrollTrigger: { trigger: '.exhibit', scrub: true, start: 'top bottom', end: 'bottom top' },
+  // Corridor ("the gang"): desktop gets a pinned CSS-3D walk past the five
+  // Bloom works, ending at a door that grows to fullscreen. Mobile and
+  // reduced motion both get the plain .corridor--row horizontal scroll-snap
+  // treatment instead (added/removed by the second matchMedia below — the
+  // two conditions are each other's exact negation, so every combination of
+  // width and motion preference lands in exactly one of the two). Neither
+  // branch runs at all without JS: the unmodified default CSS (five works
+  // stacked, then the door) is what a visitor without JS sees.
+  mm.add('(min-width: 861px) and (prefers-reduced-motion: no-preference)', function () {
+    var corridor = document.getElementById('corridor');
+    var pin = document.getElementById('corridor-pin');
+    var works = document.getElementById('corridor-works');
+    var door = document.getElementById('corridor-door');
+    var fill = document.getElementById('corridor-progress-fill');
+    var items = Array.prototype.slice.call(works.querySelectorAll('.corr-work'));
+    if (!corridor || !pin || !works || !door || !items.length) return;
+
+    corridor.classList.add('corridor--3d');
+
+    // Five works, alternating left/right, each one step further away
+    // (translateZ) than the last, angled inward. Set once at init: these
+    // are each work's own fixed place in the hallway; only the parent
+    // (.corridor-works, the "camera") moves as the visitor scrolls, rigidly
+    // carrying every work forward by the same amount. A rigid group move
+    // like that never changes which work has the largest raw Z value (that
+    // ordering is translation-invariant), so "nearest" can't be "whichever
+    // work is currently biggest/closest to dead centre" — that always
+    // resolves to the same work (room 1) once it's travelled far enough.
+    // What does change over time, per work, is how close its own
+    // projected size sits to its own natural close-up size as it passes
+    // the camera in turn — so nearestWork() below tracks distance to a
+    // fixed target width instead of a global maximum, the 3D equivalent of
+    // the issue strip's "distance to the viewport's centre".
+    var DEPTH_STEP = 150;
+    var OFFSET_X = 260;
+    var DOOR_AT = 0.8; // fraction of the pin's scroll range where the camera stops and the door starts opening
+    var totalDepth = DEPTH_STEP * (items.length + 6); // last work reaches its close-up just before DOOR_AT
+    items.forEach(function (el, i) {
+      var side = i % 2 === 0 ? -1 : 1;
+      var z = -(DEPTH_STEP * (i + 1));
+      var x = side * OFFSET_X;
+      var ry = -side * 26;
+      el.style.transform = 'translate3d(calc(-50% + ' + x + 'px), -50%, ' + z + 'px) rotateY(' + ry + 'deg)';
     });
+
+    gsap.set(works, { z: 0 });
+    gsap.set(door, { scale: .06, opacity: 0 });
+    door.classList.remove('is-open');
+
+    // Each work's own base (unscaled by perspective) on-screen width,
+    // measured once so the "close-up" target below is relative to this
+    // page's actual layout (min(26vw,320px)), not a hardcoded pixel guess.
+    var baseWidth = items[0].getBoundingClientRect().width;
+    var PEAK_WIDTH = baseWidth * 2.1;
+
+    // The work currently closest to its own close-up moment, from real
+    // getBoundingClientRect() widths (already 3D-projected by the browser,
+    // so this reflects the work's actual current on-screen size) — not a
+    // cached value and not a scroll-position threshold.
+    function nearestWork() {
+      var best = items[0], bestDiff = Infinity;
+      items.forEach(function (el) {
+        var w = el.getBoundingClientRect().width;
+        var diff = Math.abs(w - PEAK_WIDTH);
+        if (diff < bestDiff) { bestDiff = diff; best = el; }
+      });
+      return best;
+    }
+    var active = items[0];
+    function render() {
+      items.forEach(function (el) { el.classList.toggle('is-near', el === active); });
+    }
+    function setActive() { active = nearestWork(); render(); }
+    render();
+
+    var tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: pin,
+        start: 'top top',
+        end: '+=' + Math.round(innerHeight * 3.5),
+        scrub: true,
+        pin: true,
+        onUpdate: function (self) {
+          if (fill) fill.style.width = (self.progress * 100) + '%';
+          door.classList.toggle('is-open', self.progress > DOOR_AT);
+        },
+        onEnter: function () { gsap.ticker.add(setActive); },
+        onEnterBack: function () { gsap.ticker.add(setActive); },
+        onLeave: function () { gsap.ticker.remove(setActive); active = items[items.length - 1]; render(); door.classList.add('is-open'); },
+        onLeaveBack: function () { gsap.ticker.remove(setActive); active = items[0]; render(); door.classList.remove('is-open'); },
+      },
+    });
+    // The camera dolly (works' own translateZ) runs only up to DOOR_AT, then
+    // holds still while the door grows to fullscreen in the remaining
+    // stretch — the camera never keeps closing in on works that have
+    // already passed while the door is opening.
+    tl.to(works, { z: totalDepth, ease: 'none', duration: DOOR_AT }, 0)
+      .to(door, { scale: 1, opacity: 1, ease: 'none', duration: 1 - DOOR_AT }, DOOR_AT);
+
+    return function () {
+      gsap.ticker.remove(setActive);
+      corridor.classList.remove('corridor--3d');
+      items.forEach(function (el) { el.style.transform = ''; el.classList.remove('is-near'); });
+      gsap.set(works, { clearProps: 'all' });
+      gsap.set(door, { clearProps: 'all' });
+      door.classList.remove('is-open');
+      if (fill) fill.style.width = '';
+    };
+  });
+
+  mm.add('(max-width: 860px), (prefers-reduced-motion: reduce)', function () {
+    var corridor = document.getElementById('corridor');
+    if (!corridor) return;
+    corridor.classList.add('corridor--row');
+    return function () { corridor.classList.remove('corridor--row'); };
   });
 });
 </script>
