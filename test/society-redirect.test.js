@@ -84,9 +84,26 @@ async function run() {
         assert(!/Log in/i.test(part), `${rel}: the ${name} has no Log in`);
       }
       const items = [...nav.matchAll(/<div class="menu"[^>]*>([\s\S]*?)<\/div>/g)][0][1].match(/<a [^>]*>([^<]*)<\/a>/g).map(a => a.replace(/<[^>]*>/g, ''));
-      assert(JSON.stringify(items) === JSON.stringify(['Magazine', 'Gallery']), `${rel}: the nav items are Magazine, Gallery — got ${JSON.stringify(items)}`);
+      assert(JSON.stringify(items) === JSON.stringify(['Magazine', 'Gallery', 'Open call']), `${rel}: the nav items are Magazine, Gallery, Open call — got ${JSON.stringify(items)}`);
     }
-    console.log(`PASS - nav and footer of ${pages.length} pages have no Society link, no Circle link and no Log in; the nav is Magazine, Gallery`);
+    console.log(`PASS - nav and footer of ${pages.length} pages have no Society link, no Circle link and no Log in; the nav is Magazine, Gallery, Open call`);
+
+    // The Open call nav item is a plain internal link to /submit, marked as
+    // the current page only there (aria-current="page"), the same way every
+    // other nav item is marked on its own page.
+    {
+      const submitHtml = fs.readFileSync(path.join(ROOT, 'public', 'submit', 'index.html'), 'utf8');
+      const { nav: submitNav } = navAndFooter(submitHtml);
+      assert(/<a aria-current="page" href="#">Open call<\/a>/.test(submitNav),
+        '/submit: the Open call nav item carries aria-current="page"');
+      console.log('PASS - /submit marks Open call as the current nav item');
+
+      for (const rel of pages.filter(p => p !== 'public/submit/index.html')) {
+        const { nav: otherNav } = navAndFooter(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+        assert(!/aria-current="page">Open call</.test(otherNav), `${rel}: Open call is not marked current (only /submit marks it)`);
+      }
+      console.log('PASS - no page other than /submit marks Open call as current');
+    }
 
     console.log('\nALL PASS');
   } finally {

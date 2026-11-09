@@ -13,9 +13,16 @@
 <!-- Two art-directed hero photos (not one photo cropped two ways): the mobile
      preload fires only in the same (max-width:860px) and (orientation:portrait)
      case the <picture> below switches on, its exact negation preloads the
-     desktop photo everywhere else, so only one hero image is ever fetched. -->
-<link rel="preload" as="image" media="(max-width: 860px) and (orientation: portrait)" href="/assets/responsive/bloom-hero-mobile-1024.webp" imagesrcset="/assets/responsive/bloom-hero-mobile-512.webp 512w, /assets/responsive/bloom-hero-mobile-768.webp 768w, /assets/responsive/bloom-hero-mobile-1024.webp 1024w" imagesizes="100vw" fetchpriority="high">
-<link rel="preload" as="image" media="(min-width: 861px), (orientation: landscape)" href="/assets/responsive/bloom-hero-desktop-1536.webp" imagesrcset="/assets/responsive/bloom-hero-desktop-768.webp 768w, /assets/responsive/bloom-hero-desktop-1152.webp 1152w, /assets/responsive/bloom-hero-desktop-1536.webp 1536w" imagesizes="100vw" fetchpriority="high">
+     desktop photo everywhere else, so only one hero image is ever fetched.
+     type="image/avif" matches the <picture>'s own first (most preferred)
+     source below: a browser that would pick AVIF from the <picture> gets it
+     preloaded too, instead of preloading webp (never used by that browser)
+     while the real fetch goes to avif, doubling the request. A browser
+     without AVIF support just skips these two preloads (per the type
+     attribute) and falls through to the <picture>'s webp/jpg sources as
+     before, uncached. -->
+<link rel="preload" as="image" type="image/avif" media="(max-width: 860px) and (orientation: portrait)" href="/assets/responsive/bloom-hero-mobile-1024.avif" imagesrcset="/assets/responsive/bloom-hero-mobile-512.avif 512w, /assets/responsive/bloom-hero-mobile-768.avif 768w, /assets/responsive/bloom-hero-mobile-1024.avif 1024w" imagesizes="100vw" fetchpriority="high">
+<link rel="preload" as="image" type="image/avif" media="(min-width: 861px), (orientation: landscape)" href="/assets/responsive/bloom-hero-desktop-1536.avif" imagesrcset="/assets/responsive/bloom-hero-desktop-768.avif 768w, /assets/responsive/bloom-hero-desktop-1152.avif 1152w, /assets/responsive/bloom-hero-desktop-1536.avif 1536w" imagesizes="100vw" fetchpriority="high">
 <!-- Privacy-friendly analytics by Plausible — proxied via own domain so adblockers don't skew the numbers -->
 <script async src="/js/pa-MH-OTeJcc74k86JrwLa7k.js"></script>
 <script>
@@ -45,10 +52,21 @@ a{color:inherit;text-decoration:none}
 .rv.is-in{opacity:1;transform:none}
 :focus-visible{outline:2px solid currentColor;outline-offset:3px}
 
-/* ── Hero: cold open on the Bloom cover ── */
+/* ── Hero: cold open on the Bloom cover ──
+   Driven by JS (the inline script right after the hero markup), not a fixed
+   timer from page parse: on a slow connection the old timers ran out while
+   the image itself was still loading, so the sequence could finish (or even
+   look stuck mid-way) before there was anything to see. The default state
+   below is the pre-open frame (zoomed in, copy hidden); .is-opening (added
+   once the hero image's decode() resolves, or after a 2500ms fallback) runs
+   the three keyframe animations from that same zero point. .is-static
+   (reduced motion, set by that same script) and the <noscript> fallback
+   below both skip straight to the end state. */
 .hero{position:relative;height:100svh;min-height:600px;background:var(--ink);overflow:hidden;display:flex;align-items:flex-end;color:#fff}
 .hero-media{position:absolute;inset:0;overflow:hidden}
-.hero-media picture,.hero-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;transform:scale(1.15);animation:heroZoom 2400ms var(--ease) forwards}
+.hero-media picture,.hero-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;transform:scale(1.08)}
+.hero.is-opening .hero-media picture,.hero.is-opening .hero-media img{animation:heroZoom 1600ms var(--ease) forwards}
+.hero.is-static .hero-media picture,.hero.is-static .hero-media img{transform:none}
 @keyframes heroZoom{to{transform:scale(1)}}
 .hero-media::after{content:'';position:absolute;inset:0;background:linear-gradient(rgba(11,12,16,.08) 0,rgba(11,12,16,.12) 40%,rgba(11,12,16,.82) 100%)}
 @media(max-width:860px) and (orientation:portrait){
@@ -58,18 +76,22 @@ a{color:inherit;text-decoration:none}
      while still leaving that dark ground under the hero copy. */
   .hero-media picture,.hero-media img{object-position:center 30%}
 }
-.hero-copy{position:relative;z-index:2;padding:0 28px clamp(56px,10vh,110px);max-width:620px;opacity:0;animation:heroCopyIn 900ms var(--ease) 2000ms forwards}
+.hero-copy{position:relative;z-index:2;padding:0 28px clamp(56px,10vh,110px);max-width:620px;opacity:0}
+.hero.is-opening .hero-copy{animation:heroCopyIn 1300ms var(--ease) 700ms forwards}
+.hero.is-static .hero-copy{opacity:1}
 @keyframes heroCopyIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 .hero-copy .eyebrow{display:block;margin-bottom:16px;color:rgba(255,255,255,.72)}
 .hero-copy h1{font-weight:700;font-size:clamp(3rem,10vw,7.5rem);line-height:.9;letter-spacing:-.02em}
-.hero-copy h1 .lt{display:inline-block;font-variation-settings:'wdth' 75;animation:wdthIn 700ms var(--ease) both}
+.hero-copy h1 .lt{display:inline-block;font-variation-settings:'wdth' 75}
+.hero.is-opening .hero-copy h1 .lt{animation:wdthIn 700ms var(--ease) both}
+.hero.is-static .hero-copy h1 .lt{font-variation-settings:'wdth' 118}
 @keyframes wdthIn{to{font-variation-settings:'wdth' 118}}
 .hero-copy .lede{margin:18px 0 0;max-width:30ch;color:rgba(255,255,255,.82)}
 .hero-copy .btn:hover{background:#fff;color:var(--ink);gap:16px}
 @media(prefers-reduced-motion:reduce){
-  .hero-media img{transform:none;animation:none}
-  .hero-copy{opacity:1;animation:none}
-  .hero-copy h1 .lt{font-variation-settings:'wdth' 118;animation:none}
+  .hero-media img,.hero-media picture{transform:none}
+  .hero-copy{opacity:1}
+  .hero-copy h1 .lt{font-variation-settings:'wdth' 118}
 }
 
 /* ── Issue strip: pinned, cards slide horizontally as the page scrolls ── */
@@ -222,6 +244,7 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
   <div class="menu" id="site-menu">
     <a href="/magazine">Magazine</a>
     <a href="/gallery">Gallery</a>
+    <a href="/submit">Open call</a>
   </div>
 </nav>
 <script>
@@ -284,13 +307,35 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
   <div class="hero-copy" id="hero-copy">
     <span class="eyebrow">Issue 04 &middot; out now</span>
     <h1 id="hero-title">
-      <span aria-hidden="true" class="lt-wrap"><span class="lt" style="animation-delay:0ms">B</span><span class="lt" style="animation-delay:60ms">l</span><span class="lt" style="animation-delay:120ms">o</span><span class="lt" style="animation-delay:180ms">o</span><span class="lt" style="animation-delay:240ms">m</span><span class="lt" style="animation-delay:300ms">.</span></span>
+      <span aria-hidden="true" class="lt-wrap"><span class="lt" style="animation-delay:700ms">B</span><span class="lt" style="animation-delay:760ms">l</span><span class="lt" style="animation-delay:820ms">o</span><span class="lt" style="animation-delay:880ms">o</span><span class="lt" style="animation-delay:940ms">m</span><span class="lt" style="animation-delay:1000ms">.</span></span>
       <span class="sr-only">Bloom.</span>
     </h1>
     <p class="lede">Nothing opens on command.</p>
     <a class="btn" href="/magazine/bloom">Read the issue &rarr;</a>
   </div>
 </section>
+<noscript><style>.hero-media img,.hero-media picture{transform:none}.hero-copy{opacity:1}.hero-copy h1 .lt{font-variation-settings:'wdth' 118}</style></noscript>
+<script>
+(function () {
+  'use strict';
+  var hero = document.getElementById('hero');
+  if (!hero) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    hero.classList.add('is-static');
+    return;
+  }
+  var started = false;
+  function start() {
+    if (started) return;
+    started = true;
+    hero.classList.add('is-opening');
+  }
+  var img = hero.querySelector('.hero-media img');
+  if (img && typeof img.decode === 'function') img.decode().then(start, start);
+  else start();
+  setTimeout(start, 2500);
+}());
+</script>
 
 <section class="strip" id="strip">
   <div class="strip-head rv" data-reveal-group="strip-head">
@@ -392,7 +437,7 @@ footer .stamp{margin-top:26px;font-size:11px;color:rgba(255,255,255,.55);letter-
 <footer>
   <p class="close rv">Seventeen years of looking.</p>
   <div class="links">
-    <a href="/magazine">Magazine</a><a href="/gallery">Gallery</a><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a>
+    <a href="/magazine">Magazine</a><a href="/gallery">Gallery</a><a href="/submit">Open call</a><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a>
   </div>
   <p class="stamp">Get Inspired Society · Since 2009 · Rotterdam</p>
 </footer>

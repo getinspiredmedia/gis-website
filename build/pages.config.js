@@ -65,7 +65,7 @@ const pages = [
   {
     input:  'build/pages/submit.html',
     output: 'public/submit/index.html',
-    nav:    { active: null, variant: 'dark' },
+    nav:    { active: 'open-call', variant: 'dark' },
     footer: {},
   },
 ];
