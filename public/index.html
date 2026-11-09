@@ -434,7 +434,27 @@ document.addEventListener('gis-motion:ready', function () {
     var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
     var fill = document.getElementById('strip-progress-fill');
 
+    // Recomputed from the cards' real on-screen positions, every animation
+    // frame, for as long as this matchMedia context is active, not just
+    // while the scroll position is inside the pinned ScrollTrigger's own
+    // start/end window: ScrollTrigger's onUpdate stops firing once scroll
+    // leaves that window, which used to leave .is-active stuck on whichever
+    // card happened to be nearest centre at the last onUpdate call. Using
+    // the ticker instead makes this track scroll in both directions, fast
+    // scrolling, and keyboard scrolling identically, since it never depends
+    // on which events ScrollTrigger considers "inside" its own trigger.
+    // Above the pin's own start (st.scroll() < st.start, i.e. scrolled back
+    // above the strip entirely) the untransformed track doesn't actually
+    // centre card 0 on every viewport width, so the nearest-centre rule
+    // alone would land on a different card there too; Bloom (card 0) is
+    // forced explicitly in that zone instead, matching the static no-JS
+    // default and "scrolled back to the top, Bloom is active again".
+    var st = null;
     function setActive() {
+      if (st && st.scroll() < st.start) {
+        cards.forEach(function (c, i) { c.classList.toggle('is-active', i === 0); });
+        return;
+      }
       var center = innerWidth / 2, best = null, bestDist = Infinity;
       cards.forEach(function (card) {
         var r = card.getBoundingClientRect();
@@ -443,8 +463,9 @@ document.addEventListener('gis-motion:ready', function () {
       });
       cards.forEach(function (c) { c.classList.toggle('is-active', c === best); });
     }
+    gsap.ticker.add(setActive);
 
-    gsap.to(track, {
+    var stripTween = gsap.to(track, {
       x: function () { return -(track.scrollWidth - innerWidth); },
       ease: 'none',
       scrollTrigger: {
@@ -455,12 +476,13 @@ document.addEventListener('gis-motion:ready', function () {
         pin: true,
         onUpdate: function (self) {
           if (fill) fill.style.width = (self.progress * 100) + '%';
-          setActive();
         },
       },
     });
+    st = stripTween.scrollTrigger;
 
     return function () {
+      gsap.ticker.remove(setActive);
       removeEventListener('pointermove', onMove);
       if (media) media.style.transform = '';
       if (fill) fill.style.width = '';
