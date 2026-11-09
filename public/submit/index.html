@@ -3,210 +3,377 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Submit your work · Get Inspired Society</title>
+<title>Open Call: WONDER &middot; Get Inspired Society</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<!-- Non-blocking: this page's stricter Lighthouse performance bar (see
+     CLAUDE.md) made the plain render-blocking <link rel="stylesheet">
+     used elsewhere on the site cost too much first-paint time here.
+     Loads async via the standard preload/onload swap, same end result
+     (the body falls back to -apple-system/sans-serif until it's ready, no
+     invisible text), with a <noscript> fallback. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap"></noscript>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<meta property="og:title" content="Open Call: WONDER">
+<meta property="og:description" content="Whatever made you stop and look twice.">
+<meta property="og:image" content="https://getinspiredsociety.com/assets/gallery-poster.webp">
+<meta property="og:url" content="https://getinspiredsociety.com/submit">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 <!-- Privacy-friendly analytics by Plausible — proxied via own domain so adblockers don't skew the numbers -->
 <script async src="/js/pa-MH-OTeJcc74k86JrwLa7k.js"></script>
 <script>
   window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
   plausible.init()
 </script>
-<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+
 <style>
 :root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Archivo',-apple-system,sans-serif;background:var(--paper);color:var(--ink);min-height:100svh;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth}
+body{font-family:'Archivo',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
-.wrap{max-width:640px;margin:0 auto;padding:clamp(80px,14vh,140px) 24px 80px}
-.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:14px}
-h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-spacing:-.02em;font-variation-settings:'wdth' 116;margin-bottom:14px}
-.sub{font-size:16px;color:var(--muted);margin-bottom:40px;line-height:1.55;max-width:38ch}
-.field{display:block;margin-bottom:22px}
-.field span{display:block;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-.field input{width:100%;background:var(--paper);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:16px;padding:16px 18px;border-radius:2px;transition:border-color .2s}
-.field input:focus{outline:0;border-color:var(--blue)}
-.hp{position:absolute;left:-9999px}
-.drop{border:1px dashed var(--line);border-radius:2px;padding:40px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative}
-.drop:hover,.drop.over{border-color:var(--ink);background:#fafafa}
-.drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-.drop .drop-icon{font-size:28px;line-height:1;margin-bottom:10px}
-.drop .drop-label{font-size:14px;color:var(--muted)}
-.drop .drop-label b{color:var(--ink)}
-.drop .drop-hint{margin-top:5px;font-size:12px;color:#aaa}
-.preview{display:none;position:relative}
-.preview img{max-width:100%;max-height:260px;width:100%;object-fit:contain;border-radius:2px;display:block;background:#fafafa}
-.reset-btn{margin-top:10px;background:none;border:1px solid var(--line);border-radius:2px;padding:8px 14px;font:inherit;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:border-color .2s,color .2s}
-.reset-btn:hover{border-color:var(--ink);color:var(--ink)}
-.btn{display:inline-flex;align-items:center;gap:10px;background:0;color:var(--ink);border:1px solid currentColor;border-radius:999px;padding:16px 32px;font:inherit;font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:background .3s,color .3s,gap .3s;margin-top:8px}
-.btn:hover{background:var(--ink);color:#fff;gap:16px}
-.btn:disabled{opacity:.45;cursor:default;pointer-events:none}
-.msg{margin-top:18px;font-size:14px;line-height:1.55;display:none}
-.msg.err{color:#991b1b}
-.meta{font-size:12px;color:var(--muted);line-height:1.5}
-.intro-note{margin-bottom:32px}
-#state-done{display:none;text-align:center;padding:80px 0}
-#state-done h2{font-size:clamp(2rem,4.4vw,3rem);font-weight:700;letter-spacing:-.02em;font-variation-settings:'wdth' 114;line-height:1.04}
-#state-done p{margin-top:16px;color:var(--muted);font-size:15px}
-#state-done .meta{margin-top:24px}
-#state-done .meta a{text-decoration:underline}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+.wrap{max-width:940px;margin:0 auto}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+.btn{display:inline-flex;align-items:center;gap:9px;margin-top:26px;border:1px solid currentColor;border-radius:999px;padding:14px 26px;font-size:13px;font-weight:600;letter-spacing:.04em;transition:background .3s,color .3s,gap .3s}
+.btn:hover{gap:14px}
+.btn svg{flex-shrink:0}
+
+.rv{opacity:0;transform:translateY(22px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.rv.is-in{opacity:1;transform:none}
+
+/* ── Hero: the page's one statement panel ── */
+.hero{background:var(--blue);color:#fff;padding:clamp(150px,22vh,230px) 22px clamp(70px,11vh,120px)}
+.hero .eyebrow{display:block;margin-bottom:22px;color:rgba(255,255,255,.72)}
+.hero .reveal{overflow:hidden}
+.hero .statement{font-weight:700;line-height:.94;letter-spacing:-.02em;font-variation-settings:'wdth' 118;font-size:clamp(2.4rem,6.6vw,5.6rem);max-width:16ch;transform:translateY(105%);transition:transform 1100ms var(--ease)}
+.hero.is-in .statement{transform:none}
+.hero .meta{margin-top:22px;font-size:12px;color:rgba(255,255,255,.78);line-height:1.6}
+.hero .meta:first-of-type{margin-top:28px}
+.hero .btn{border-color:#fff}
+.hero .btn:hover{background:#fff;color:var(--blue)}
+
+/* ── Intro ── */
+.intro{padding:clamp(60px,10vh,110px) 22px}
+.intro .wrap{max-width:640px}
+.intro p{font-size:15px;line-height:1.65;max-width:46ch;color:var(--ink)}
+.intro p + p{margin-top:20px}
+
+/* ── Editorial rows ── */
+.rows{padding:0 22px clamp(60px,9vh,110px)}
+.row{display:grid;grid-template-columns:240px 1fr;gap:clamp(22px,4vw,48px);padding:30px 0;border-top:1px solid var(--line)}
+.rows .row:last-of-type{border-bottom:1px solid var(--line)}
+.row h2{font-weight:600;font-size:clamp(1.15rem,2.2vw,1.5rem);letter-spacing:-.01em}
+.row .body{color:var(--ink);font-size:15px;line-height:1.65;max-width:46ch}
+.row .body + .body{margin-top:14px}
+.row .body + .btn,.row ul + .btn{margin-top:22px}
+.row ul{margin-top:14px;padding-left:1.2em;color:var(--ink);font-size:15px;line-height:1.65;max-width:46ch}
+.row ul li + li{margin-top:8px}
+.row .dates p{font-size:15px;line-height:1.8;color:var(--ink)}
+
+/* ── Closing ── */
+.closing{background:var(--ink);color:#fff;padding:clamp(70px,11vh,130px) 22px;text-align:center}
+.closing .wrap{max-width:640px}
+.closing p{font-size:clamp(1.3rem,2.8vw,1.9rem);font-weight:700;line-height:1.15;letter-spacing:-.02em;font-variation-settings:'wdth' 112}
+.closing .btn{border-color:#fff}
+.closing .btn:hover{background:#fff;color:var(--ink)}
+
+@media(max-width:760px){
+  .row{grid-template-columns:1fr;gap:10px}
+}
+@media(max-width:480px){
+  .btn{width:100%;justify-content:center}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .rv{opacity:1;transform:none}
+  .hero .statement{transform:none}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div id="state-form">
-    <span class="eyebrow">Get Inspired Society &nbsp;<span style="font-weight:400;opacity:.55">On View</span></span>
-    <h1>Put your work forward.</h1>
-    <p class="sub">One image. One week on the wall.</p>
-    <p class="meta intro-note">We review every submission and let you know either way. We don't discuss decisions further.</p>
+<style>
+#wipe{position:fixed;inset:0;background:var(--blue);z-index:200;transform:scaleY(0);transform-origin:bottom;pointer-events:none}
+#wipe.go{animation:wipe 900ms var(--ease) forwards}
+@keyframes wipe{0%{transform:scaleY(0);transform-origin:bottom}45%{transform:scaleY(1);transform-origin:bottom}55%{transform:scaleY(1);transform-origin:top}100%{transform:scaleY(0);transform-origin:top}}
+</style>
+<div id="wipe"></div>
+<script>
+(function(){
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wipeEl = document.getElementById('wipe');
+  document.addEventListener('DOMContentLoaded', function(){
+    var navEl = document.querySelector('nav');
+    if(navEl){
+      var lastY = scrollY;
+      function onScroll(){
+        var y = scrollY;
+        navEl.classList.toggle('solid', y > 40);
+        navEl.classList.toggle('hide', y > innerHeight*0.7 && y > lastY);
+        lastY = y;
+      }
+      onScroll();
+      addEventListener('scroll', onScroll, {passive:true});
+    }
+    if(wipeEl){
+      document.querySelectorAll('a[href^="/"]:not([download]):not([target="_blank"])').forEach(function(a){
+        a.addEventListener('click', function(ev){
+          if(reduce) return;
+          ev.preventDefault();
+          wipeEl.classList.add('go');
+          setTimeout(function(){ location.href = a.getAttribute('href'); }, 430);
+        });
+      });
+    }
+  });
+})();
+</script>
 
-    <form id="form" novalidate>
-      <label class="field">
-        <span>Your name</span>
-        <input id="name" type="text" placeholder="First and last name" autocomplete="name" required>
-      </label>
-      <label class="field">
-        <span>Your email</span>
-        <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
-      </label>
-      <label class="field">
-        <span>Portfolio</span>
-        <input id="portfolio" type="url" placeholder="https://yourwebsite.com" required>
-      </label>
-      <label class="field">
-        <span>Title of the work (optional)</span>
-        <input id="work_title" type="text" placeholder="Untitled">
-      </label>
-      <div class="field">
-        <span>The image</span>
-        <div class="drop" id="drop">
-          <input type="file" id="file" accept="image/jpeg,image/png,image/webp" required>
-          <div class="drop-icon">⬆</div>
-          <p class="drop-label"><b>Click to choose</b> or drag and drop</p>
-          <p class="drop-hint">JPEG, PNG or WebP · max 20 MB</p>
-        </div>
-        <div class="preview" id="preview">
-          <img id="preview-img" src="" alt="Preview">
-          <button type="button" class="reset-btn" id="reset-btn">Choose a different image</button>
-        </div>
-      </div>
-      <input class="hp" id="hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" placeholder="Leave empty">
-      <div class="h-captcha" data-sitekey="0a7267b2-d53c-4d0a-b414-cbce7aeaba72" style="margin-bottom:20px"></div>
-      <button class="btn" type="submit" id="submit-btn">Submit →</button>
-      <p class="msg" id="msg"></p>
-    </form>
+<style>
+nav{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid transparent;transition:transform .45s var(--ease),background .35s,border-color .35s,padding .35s var(--ease)}
+nav.solid{background:var(--ink);border-bottom-color:rgba(255,255,255,.14);padding:8px 22px}
+nav.hide{transform:translateY(-102%)}
+nav .mark{height:clamp(52px,9vw,88px);transition:height .4s var(--ease),width .4s var(--ease)}
+nav.solid .mark{height:clamp(30px,4vw,40px);width:auto}
+nav:not(.solid) .mark-dark{filter:invert(1)}
+.menu{display:flex;gap:4px;align-items:center}
+.menu a{text-decoration:none;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding:9px 13px;border-radius:999px;line-height:1;transition:background .25s,color .25s}
+.menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:rgba(255,255,255,.16)}
+nav[data-variant="light"] .mark{filter:invert(1)}
+nav[data-variant="light"].solid .mark{filter:none}
+nav[data-variant="light"] .menu a{color:var(--ink)}
+nav[data-variant="light"].solid .menu a{color:#fff}
+nav[data-variant="light"] .menu a:hover,nav[data-variant="light"] .menu a:focus-visible,nav[data-variant="light"] .menu a[aria-current]{background:rgba(11,12,16,.08)}
+nav[data-variant="light"].solid .menu a:hover,nav[data-variant="light"].solid .menu a:focus-visible,nav[data-variant="light"].solid .menu a[aria-current]{background:rgba(255,255,255,.16)}
+
+/* ── Mobile nav toggle ── */
+.nav-toggle{display:none;position:relative;z-index:2;width:40px;height:40px;flex-shrink:0;border:0;background:transparent;color:#fff;cursor:pointer;align-items:center;justify-content:center}
+.nav-toggle span{position:relative;display:block;width:22px;height:2px;background:currentColor;transition:background .2s var(--ease)}
+.nav-toggle span::before,.nav-toggle span::after{content:'';position:absolute;left:0;width:22px;height:2px;background:currentColor;transition:transform .3s var(--ease)}
+.nav-toggle span::before{top:-7px}
+.nav-toggle span::after{top:7px}
+.nav-toggle:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+nav[data-variant="light"] .nav-toggle{color:var(--ink)}
+nav[data-variant="light"].solid .nav-toggle{color:#fff}
+
+@media(max-width:860px){
+  .nav-toggle{display:flex}
+  nav .mark{height:40px!important;width:auto!important}
+  /* Not covered by build/check-nav-drift.js — keep this in sync by hand with the matching rule in public/on-view/index.html */
+  nav>a{position:relative;z-index:2}
+  .menu{
+    position:fixed;inset:0;z-index:1;
+    display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+    gap:6px;padding:32px;
+    background:var(--ink);
+    transform:translateY(-100%);
+    opacity:0;
+    transition:transform .4s var(--ease),opacity .35s var(--ease);
+    pointer-events:none;
+  }
+  nav.nav-open{background:var(--ink);border-bottom-color:transparent}
+  nav.nav-open.hide{transform:none}
+  nav.nav-open .menu{transform:translateY(0);opacity:1;pointer-events:auto}
+  .menu a{
+    color:#fff;
+    background:none;
+    font-size:clamp(1.7rem,8vw,2.6rem);
+    font-weight:700;
+    letter-spacing:-.02em;
+    font-variation-settings:'wdth' 116;
+    text-transform:none;
+    padding:9px 0;
+    border-radius:0;
+    line-height:1.15;
+  }
+  .menu a:hover,.menu a:focus-visible,.menu a[aria-current]{background:none;color:rgba(255,255,255,.6)}
+  nav[data-variant="light"] .menu a{color:#fff}
+  nav[data-variant="light"] .menu a:hover,nav[data-variant="light"] .menu a:focus-visible,nav[data-variant="light"] .menu a[aria-current]{background:none;color:rgba(255,255,255,.6)}
+  nav.nav-open .mark{filter:none}
+  nav.nav-open .nav-toggle{color:#fff}
+}
+@media(prefers-reduced-motion:reduce){
+  .menu{transition:none}
+  .nav-toggle span::before,.nav-toggle span::after{transition:none}
+}
+</style>
+<nav>
+  <a href="/" aria-label="Get Inspired Society, home"><img class="mark" src="/assets/mark.png" alt="Get Inspired Society" width="110" height="88"></a>
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="Open menu">
+    <span></span>
+  </button>
+  <div class="menu" id="site-menu">
+    <a href="/magazine">Magazine</a>
+    <a href="/gallery">Gallery</a>
   </div>
-
-  <div id="state-done">
-    <h2>Got it.</h2>
-    <p>We've received your submission. If it's selected, we'll be in touch.</p>
-    <p class="meta"><a href="https://getinspiredsociety.com">getinspiredsociety.com</a></p>
-  </div>
-</div>
-
+</nav>
 <script>
 (function () {
   'use strict';
-  var form      = document.getElementById('form');
-  var submitBtn = document.getElementById('submit-btn');
-  var msg       = document.getElementById('msg');
-  var stateDone = document.getElementById('state-done');
-  var stateForm = document.getElementById('state-form');
-  var fileInput = document.getElementById('file');
-  var drop      = document.getElementById('drop');
-  var preview   = document.getElementById('preview');
-  var previewImg= document.getElementById('preview-img');
-  var resetBtn  = document.getElementById('reset-btn');
+  var nav    = document.querySelector('nav');
+  var toggle = nav && nav.querySelector('.nav-toggle');
+  var menu   = document.getElementById('site-menu');
+  if (!nav || !toggle || !menu) return;
 
-  function showPreview(file) {
-    previewImg.src = URL.createObjectURL(file);
-    drop.style.display = 'none';
-    preview.style.display = 'block';
+  function isOpen() { return nav.classList.contains('nav-open'); }
+
+  function open() {
+    nav.classList.add('nav-open');
+    toggle.setAttribute('aria-expanded', 'true');
+    toggle.setAttribute('aria-label', 'Close menu');
+    document.body.style.overflow = 'hidden';
+    var first = menu.querySelector('a');
+    if (first) first.focus();
   }
 
-  function clearPreview() {
-    previewImg.src = '';
-    fileInput.value = '';
-    preview.style.display = 'none';
-    drop.style.display = '';
+  function close(returnFocus) {
+    nav.classList.remove('nav-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open menu');
+    document.body.style.overflow = '';
+    if (returnFocus) toggle.focus();
   }
 
-  fileInput.addEventListener('change', function () {
-    if (fileInput.files[0]) showPreview(fileInput.files[0]);
+  toggle.addEventListener('click', function () {
+    if (isOpen()) close(true); else open();
   });
 
-  resetBtn.addEventListener('click', clearPreview);
-
-  drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
-  drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
-  drop.addEventListener('drop', function (e) {
-    e.preventDefault();
-    drop.classList.remove('over');
-    var file = e.dataTransfer.files[0];
-    if (file && /^image\/(jpeg|png|webp)$/.test(file.type)) {
-      var dt = new DataTransfer();
-      dt.items.add(file);
-      fileInput.files = dt.files;
-      showPreview(file);
-    }
+  menu.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A') close(false);
   });
 
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    var name       = document.getElementById('name').value.trim();
-    var email      = document.getElementById('email').value.trim();
-    var portfolio  = document.getElementById('portfolio').value.trim();
-    var work_title = document.getElementById('work_title').value.trim();
-    var file       = fileInput.files[0];
-    var hp         = document.getElementById('hp').value;
-    var captcha    = window.hcaptcha ? hcaptcha.getResponse() : '';
-    msg.style.display = 'none';
-    if (!name)      { showMsg('Please enter your name.'); return; }
-    if (!email)     { showMsg('Please enter your email.'); return; }
-    if (!portfolio) { showMsg('Please enter your portfolio URL.'); return; }
-    if (!file)      { showMsg('Please select an image.'); return; }
-    if (!captcha)   { showMsg('Please complete the captcha.'); return; }
-
-    var fd = new FormData();
-    fd.append('name', name);
-    fd.append('email', email);
-    fd.append('portfolio', portfolio);
-    fd.append('work_title', work_title);
-    fd.append('image', file);
-    fd.append('hp', hp);
-    fd.append('captcha', captcha);
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Sending…';
-
-    fetch('/api/submit', { method: 'POST', body: fd })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (data.ok) {
-          stateForm.style.display = 'none';
-          stateDone.style.display = 'block';
-        } else {
-          showMsg(data.error || 'Something went wrong.');
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit →';
-        }
-      })
-      .catch(function () {
-        showMsg('Could not reach the server. Please try again.');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit →';
-      });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen()) close(true);
   });
 
-  function showMsg(text) {
-    msg.textContent = text;
-    msg.className = 'msg err';
-    msg.style.display = 'block';
-  }
+  addEventListener('resize', function () {
+    if (innerWidth > 860 && isOpen()) close(false);
+  });
 }());
+</script>
+
+
+<main>
+<section class="hero rv">
+  <div class="wrap">
+    <span class="eyebrow">Open Call: WONDER</span>
+    <div class="reveal"><h1 class="statement">Whatever made you stop and look twice.</h1></div>
+    <p class="meta">Free to enter</p>
+    <p class="meta">Deadline: 6 December 2026</p>
+    <a class="btn" href="https://tally.so/r/REPLACE_ME" target="_blank" rel="noopener" data-position="hero">
+      Submit your work
+      <svg aria-hidden="true" focusable="false" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+      <span class="sr-only">(opens in a new tab)</span>
+    </a>
+  </div>
+</section>
+
+<section class="intro">
+  <div class="wrap rv">
+    <p>Wonder is the moment the world surprises you. A strange light in an ordinary street. A face you can't stop looking at. A place that only exists in your head until you make it real.</p>
+    <p>For our next issue, Get Inspired Society is looking for work that holds that moment. Not perfect, not polished for its own sake, but personal. Show us what makes you wonder, and how you see it.</p>
+  </div>
+</section>
+
+<section class="rows">
+  <div class="wrap">
+
+    <div class="row rv">
+      <h2>What we're looking for</h2>
+      <div class="col">
+        <p class="body">Work with a clear personal voice, strong visual impact and a feeling that stays with you. Every interpretation is welcome: quiet or loud, real or imagined, intimate or epic.</p>
+      </div>
+    </div>
+
+    <div class="row rv">
+      <h2>Who can submit</h2>
+      <div class="col">
+        <p class="body">Photographers, illustrators, digital artists, painters and mixed media makers from anywhere in the world. Emerging or established, it makes no difference. We look at the work, not the name.</p>
+        <p class="body">AI-assisted and AI-generated work is welcome. We only ask that you're open about how your work was made.</p>
+      </div>
+    </div>
+
+    <div class="row rv">
+      <h2>How to submit</h2>
+      <div class="col">
+        <p class="body">Up to 3 works, plus one or two sentences about each piece.</p>
+        <a class="btn" href="https://tally.so/r/REPLACE_ME" target="_blank" rel="noopener" data-position="how-to-submit">
+          Submit your work
+          <svg aria-hidden="true" focusable="false" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+          <span class="sr-only">(opens in a new tab)</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="row rv">
+      <h2>What happens next</h2>
+      <div class="col">
+        <p class="body">Selected works will be featured twice: in the WONDER issue of Get Inspired Magazine, in print and online, and in a WONDER exhibition in the GIS digital gallery.</p>
+        <ul>
+          <li><strong>Cover:</strong> one work will be chosen for the cover. Its maker receives a free printed copy of the issue.</li>
+          <li><strong>Spotlight:</strong> three artists will be invited for an extended feature with a series of their work and an interview.</li>
+          <li>All selected artists get 20% off the printed issue.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="row rv">
+      <h2>Key dates</h2>
+      <div class="dates">
+        <p>Open: 9 November 2026</p>
+        <p>Deadline: 6 December 2026</p>
+        <p>Magazine and gallery launch: 15 January 2027</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="closing rv">
+  <div class="wrap">
+    <p>Free to enter. Deadline 6 December 2026.</p>
+    <a class="btn" href="https://tally.so/r/REPLACE_ME" target="_blank" rel="noopener" data-position="closing">
+      Submit your work
+      <svg aria-hidden="true" focusable="false" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+      <span class="sr-only">(opens in a new tab)</span>
+    </a>
+  </div>
+</section>
+</main>
+
+<style>
+footer{background:var(--ink);color:#fff;padding:clamp(60px,9vh,110px) 28px 40px;text-align:center}
+footer .close{font-size:clamp(1.2rem,2.6vw,2rem);font-weight:600;letter-spacing:-.01em;font-variation-settings:'wdth' 106}
+footer .close + .links{margin-top:38px}
+footer .links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+footer .links a:hover{color:#fff}
+footer .stamp{margin-top:26px;font-size:11px;color:rgba(255,255,255,.55);letter-spacing:.14em;text-transform:uppercase}
+</style>
+<footer>
+  
+  <div class="links">
+    <a href="/magazine">Magazine</a><a href="/gallery">Gallery</a><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a>
+  </div>
+  <p class="stamp">Get Inspired Society · Since 2009 · Rotterdam</p>
+</footer>
+
+
+<script>
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const io = new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}})},{threshold:.15});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+document.querySelectorAll('.btn[data-position]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    if (typeof plausible === 'function') plausible('Application Started', { props: { position: btn.getAttribute('data-position') } });
+  });
+});
 </script>
 </body>
 </html>

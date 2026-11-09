@@ -1,7 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE } = require('./pages.config');
+const { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE, TALLY_URL } = require('./pages.config');
 
 const ROOT = path.resolve(__dirname, '..');
 const PARTIALS = path.join(__dirname, 'partials');
@@ -61,6 +61,19 @@ function injectIssueCallUrl(html) {
     .split('{{ISSUE_CALL_DOOR_LINE}}').join(ISSUE_CALL_DOOR_LINE);
 }
 
+// The WONDER open call's Tally form link (see pages.config.js), used only
+// by build/pages/submit.html. Aborting the build on a
+// malformed value (not a real https://tally.so/ link) is cheaper than
+// shipping a submit page whose three buttons silently go nowhere useful.
+function injectTallyUrl(html) {
+  return html.split('{{TALLY_URL}}').join(TALLY_URL);
+}
+
+if (!TALLY_URL.startsWith('https://tally.so/')) {
+  console.error(`[build] Aborting — TALLY_URL in build/pages.config.js must start with https://tally.so/, got: ${TALLY_URL}`);
+  process.exit(1);
+}
+
 const { checkNavDrift } = require('./check-nav-drift');
 const navDriftErrors = checkNavDrift();
 if (navDriftErrors.length) {
@@ -97,6 +110,7 @@ pages.forEach(config => {
   if (config.wipe !== false) html = injectWipe(html);
   html = injectAnalytics(html);
   html = injectIssueCallUrl(html);
+  html = injectTallyUrl(html);
   const outPath = path.join(ROOT, config.output);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, html, 'utf8');

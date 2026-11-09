@@ -1,12 +1,21 @@
 'use strict';
 /*
- * Epic 3: /submit is public (no shared token) for the open call. Protected
- * the same way the contact form is — hCaptcha + honeypot on the form, an
- * IP rate limiter on POST /api/submit — since the token gate that used to
- * be the only access control is gone. Old /submit/:token links keep
- * working via a redirect. Also covers the duplicate-check bugfix: a
+ * Epic 3: the On View weekly submission form is public (no shared token).
+ * Protected the same way the contact form is — hCaptcha + honeypot on the
+ * form, an IP rate limiter on POST /api/submit — since the token gate that
+ * used to be the only access control is gone. Old /submit/:token links
+ * keep working via a redirect. Also covers the duplicate-check bugfix: a
  * rejected submission must not permanently block a resubmission from the
  * same email (only an active pending/approved submission should).
+ *
+ * The form itself moved from /submit to /on-view/submit when /submit
+ * became the WONDER open call page (build/pages/submit.html, see
+ * CLAUDE.md and test/submit-page.test.js). On View is on hold, its
+ * weekly form is reachable but no longer promoted. /submit/:token still
+ * redirects to /submit unchanged (old shared links, archive-expiry mails):
+ * that path and its target were explicitly left alone by that change.
+ * POST /api/submit itself is unaffected either way, since the form posts
+ * to it by absolute path regardless of which page renders the form.
  */
 const { spawn } = require('child_process');
 const path = require('path');
@@ -102,15 +111,16 @@ async function run() {
       create: { width: 400, height: 300, channels: 3, background: { r: 80, g: 140, b: 200 } },
     }).webp().toBuffer();
 
-    // GET /submit loads without a token
+    // GET /on-view/submit loads without a token (moved off /submit, which
+    // is now the WONDER open call page, see test/submit-page.test.js)
     {
-      const r = await fetch(`${BASE}/submit`);
-      assert(r.status === 200, `GET /submit responds 200 without a token — got ${r.status}`);
+      const r = await fetch(`${BASE}/on-view/submit`);
+      assert(r.status === 200, `GET /on-view/submit responds 200 without a token — got ${r.status}`);
       const html = await r.text();
-      assert(html.toLowerCase().includes('submit your work') || html.includes('id="form"'), 'GET /submit renders the submission form');
+      assert(html.toLowerCase().includes('submit') && html.includes('id="form"'), 'GET /on-view/submit renders the On View submission form');
       assert(html.includes('https://getinspiredsociety.com'), 'the post-submission confirmation screen links to https://getinspiredsociety.com');
     }
-    console.log('PASS - /submit is publicly reachable without a token');
+    console.log('PASS - the On View submission form is publicly reachable at /on-view/submit without a token');
 
     // A valid submission gets review_status=pending, same as /hand-in
     {

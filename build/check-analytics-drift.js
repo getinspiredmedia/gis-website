@@ -2,9 +2,10 @@
 /*
  * Pages outside the build pipeline (see CLAUDE.md) carry a
  * hand-maintained copy of build/partials/analytics.html's Plausible script
- * tags: public/on-view/index.html, public/work/index.html, public/submit/
- * index.html, and every magazine
- * reader page (found by glob, see readers.js).
+ * tags: public/on-view/index.html, public/work/index.html,
+ * public/on-view/submit/index.html (the On View submission form, moved
+ * off /submit when that path became the WONDER open call build page), and
+ * every magazine reader page (found by glob, see readers.js).
  * This guards against any of them silently
  * drifting from the partial — e.g. if the script hash, domain, or init
  * snippet ever changes and one copy doesn't get updated.
@@ -28,7 +29,7 @@ const ROOT = path.resolve(__dirname, '..');
 const HAND_MAINTAINED_COPIES = [
   'public/on-view/index.html',
   'public/work/index.html',
-  'public/submit/index.html',
+  'public/on-view/submit/index.html',
   ...listReaderPages(),
 ];
 

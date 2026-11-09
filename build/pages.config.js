@@ -1,15 +1,19 @@
 'use strict';
 
-// André's own form for issue 05 submissions, separate from the weekly
-// On View /submit flow, will replace this once it exists. Until then this
-// points at /magazine, a real page, instead of a dead placeholder link,
-// and the copy says the open call hasn't started yet (it opens 9 November)
-// rather than claiming it's already open. All three are meant to be swapped
-// together, in this one file, the moment the real form is ready. Used by
-// the homepage's issue-05 card and its "Show your work." door.
-const ISSUE_CALL_URL = '/magazine';
-const ISSUE_CALL_CARD_LINE = 'Open call opens 9 November.';
-const ISSUE_CALL_DOOR_LINE = 'Issue 05 opens for submissions on 9 November.';
+// The open call WONDER opened 9 November 2026: /submit is now the WONDER
+// open call page (build/pages/submit.html), not André's weekly On View form
+// any more (that form moved to /on-view/submit, see CLAUDE.md). Used by the
+// homepage's issue-05 card and its "Show your work." door.
+const ISSUE_CALL_URL = '/submit';
+const ISSUE_CALL_CARD_LINE = 'Free to enter. Deadline 6 December 2026.';
+const ISSUE_CALL_DOOR_LINE = 'Free to enter. Deadline 6 December 2026.';
+
+// The Tally form WONDER submissions go through. A placeholder (not a real
+// Tally form) until André supplies the real one, swap this one value and
+// rebuild, nothing else needs to change. build/build.js aborts the build if
+// this doesn't start with https://tally.so/, so a stray typo here can't
+// ship a broken submit link.
+const TALLY_URL = 'https://tally.so/r/REPLACE_ME';
 
 const pages = [
   {
@@ -58,6 +62,12 @@ const pages = [
     nav:    { active: null, variant: 'light' },
     footer: {},
   },
+  {
+    input:  'build/pages/submit.html',
+    output: 'public/submit/index.html',
+    nav:    { active: null, variant: 'dark' },
+    footer: {},
+  },
 ];
 
-module.exports = { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE };
+module.exports = { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE, TALLY_URL };

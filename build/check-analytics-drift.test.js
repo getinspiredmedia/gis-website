@@ -83,7 +83,7 @@ function run() {
       const expectedCopies = [
         'public/on-view/index.html',
         'public/work/index.html',
-        'public/submit/index.html',
+        'public/on-view/submit/index.html',
         ...listReaderPages(),
       ];
       for (const copyPath of expectedCopies) {

@@ -1,22 +1,22 @@
 'use strict';
 /*
  * The homepage (build/pages/index.html -> public/index.html) is a static
- * showcase for the issues, the gallery and the issue 05 open call: a Bloom
+ * showcase for the issues, the gallery and the WONDER open call: a Bloom
  * cold-open hero, a five-card issue strip, one blue statement, an exhibition
  * band and the doors. This checks the generated public/index.html directly
  * (no DOM runner in this repo): the five issue cards and their hrefs, that
  * there is exactly one statement element, that every <img> has an alt
  * attribute, the copy rules from docs/gis-design-system.md (no long dash,
- * never the word "community"), that nothing on the page links to /submit or
- * /on-view, and that the nav has no "On view" item.
+ * never the word "community"), that nothing on the page links to /on-view,
+ * and that the nav has no "On view" item.
  *
  * The issue 05 card and the "To be seen" door use ISSUE_CALL_URL,
  * ISSUE_CALL_CARD_LINE and ISSUE_CALL_DOOR_LINE from build/pages.config.js,
- * not a hardcoded link or claim: until the real form exists, that config
- * points at /magazine (a real page, not a placeholder) and the copy says
- * the open call hasn't started yet, rather than claiming it's already open
- * with a close date that isn't true today. Swapping all three in that one
- * file is how the actual open call goes live.
+ * not a hardcoded link or claim. Since the WONDER open call opened on 9
+ * November 2026, ISSUE_CALL_URL points at /submit (the WONDER open call
+ * page, build/pages/submit.html) and the copy states the real deadline.
+ * Swapping all three in that one file is how a future open call replaces
+ * this one.
  */
 const fs = require('fs');
 const path = require('path');
@@ -68,12 +68,12 @@ const lookDoorHref = html.match(/<a class="door look[^"]*"[^>]*href="([^"]+)"/);
 assert(lookDoorHref && lookDoorHref[1] === '/magazine', `the "To look" door links straight to /magazine — got ${lookDoorHref && lookDoorHref[1]}`);
 console.log('PASS - both doors are whole-door links, with no separate button inside');
 
-// Nothing on the page links to /submit (the weekly On View form) or
-// /on-view: the homepage routes issue 05 to ISSUE_CALL_URL and no longer
-// promotes the On View wall at all.
-assert(!/href="\/submit"/.test(html), 'no link on the homepage points at /submit');
+// Nothing on the page links to /on-view: the homepage no longer promotes
+// the On View wall at all. It does link to /submit now (ISSUE_CALL_URL,
+// the WONDER open call page, since 9 November 2026): that is deliberate,
+// not the thing this check used to guard against.
 assert(!/href="\/on-view"/.test(html), 'no link on the homepage points at /on-view');
-console.log('PASS - no link on the homepage points at /submit or /on-view');
+console.log('PASS - no link on the homepage points at /on-view');
 
 // No dead placeholder link (tally.com or any other obvious stand-in).
 assert(!/tally\.com/i.test(html), 'no href points at the old tally.com placeholder');
@@ -88,13 +88,6 @@ assert(html.includes(`<p>${ISSUE_CALL_DOOR_LINE}</p>`),
   `the "To be seen" door shows ISSUE_CALL_DOOR_LINE ("${ISSUE_CALL_DOOR_LINE}") verbatim`);
 console.log('PASS - the 05 card and the "To be seen" door use the configured copy verbatim');
 
-// With today's config values, nothing visible on the page claims the open
-// call is already open or names a close date — that would be false before
-// it opens on 9 November.
-assert(!/\bis open\b/i.test(visibleText), 'no text claims the open call "is open"');
-assert(!/\bopen now\b/i.test(visibleText), 'no text claims the open call is "open now"');
-assert(!/\bcloses?\b/i.test(visibleText), 'no text names a close date for the open call');
-console.log('PASS - no claim that the open call is already open, and no close date');
 
 // The nav has no "On view" item (sitewide change, checked here for the
 // homepage specifically; test/society-redirect.test.js covers every page).

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Open Call: WONDER &middot; Get Inspired Society</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Non-blocking: this page's stricter Lighthouse performance bar (see
+     CLAUDE.md) made the plain render-blocking <link rel="stylesheet">
+     used elsewhere on the site cost too much first-paint time here.
+     Loads async via the standard preload/onload swap, same end result
+     (the body falls back to -apple-system/sans-serif until it's ready, no
+     invisible text), with a <noscript> fallback. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap"></noscript>
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<meta property="og:title" content="Open Call: WONDER">
+<meta property="og:description" content="Whatever made you stop and look twice.">
+<meta property="og:image" content="https://getinspiredsociety.com/assets/gallery-poster.webp">
+<meta property="og:url" content="https://getinspiredsociety.com/submit">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<!-- @include: analytics -->
+<style>
+:root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Archivo',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+.wrap{max-width:940px;margin:0 auto}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+.btn{display:inline-flex;align-items:center;gap:9px;margin-top:26px;border:1px solid currentColor;border-radius:999px;padding:14px 26px;font-size:13px;font-weight:600;letter-spacing:.04em;transition:background .3s,color .3s,gap .3s}
+.btn:hover{gap:14px}
+.btn svg{flex-shrink:0}
+
+.rv{opacity:0;transform:translateY(22px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.rv.is-in{opacity:1;transform:none}
+
+/* ── Hero: the page's one statement panel ── */
+.hero{background:var(--blue);color:#fff;padding:clamp(150px,22vh,230px) 22px clamp(70px,11vh,120px)}
+.hero .eyebrow{display:block;margin-bottom:22px;color:rgba(255,255,255,.72)}
+.hero .reveal{overflow:hidden}
+.hero .statement{font-weight:700;line-height:.94;letter-spacing:-.02em;font-variation-settings:'wdth' 118;font-size:clamp(2.4rem,6.6vw,5.6rem);max-width:16ch;transform:translateY(105%);transition:transform 1100ms var(--ease)}
+.hero.is-in .statement{transform:none}
+.hero .meta{margin-top:22px;font-size:12px;color:rgba(255,255,255,.78);line-height:1.6}
+.hero .meta:first-of-type{margin-top:28px}
+.hero .btn{border-color:#fff}
+.hero .btn:hover{background:#fff;color:var(--blue)}
+
+/* ── Intro ── */
+.intro{padding:clamp(60px,10vh,110px) 22px}
+.intro .wrap{max-width:640px}
+.intro p{font-size:15px;line-height:1.65;max-width:46ch;color:var(--ink)}
+.intro p + p{margin-top:20px}
+
+/* ── Editorial rows ── */
+.rows{padding:0 22px clamp(60px,9vh,110px)}
+.row{display:grid;grid-template-columns:240px 1fr;gap:clamp(22px,4vw,48px);padding:30px 0;border-top:1px solid var(--line)}
+.rows .row:last-of-type{border-bottom:1px solid var(--line)}
+.row h2{font-weight:600;font-size:clamp(1.15rem,2.2vw,1.5rem);letter-spacing:-.01em}
+.row .body{color:var(--ink);font-size:15px;line-height:1.65;max-width:46ch}
+.row .body + .body{margin-top:14px}
+.row .body + .btn,.row ul + .btn{margin-top:22px}
+.row ul{margin-top:14px;padding-left:1.2em;color:var(--ink);font-size:15px;line-height:1.65;max-width:46ch}
+.row ul li + li{margin-top:8px}
+.row .dates p{font-size:15px;line-height:1.8;color:var(--ink)}
+
+/* ── Closing ── */
+.closing{background:var(--ink);color:#fff;padding:clamp(70px,11vh,130px) 22px;text-align:center}
+.closing .wrap{max-width:640px}
+.closing p{font-size:clamp(1.3rem,2.8vw,1.9rem);font-weight:700;line-height:1.15;letter-spacing:-.02em;font-variation-settings:'wdth' 112}
+.closing .btn{border-color:#fff}
+.closing .btn:hover{background:#fff;color:var(--ink)}
+
+@media(max-width:760px){
+  .row{grid-template-columns:1fr;gap:10px}
+}
+@media(max-width:480px){
+  .btn{width:100%;justify-content:center}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .rv{opacity:1;transform:none}
+  .hero .statement{transform:none}
+}
+</style>
+</head>
+<body>
+<!-- @include: wipe -->
+<!-- @include: nav -->
+
+<main>
+<section class="hero rv">
+  <div class="wrap">
+    <span class="eyebrow">Open Call: WONDER</span>
+    <div class="reveal"><h1 class="statement">Whatever made you stop and look twice.</h1></div>
+    <p class="meta">Free to enter</p>
+    <p class="meta">Deadline: 6 December 2026</p>
+    <a class="btn" href="{{TALLY_URL}}" target="_blank" rel="noopener" data-position="hero">
+      Submit your work
+      <svg aria-hidden="true" focusable="false" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+      <span class="sr-only">(opens in a new tab)</span>
+    </a>
+  </div>
+</section>
+
+<section class="intro">
+  <div class="wrap rv">
+    <p>Wonder is the moment the world surprises you. A strange light in an ordinary street. A face you can't stop looking at. A place that only exists in your head until you make it real.</p>
+    <p>For our next issue, Get Inspired Society is looking for work that holds that moment. Not perfect, not polished for its own sake, but personal. Show us what makes you wonder, and how you see it.</p>
+  </div>
+</section>
+
+<section class="rows">
+  <div class="wrap">
+
+    <div class="row rv">
+      <h2>What we're looking for</h2>
+      <div class="col">
+        <p class="body">Work with a clear personal voice, strong visual impact and a feeling that stays with you. Every interpretation is welcome: quiet or loud, real or imagined, intimate or epic.</p>
+      </div>
+    </div>
+
+    <div class="row rv">
+      <h2>Who can submit</h2>
+      <div class="col">
+        <p class="body">Photographers, illustrators, digital artists, painters and mixed media makers from anywhere in the world. Emerging or established, it makes no difference. We look at the work, not the name.</p>
+        <p class="body">AI-assisted and AI-generated work is welcome. We only ask that you're open about how your work was made.</p>
+      </div>
+    </div>
+
+    <div class="row rv">
+      <h2>How to submit</h2>
+      <div class="col">
+        <p class="body">Up to 3 works, plus one or two sentences about each piece.</p>
+        <a class="btn" href="{{TALLY_URL}}" target="_blank" rel="noopener" data-position="how-to-submit">
+          Submit your work
+          <svg aria-hidden="true" focusable="false" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+          <span class="sr-only">(opens in a new tab)</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="row rv">
+      <h2>What happens next</h2>
+      <div class="col">
+        <p class="body">Selected works will be featured twice: in the WONDER issue of Get Inspired Magazine, in print and online, and in a WONDER exhibition in the GIS digital gallery.</p>
+        <ul>
+          <li><strong>Cover:</strong> one work will be chosen for the cover. Its maker receives a free printed copy of the issue.</li>
+          <li><strong>Spotlight:</strong> three artists will be invited for an extended feature with a series of their work and an interview.</li>
+          <li>All selected artists get 20% off the printed issue.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="row rv">
+      <h2>Key dates</h2>
+      <div class="dates">
+        <p>Open: 9 November 2026</p>
+        <p>Deadline: 6 December 2026</p>
+        <p>Magazine and gallery launch: 15 January 2027</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="closing rv">
+  <div class="wrap">
+    <p>Free to enter. Deadline 6 December 2026.</p>
+    <a class="btn" href="{{TALLY_URL}}" target="_blank" rel="noopener" data-position="closing">
+      Submit your work
+      <svg aria-hidden="true" focusable="false" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+      <span class="sr-only">(opens in a new tab)</span>
+    </a>
+  </div>
+</section>
+</main>
+
+<!-- @include: footer -->
+
+<script>
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const io = new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-in');io.unobserve(e.target);}})},{threshold:.15});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+document.querySelectorAll('.btn[data-position]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    if (typeof plausible === 'function') plausible('Application Started', { props: { position: btn.getAttribute('data-position') } });
+  });
+});
+</script>
+</body>
+</html>
