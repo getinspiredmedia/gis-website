@@ -89,10 +89,11 @@ function injectCorridorWorks(html) {
     const sizes = '(min-width:861px) 26vw, 68vw';
     return `    <figure class="corr-work" data-room="${a.room}">
       <span class="spot" aria-hidden="true"></span>
+      <span class="floor" aria-hidden="true"></span>
       <picture>
         <source type="image/avif" srcset="${base}-450.avif 450w, ${base}-900.avif 900w" sizes="${sizes}">
         <source type="image/webp" srcset="${base}-450.webp 450w, ${base}-900.webp 900w" sizes="${sizes}">
-        <img src="${base}-900.jpg" srcset="${base}-450.jpg 450w, ${base}-900.jpg 900w" sizes="${sizes}" alt="Work by ${a.name}, Room ${room(a.room)}" loading="lazy" decoding="async" width="${a.width}" height="${a.height}">
+        <img src="${base}-900.jpg" srcset="${base}-450.jpg 450w, ${base}-900.jpg 900w" sizes="${sizes}" alt="Work by ${a.name}, Room ${room(a.room)}" loading="eager" decoding="async" width="${a.width}" height="${a.height}">
       </picture>
       <figcaption class="plaque"><b>${a.name}</b><span>Room ${room(a.room)}</span></figcaption>
     </figure>`;
