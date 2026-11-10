@@ -8,16 +8,22 @@
  * horizontal scroll-snap row with no pin and no 3D; without JavaScript at
  * all, the five works simply stacked, then the door.
  *
- * Every per-work value (rotation, x, opacity, colour) is written by the
- * page every scrub tick as a continuous function of real scroll progress —
- * never a toggled class driving a CSS transition — so this test reads the
- * live rotation straight off each work's own data-rot attribute (the exact
- * rotateY degrees the page just applied) and the live rect from
+ * Every per-work value (rotation, x, opacity, colour, scale) is written by
+ * the page every scrub tick as a continuous function of real scroll
+ * progress — never a toggled class driving a CSS transition — so this test
+ * reads the live rotation straight off each work's own data-rot attribute
+ * (the exact rotateY degrees the page just applied) and the live rect from
  * getBoundingClientRect(), and computes its own answers from those raw
  * numbers: which work is "nearest" (smallest |rotation|, independent of the
  * page's own .is-near class, checked against it as a consistency check),
  * whether same-side works' rects ever overlap, how many are visible at
- * once, and whether the rotation ranges stay within the required bounds.
+ * once, whether the rotation ranges stay within the required bounds, and
+ * (desktop sizing bugfix) whether each work's own peak height while
+ * passing reaches 65-70% of the viewport height (build/pages/index.html's
+ * PASS_HEIGHT_VH), on top of the resting size growing "naar verhouding"
+ * with it. Also covers the door's end image: a real screenshot of the
+ * Bloom room in the gis-gallery virtual gallery, not the old
+ * bloom-exhibition crop (a piece of Dina Belenko's own artwork).
  */
 const { spawn } = require('child_process');
 const path = require('path');
@@ -146,11 +152,17 @@ async function checkDesktopSize(browserType, label, size) {
   let maxOverlapLeft = 0, maxOverlapRight = 0, maxVisible = 0;
   let nearRotMin = Infinity, nearRotMax = -Infinity;
   let restRotMin = Infinity, restRotMax = -Infinity;
+  const maxHeightFrac = {}; // per room, the largest rect height seen as a fraction of the viewport
   for (let i = 0; i <= steps; i++) {
     const y = bounds.start + span * (i / steps);
     await page.evaluate((yy) => window.scrollTo(0, yy), y);
     await page.waitForTimeout(15);
     const snap = await snapshot(page);
+
+    snap.works.forEach(w => {
+      const frac = (w.bottom - w.top) / size.height;
+      if (!maxHeightFrac[w.room] || frac > maxHeightFrac[w.room]) maxHeightFrac[w.room] = frac;
+    });
 
     // Independent "nearest" answer: the work with the smallest absolute
     // rotation, i.e. turned furthest toward the visitor right now — not a
@@ -200,6 +212,17 @@ async function checkDesktopSize(browserType, label, size) {
   // Criterion 2: rest rotation 65-75deg, active rotation 10-25deg.
   assert(restRotMin >= 65 && restRotMax <= 75, `${label}: resting rotation stays within 65-75deg — got [${restRotMin.toFixed(1)}, ${restRotMax.toFixed(1)}]`);
   assert(nearRotMin >= 10 && nearRotMax <= 25, `${label}: the active work's rotation stays within 10-25deg — got [${nearRotMin.toFixed(1)}, ${nearRotMax.toFixed(1)}]`);
+
+  // Criterion (desktop sizing): every work's own peak height, as it passes,
+  // reaches 65-70% of the viewport height — not just one room, all five,
+  // since each is scaled individually (see PASS_HEIGHT_VH in
+  // build/pages/index.html) to the same screen-height fraction regardless
+  // of its own crop's aspect ratio.
+  for (const room of ['1', '2', '3', '4', '5']) {
+    const frac = maxHeightFrac[room];
+    assert(frac !== undefined, `${label}: room ${room}'s height was measured at least once`);
+    assert(frac >= 0.65 && frac <= 0.70, `${label}: room ${room}'s peak height while passing is 65-70% of the viewport height — got ${(frac * 100).toFixed(1)}%`);
+  }
 
   // The door is fullscreen and its copy readable at the pin's own end.
   await page.evaluate((y) => window.scrollTo(0, y), bounds.end);
@@ -269,6 +292,29 @@ async function checkMobile(browserType) {
   assert(consoleErrors.length === 0, `mobile 375x812: no console errors — got ${JSON.stringify(consoleErrors)}`);
   await page.close();
   console.log('PASS - mobile (375x812): horizontal scroll-snap row, no pin, no 3D, no console errors');
+}
+
+// The door's end image is a real screenshot of the Bloom room in the
+// gis-gallery virtual gallery (public/assets/gallery/room-bloom.png), not
+// the old bloom-exhibition crop (a piece of Dina Belenko's own artwork) or
+// gallery-poster.webp (used on /gallery, not here). One shared markup
+// block for the door across all corridor variants (3D/row/reduced-motion/
+// no-JS), so checking it once at a normal desktop size covers all of them.
+async function checkDoorUsesRoomBloom(browserType) {
+  const page = await browserType.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(300);
+  const html = await page.content();
+  assert(/room-bloom-\d+\.(avif|webp|jpg)/.test(html), 'the door picture references room-bloom, not the old bloom-exhibition crop');
+  assert(!html.includes('bloom-exhibition'), 'the door no longer uses the bloom-exhibition crop');
+  assert(!html.includes('gallery-poster.webp'), 'the door does not use gallery-poster.webp (that stays on /gallery only)');
+  const alt = await page.evaluate(() => {
+    const img = document.querySelector('.corridor-door-media img');
+    return img ? img.getAttribute('alt') : null;
+  });
+  assert(alt === 'The Bloom room in the Get Inspired Society gallery', `the door image's alt text is the required copy — got ${JSON.stringify(alt)}`);
+  await page.close();
+  console.log('PASS - the corridor door uses room-bloom.png (the real gallery room), not bloom-exhibition or gallery-poster.webp, with the required alt text');
 }
 
 async function checkReducedMotion(browserType) {
@@ -486,6 +532,7 @@ async function run() {
         await checkDesktopSize(browser, `chromium ${size.width}x${size.height}`, size);
       }
       await checkMobile(browser);
+      await checkDoorUsesRoomBloom(browser);
       await checkReducedMotion(browser);
       await checkNoJs(browser);
       await checkPinAndHeightUnaffectedBySlowImages(browser);

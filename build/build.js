@@ -91,7 +91,17 @@ function injectCorridorWorks(html) {
   const room = n => String(n).padStart(2, '0');
   const figures = CORRIDOR_ARTISTS.map(a => {
     const base = `/assets/responsive/corridor-${a.slug}`;
-    const sizes = '(min-width:861px) 26vw, 68vw';
+    // Desktop now scales the passing work up to 65-70% of the viewport
+    // height (see build/pages/index.html's PASS_HEIGHT_VH), well past the
+    // resting CSS box size the "900w" srcset entry was originally sized
+    // for. None of these five crops has a higher-resolution source than
+    // its own reader spread (checked, see CLAUDE.md), so the "900w" file
+    // is already capped at the crop's own native size by
+    // generate-responsive-images.js (withoutEnlargement) — this sizes
+    // value just makes sure the browser always requests that largest
+    // available variant on desktop, instead of picking a smaller one
+    // sized for the old, smaller resting box.
+    const sizes = '(min-width:861px) 700px, 68vw';
     return `    <figure class="corr-work" data-room="${a.room}">
       <span class="spot" aria-hidden="true"></span>
       <span class="floor" aria-hidden="true"></span>

@@ -171,7 +171,7 @@ a{color:inherit;text-decoration:none}
 
 .corridor-door{background:var(--ink);display:grid;grid-template-columns:1fr}
 .corridor-door-media{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--band)}
-.corridor-door-media picture,.corridor-door-media img{position:absolute;left:0;top:-12%;width:100%;height:124%;object-fit:cover}
+.corridor-door-media picture,.corridor-door-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 45%}
 .corridor-door-copy{padding:clamp(48px,8vh,88px) 28px}
 .corridor-door-copy .eyebrow{color:rgba(255,255,255,.66)}
 .corridor-door-copy h2{margin:16px 0 16px;font-size:clamp(1.8rem,4vw,3rem);font-weight:700;line-height:1.05;letter-spacing:-.02em;font-variation-settings:'wdth' 112}
@@ -199,7 +199,7 @@ a{color:inherit;text-decoration:none}
 .corridor--3d .corridor-pin{position:relative;height:100svh;overflow:hidden}
 .corridor--3d .corridor-stage{position:absolute;inset:0;perspective:6000px;perspective-origin:50% 42%;background:linear-gradient(to bottom,var(--band) 0%,var(--ink) 18%,var(--ink) 82%,var(--band) 100%)}
 .corridor--3d .corridor-works{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;will-change:transform;display:block;padding:0;gap:0}
-.corridor--3d .corr-work{position:absolute;top:50%;left:50%;width:min(22vw,280px);margin:0;will-change:transform,opacity,filter}
+.corridor--3d .corr-work{position:absolute;top:50%;left:50%;width:min(24vw,300px);margin:0;will-change:transform,opacity,filter}
 .corridor--3d .corr-work .plaque{margin-top:8px;will-change:opacity}
 .corridor--3d .corr-work .spot{position:absolute;inset:-40% -60%;border-radius:50%;background:radial-gradient(closest-side,var(--doorglow),transparent 70%);opacity:0;pointer-events:none;z-index:-1;will-change:opacity}
 .corridor--3d .corr-work .floor{position:absolute;left:10%;right:10%;bottom:-18%;height:30%;border-radius:50%;background:radial-gradient(closest-side,var(--doorglow),transparent 75%);opacity:0;filter:blur(2px);pointer-events:none;z-index:-1;will-change:opacity}
@@ -351,9 +351,9 @@ a{color:inherit;text-decoration:none}
       <div class="corridor-door" id="corridor-door" data-cursor="Enter">
         <div class="corridor-door-media">
           <picture>
-            <source type="image/avif" srcset="/assets/responsive/bloom-exhibition-500.avif 500w, /assets/responsive/bloom-exhibition-697.avif 697w" sizes="(min-width:861px) 55vw, 100vw">
-            <source type="image/webp" srcset="/assets/responsive/bloom-exhibition-500.webp 500w, /assets/responsive/bloom-exhibition-697.webp 697w" sizes="(min-width:861px) 55vw, 100vw">
-            <img src="/assets/responsive/bloom-exhibition-697.jpg" srcset="/assets/responsive/bloom-exhibition-500.jpg 500w, /assets/responsive/bloom-exhibition-697.jpg 697w" sizes="(min-width:861px) 55vw, 100vw" alt="Artwork by Dina Belenko from issue 04, Bloom" loading="lazy" decoding="async" width="697" height="392">
+            <source type="image/avif" srcset="/assets/responsive/room-bloom-960.avif 960w, /assets/responsive/room-bloom-1440.avif 1440w, /assets/responsive/room-bloom-1904.avif 1904w" sizes="100vw">
+            <source type="image/webp" srcset="/assets/responsive/room-bloom-960.webp 960w, /assets/responsive/room-bloom-1440.webp 1440w, /assets/responsive/room-bloom-1904.webp 1904w" sizes="100vw">
+            <img src="/assets/responsive/room-bloom-1904.jpg" srcset="/assets/responsive/room-bloom-960.jpg 960w, /assets/responsive/room-bloom-1440.jpg 1440w, /assets/responsive/room-bloom-1904.jpg 1904w" sizes="100vw" alt="The Bloom room in the Get Inspired Society gallery" loading="lazy" decoding="async" width="1904" height="964">
           </picture>
         </div>
         <div class="corridor-door-copy rv" data-reveal-group="corridor-door">
@@ -662,11 +662,22 @@ document.addEventListener('gis-motion:ready', function () {
     // that live distance, recomputed every scrub tick for every work, the
     // 3D equivalent of the issue strip's "distance to the viewport centre".
     var DEPTH_STEP = 550; // kept well under the CSS perspective (6000px, .corridor--3d .corridor-stage), see totalDepth below
-    var CENTER_FACTOR = 0.85; // how far toward centre a passing work's x moves (1 = no movement; "iets naar het midden")
+    var CENTER_FACTOR = 1; // how far toward centre a passing work's x moves (1 = no movement; "iets naar het midden"). No pull at all now: PASS_HEIGHT_VH below makes a passing work much wider on screen (especially a landscape crop like room 3), and under this stage's perspective even a small inward pull shifts a wide work's edges enough to overlap its same-side neighbour.
     var REST_ROT = 70; // degrees, facing the wall
     var PASS_ROT = 15; // degrees, turned toward the visitor at its closest point
     var PASS_RANGE = 380; // |effective z| within which a work turns/brightens toward the visitor
     var FOG_RANGE = 900; // |effective z| within which a work is visible at all (mist toward ink beyond this)
+    // The passing work's own on-screen height as a fraction of the
+    // viewport, independent of its resting CSS size or its crop's own
+    // aspect ratio: every work is scaled individually (see the per-work
+    // scale probe below, near "state.forEach") to reach this same
+    // screen-height fraction at the peak of its pass, portrait or
+    // landscape alike. 0.675 sits in the middle of the required 65-70%
+    // range, leaving sampling headroom on both sides. At rest the scale is
+    // 1 (the element's own CSS width, see .corridor--3d .corr-work below),
+    // so resting size grows too whenever that CSS width grows, "naar
+    // verhouding" with the passing size.
+    var PASS_HEIGHT_VH = 0.675;
     var FOG_BRIGHTNESS_MIN = 0.12;
     var DOOR_AT = 0.8; // fraction of the pin's scroll range where the camera stops and the door's fast final growth starts
     // Buffer of 2 steps past the last work's own base depth so its pass
@@ -686,10 +697,22 @@ document.addEventListener('gis-motion:ready', function () {
     // work's passing swing land right on top of a farther one's resting
     // spot. These explicit, deliberately spaced fractions are what the
     // no-overlap acceptance criterion actually depends on.
-    var SLOT_X_FRACTION = [0.56, 0.30, 0.08];
+    var SLOT_X_FRACTION = [0.78, 0.32, 0.12];
+    // Which slot (by index into SLOT_X_FRACTION above) each same-side work
+    // gets, by its ordinal position on that wall (1st/2nd/3rd work passed
+    // on that side), not simply 0/1/2 in passing order: room 3's crop is
+    // landscape (its spread's own aspect ratio, see corridor-artists.js),
+    // so hitting the same PASS_HEIGHT_VH as the portrait works makes it
+    // much wider while passing than any other work. Put the widest
+    // passer in the outermost slot (only one same-side neighbour to clear,
+    // on its inner side) instead of the cramped middle slot a plain
+    // passing-order mapping would give it.
+    var LEFT_SLOT_FOR_ORDINAL = [1, 0, 2]; // rooms 1, 3, 5 in that order
+    var RIGHT_SLOT_FOR_ORDINAL = [0, 1]; // rooms 2, 4
     var state = items.map(function (el, i) {
       var isLeft = i % 2 === 0;
-      var slot = Math.floor(i / 2);
+      var ordinal = Math.floor(i / 2);
+      var slot = (isLeft ? LEFT_SLOT_FOR_ORDINAL : RIGHT_SLOT_FOR_ORDINAL)[ordinal];
       var baseZ = -(DEPTH_STEP * (i + 1));
       var restX = (isLeft ? -1 : 1) * SLOT_X_FRACTION[slot] * innerWidth;
       return {
@@ -704,6 +727,28 @@ document.addEventListener('gis-motion:ready', function () {
       };
     });
 
+    // Each work's own pass-time scale, measured once per work rather than
+    // computed from its CSS width and image aspect ratio: a work's fixed Z
+    // depth (baseZ) shrinks its rendered size under the stage's own
+    // perspective well before rotation or scale ever enter the picture (a
+    // farther-back work like room 5 renders visibly smaller at scale(1)
+    // than a nearer one like room 1, even at the identical rotation), and
+    // that shrink doesn't reduce to a simple formula worth reproducing by
+    // hand. Probing the real rendered height at scale(1), at this work's
+    // own rotation/position/depth, and solving for the scale that would
+    // have put it at PASS_HEIGHT_VH of the viewport, sidesteps the whole
+    // perspective calculation: scale itself behaves linearly on the
+    // rendered size (confirmed empirically), it's only the un-scaled
+    // starting point that varies per work. Rotation barely affects the
+    // probe's own height (foreshortening from rotateY acts on width, not
+    // height), so probing once at this work's passRot, before any scroll
+    // handling starts, is accurate enough for passT anywhere in [0,1].
+    state.forEach(function (s) {
+      s.el.style.transform = 'translate3d(calc(-50% + ' + s.restX + 'px), -50%, ' + s.baseZ + 'px) rotateY(' + s.passRot + 'deg) scale(1)';
+      var naturalHeight = s.el.getBoundingClientRect().height;
+      s.passScale = naturalHeight > 0 ? (PASS_HEIGHT_VH * innerHeight) / naturalHeight : 1;
+    });
+
     function setWork(s, cameraZ) {
       var effZ = s.baseZ + cameraZ;
       var absZ = Math.abs(effZ);
@@ -714,7 +759,12 @@ document.addEventListener('gis-motion:ready', function () {
       var x = lerp(s.restX, s.restX * CENTER_FACTOR, passT);
       var brightness = lerp(FOG_BRIGHTNESS_MIN, 1, visible);
       var grayscale = 1 - passT;
-      s.el.style.transform = 'translate3d(calc(-50% + ' + x + 'px), -50%, ' + s.baseZ + 'px) rotateY(' + rotation + 'deg)';
+      // Scale: 1 at rest (the element's own CSS width governs resting
+      // size, so resting size grows too whenever that CSS width grows,
+      // "naar verhouding" with the passing size), growing toward
+      // s.passScale (see above) at passT 1.
+      var scale = lerp(1, s.passScale, passT);
+      s.el.style.transform = 'translate3d(calc(-50% + ' + x + 'px), -50%, ' + s.baseZ + 'px) rotateY(' + rotation + 'deg) scale(' + scale + ')';
       s.el.dataset.rot = rotation; // exposes the live rotation for tests, see test/homepage-corridor.test.js
       s.el.style.opacity = visible;
       s.el.style.filter = 'grayscale(' + grayscale + ') brightness(' + brightness + ')';

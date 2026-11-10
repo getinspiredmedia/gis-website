@@ -47,6 +47,12 @@ const JOBS = [
   { src: 'public/assets/spreads/bloom/08.webp', outDir: 'public/assets/responsive', base: 'corridor-room-03', widths: [450, 900], extract: { left: 90, top: 358, width: 612, height: 407 } },
   { src: 'public/assets/spreads/bloom/11.webp', outDir: 'public/assets/responsive', base: 'corridor-room-04', widths: [450, 900], extract: { left: 903, top: 138, width: 575, height: 846 } },
   { src: 'public/assets/spreads/bloom/14.webp', outDir: 'public/assets/responsive', base: 'corridor-room-05', widths: [450, 900], extract: { left: 48, top: 125, width: 698, height: 870 } },
+  // The corridor door's end image: a real screenshot of the Bloom room in
+  // the gis-gallery virtual gallery (public/assets/gallery/room-bloom.png,
+  // 1904x964, supplied whole, no extract), replacing the old
+  // bloom-exhibition crop (a piece of Dina Belenko's own artwork, not the
+  // gallery itself).
+  { src: 'public/assets/gallery/room-bloom.png', outDir: 'public/assets/responsive', base: 'room-bloom', widths: [960, 1440, 1904] },
 ];
 
 async function run() {
