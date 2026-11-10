@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE, TALLY_URL } = require('./pages.config');
 const { CORRIDOR_ARTISTS } = require('./corridor-artists');
+const { ISSUES, UNAPPROVED_COPY } = require('./data/issues');
 
 const ROOT = path.resolve(__dirname, '..');
 const PARTIALS = path.join(__dirname, 'partials');
@@ -102,6 +103,54 @@ function injectCorridorWorks(html) {
   return html.replace('    <!-- {{CORRIDOR_WORKS}} -->', figures);
 }
 
+// Issue pages (/magazine/<slug>), one per build/data/issues.js entry, built
+// from the single build/pages/issue.html template. Capitalizes only the
+// first letter of the existing spreadsWord (e.g. "seventeen" -> "Seventeen
+// spreads."), no new words.
+function cap(word) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+function renderArtistRows(issue) {
+  return issue.artists.map(a => `    <a class="i-artist-row rv" data-reveal-group="artists" href="/magazine/${issue.slug}/read?spread=${a.spread}" data-cursor="Read">
+      <span class="name">${a.name}</span>
+      <span class="tile"><img src="${a.image}" alt="${a.alt}" loading="lazy" decoding="async"><span class="tile-name">${a.name}</span></span>
+    </a>`).join('\n');
+}
+
+function renderLookInside(issue) {
+  return issue.artists.map(a => `    <a class="i-look-item" href="/magazine/${issue.slug}/read?spread=${a.spread}" data-cursor="Read">
+      <img src="${a.image}" alt="${a.alt}" loading="lazy" decoding="async">
+    </a>`).join('\n');
+}
+
+function renderArchiveRows(issue) {
+  const room = n => String(n).padStart(2, '0');
+  return ISSUES.filter(i => i.slug !== issue.slug).map(i => `    <a class="i-row rv" href="/magazine/${i.slug}" data-cursor="Read">
+      <span class="no">No. ${room(i.number)}</span>
+      <div><h2>${i.title}</h2><p class="q">${i.line}</p></div>
+      <img class="cover" src="${i.cover}" alt="${i.coverAlt}" loading="lazy" decoding="async" style="view-transition-name:issue-${room(i.number)}">
+    </a>`).join('\n');
+}
+
+function injectIssuePage(html, issue) {
+  const room = String(issue.number).padStart(2, '0');
+  return html
+    .split('{{ISSUE_SLUG}}').join(issue.slug)
+    .split('{{ISSUE_NUMBER}}').join(room)
+    .split('{{ISSUE_TITLE}}').join(issue.title)
+    .split('{{ISSUE_LINE}}').join(issue.line)
+    .split('{{ISSUE_COVER}}').join(issue.cover)
+    .split('{{ISSUE_COVER_ALT}}').join(issue.coverAlt)
+    .split('{{ISSUE_PDF}}').join(issue.pdf)
+    .split('{{ISSUE_PEECHO}}').join(issue.peecho)
+    .split('{{ISSUE_SPREADS_WORD}}').join(cap(issue.spreadsWord))
+    .split('{{LOOK_INSIDE_LABEL}}').join(UNAPPROVED_COPY.lookInsideLabel)
+    .replace('    <!-- {{ISSUE_ARTIST_ROWS}} -->', renderArtistRows(issue))
+    .replace('    <!-- {{ISSUE_LOOK_INSIDE}} -->', renderLookInside(issue))
+    .replace('    <!-- {{ISSUE_ARCHIVE_ROWS}} -->', renderArchiveRows(issue));
+}
+
 if (!TALLY_URL_PATTERN.test(TALLY_URL)) {
   console.error(`[build] Aborting — TALLY_URL in build/pages.config.js must match https://tally.so/r/<id>, got: ${TALLY_URL}`);
   process.exit(1);
@@ -153,6 +202,21 @@ pages.forEach(config => {
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, html, 'utf8');
   console.log(`Built: ${config.output}`);
+});
+
+// Issue pages (/magazine/<slug>), one per build/data/issues.js entry — not
+// a 1:1 entry in `pages` above since one template fans out to four outputs.
+const issueTemplate = read(path.join(ROOT, 'build/pages/issue.html'));
+ISSUES.forEach(issue => {
+  let html = issueTemplate;
+  html = injectNav(html, { active: 'magazine', variant: 'dark' });
+  html = injectFooter(html, { active: 'magazine', variant: 'dark' }, {});
+  html = injectAnalytics(html);
+  html = injectIssuePage(html, issue);
+  const outPath = path.join(ROOT, 'public', 'magazine', issue.slug, 'index.html');
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, html, 'utf8');
+  console.log(`Built: public/magazine/${issue.slug}/index.html`);
 });
 
 // Responsive image variants (AVIF/WebP/JPEG) for the homepage — idempotent,

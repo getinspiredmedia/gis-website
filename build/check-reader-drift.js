@@ -1,7 +1,8 @@
 'use strict';
 /*
- * The magazine readers (public/magazine/<slug>/index.html) are hand-maintained
- * copies of one template, outside the build pipeline. Everything that belongs
+ * The magazine readers (public/magazine/<slug>/read/index.html) are
+ * hand-maintained copies of one template, outside the build pipeline.
+ * Everything that belongs
  * to a single issue sits between marker lines; everything else must be
  * identical in every reader:
  *

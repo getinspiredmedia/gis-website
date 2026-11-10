@@ -34,6 +34,8 @@
     "test:submit-page": "node test/submit-page.test.js",
     "test:on-view-closing": "node test/on-view-closing.test.js",
     "test:mail-escaping": "node test/mail-escaping.test.js",
+    "test:issue-pages": "node test/issue-pages.test.js",
+    "test:issue-page-playwright": "node test/issue-page.playwright.test.js",
     "start": "exec node server.js"
   },
   "engines": {

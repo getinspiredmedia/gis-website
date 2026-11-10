@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+// An old link with a spread hash (#spread-N, the reader's own convention,
+// see public/magazine/{{ISSUE_SLUG}}/read/index.html) still has to open the
+// reader at that spread. A fragment never reaches the server, so unlike the
+// ?spread= query case (redirected server-side, see server.js) this one is
+// handled here, before anything paints, so a visitor never sees this issue
+// page flash first.
+if (/^#spread-\d+$/.test(location.hash)) {
+  location.replace('/magazine/{{ISSUE_SLUG}}/read?spread=' + location.hash.slice(8));
+}
+</script>
+<title>{{ISSUE_TITLE}} &middot; Get Inspired Society</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Non-blocking font load, same pattern as build/pages/submit.html: this
+     page has the same stricter Lighthouse mobile bar (performance >= 90). -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap"></noscript>
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<meta property="og:title" content="{{ISSUE_TITLE}}">
+<meta property="og:description" content="{{ISSUE_LINE}}">
+<meta property="og:image" content="https://getinspiredsociety.com{{ISSUE_COVER}}">
+<meta property="og:url" content="https://getinspiredsociety.com/magazine/{{ISSUE_SLUG}}">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<!-- @include: analytics -->
+<style>
+:root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Archivo',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.rv{opacity:0;transform:translateY(22px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.rv.is-in{opacity:1;transform:none}
+.btn{display:inline-flex;align-items:center;gap:9px;border:1px solid currentColor;border-radius:999px;padding:12px 22px;font-size:13px;font-weight:600;letter-spacing:.04em;transition:background .3s,color .3s,gap .3s}
+
+/* cross-document View Transition: the cover morphs from the homepage strip
+   card into this hero when the browser supports it (motion.js steps aside
+   from the block wipe in that case); same opt-in as build/pages/index.html. */
+@view-transition { navigation: auto; }
+
+/* hero */
+.i-hero{background:var(--ink);color:#fff;padding:clamp(120px,16vh,170px) 28px clamp(60px,9vh,100px)}
+.i-hero-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:minmax(0,320px) 1fr;gap:clamp(32px,6vw,72px);align-items:center}
+.i-cover-wrap{perspective:1200px}
+.i-cover{aspect-ratio:3/4;width:100%;object-fit:cover;box-shadow:0 30px 70px rgba(0,0,0,.45);will-change:transform;transition:transform .3s var(--ease)}
+.i-hero .eyebrow{color:rgba(255,255,255,.6)}
+.i-hero h1{margin:14px 0 10px;font-weight:700;line-height:.96;letter-spacing:-.02em;font-variation-settings:'wdth' 116;font-size:clamp(2.4rem,6vw,4.6rem)}
+.i-hero .lede{font-size:clamp(1rem,1.7vw,1.35rem);color:rgba(255,255,255,.78);line-height:1.4}
+.i-hero .meta{margin-top:14px;font-size:12px;color:rgba(255,255,255,.62)}
+.i-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.i-actions .btn{border-color:rgba(255,255,255,.55)}
+.i-actions .btn:hover{background:#fff;color:var(--ink);gap:14px;border-color:#fff}
+
+/* artists (tile rule: grayscale/dim until hover or focus, name on a gradient) */
+.i-artists{padding:clamp(70px,10vh,110px) 28px}
+.i-artists .head{max-width:1100px;margin:0 auto 26px}
+.i-artists .head .eyebrow{color:var(--muted)}
+.i-artist-rows{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.i-artist-row{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 0;border-top:1px solid var(--line)}
+.i-artist-row:last-child{border-bottom:1px solid var(--line)}
+.i-artist-row .name{font-weight:700;font-size:clamp(1.1rem,2vw,1.5rem);letter-spacing:-.01em;font-variation-settings:'wdth' 110}
+.i-artist-row .tile{position:relative;flex:none;width:min(40vw,220px);aspect-ratio:3/2;overflow:hidden;background:var(--line)}
+.i-artist-row .tile img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) brightness(.72);transition:filter .4s var(--ease),transform .4s var(--ease)}
+.i-artist-row .tile::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(11,12,16,.55) 0%,transparent 55%)}
+.i-artist-row .tile .tile-name{position:absolute;left:10px;bottom:8px;z-index:1;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#fff;opacity:0;transition:opacity .3s}
+.i-artist-row:hover .tile img,.i-artist-row:focus-visible .tile img{filter:grayscale(0) brightness(1);transform:scale(1.04)}
+.i-artist-row:hover .tile .tile-name,.i-artist-row:focus-visible .tile .tile-name{opacity:1}
+
+/* look inside: horizontal scroll-snap strip */
+.i-look{background:var(--line);padding:clamp(56px,8vh,90px) 0}
+.i-look .head{max-width:1100px;margin:0 auto 22px;padding:0 28px}
+.i-look .head .eyebrow{color:var(--muted)}
+.i-look-row{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 28px;scrollbar-width:none}
+.i-look-row::-webkit-scrollbar{display:none}
+.i-look-item{flex:none;width:min(60vw,280px);aspect-ratio:1.413;scroll-snap-align:center;overflow:hidden;background:var(--paper);box-shadow:0 14px 34px rgba(11,12,16,.14)}
+.i-look-item img{width:100%;height:100%;object-fit:cover;transition:transform .4s var(--ease)}
+.i-look-item:hover img,.i-look-item:focus-visible img{transform:scale(1.05)}
+
+/* statement (exactly one, same vocabulary as build/pages/magazine.html) */
+.claim{background:var(--blue);color:#fff;padding:clamp(80px,14vh,170px) 28px;display:flex;justify-content:center;text-align:center}
+.claim .inner{max-width:1100px;width:100%;overflow:hidden}
+.claim .statement{font-weight:700;line-height:.94;letter-spacing:-.02em;font-variation-settings:'wdth' 118;font-size:clamp(2.2rem,5.6vw,4.4rem);transform:translateY(105%);transition:transform 1100ms var(--ease)}
+.claim.is-in .statement{transform:none}
+
+/* other issues, as archive rows (same vocabulary as build/pages/magazine.html) */
+.i-archive{padding:clamp(70px,10vh,110px) 28px}
+.i-archive .head{max-width:1100px;margin:0 auto 26px}
+.i-archive .head .eyebrow{color:var(--muted)}
+.i-rows{max-width:1100px;margin:0 auto}
+.i-row{display:grid;grid-template-columns:64px 1fr 86px;gap:24px;align-items:center;padding:24px 20px;margin:0 -20px;border-top:1px solid var(--line);transition:background .35s var(--ease),color .35s}
+.i-row:last-of-type{border-bottom:1px solid var(--line)}
+.i-row .no{font-size:11px;letter-spacing:.2em;color:var(--muted);transition:color .35s}
+.i-row h2{font-weight:700;line-height:1;letter-spacing:-.02em;font-variation-settings:'wdth' 112;font-size:clamp(1.3rem,2.8vw,2rem)}
+.i-row .q{margin-top:6px;font-size:14px;color:var(--muted);transition:color .35s}
+.i-row .cover{aspect-ratio:3/4;background:var(--line);width:100%;object-fit:cover;transition:transform .45s var(--ease)}
+.i-row:hover{background:var(--blue);color:#fff}
+.i-row:hover .no,.i-row:hover .q{color:rgba(255,255,255,.75)}
+.i-row:hover .cover{transform:translateY(-6px) scale(1.06)}
+
+@media(max-width:860px){
+  .i-hero-grid{grid-template-columns:1fr}
+  .i-cover-wrap{max-width:260px;margin:0 auto}
+  .i-artist-row{flex-direction:column;align-items:flex-start;gap:12px}
+  .i-artist-row .tile{width:100%}
+  .i-row{grid-template-columns:1fr 60px;gap:14px;padding:20px 14px;margin:0 -14px}
+  .i-row .no{grid-column:1/-1;margin-bottom:-6px}
+}
+@media(max-width:480px){
+  .i-actions{flex-direction:column}
+  .i-actions .btn{width:100%;justify-content:center}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .rv{opacity:1;transform:none}
+  .claim .statement{transform:none}
+  .i-cover{transform:none!important}
+}
+</style>
+</head>
+<body>
+<!-- @include: nav -->
+
+<main>
+<section class="i-hero">
+  <div class="i-hero-grid">
+    <div class="i-cover-wrap rv" data-reveal-group="hero">
+      <img class="i-cover" id="issueCover" src="{{ISSUE_COVER}}" alt="{{ISSUE_COVER_ALT}}" style="view-transition-name:issue-{{ISSUE_NUMBER}}" width="500" height="707">
+    </div>
+    <div>
+      <span class="eyebrow rv" data-reveal-group="hero">Issue {{ISSUE_NUMBER}}</span>
+      <h1 class="rv" data-reveal-group="hero">{{ISSUE_TITLE}}</h1>
+      <p class="lede rv" data-reveal-group="hero">{{ISSUE_LINE}}</p>
+      <p class="meta rv" data-reveal-group="hero">{{ISSUE_SPREADS_WORD}} spreads.</p>
+      <div class="i-actions rv" data-reveal-group="hero">
+        <a class="btn" href="/magazine/{{ISSUE_SLUG}}/read" data-cursor="Read">Read the issue</a>
+        <a class="btn" href="{{ISSUE_PDF}}" download>Download the PDF</a>
+        <a class="btn" href="{{ISSUE_PEECHO}}" target="_blank" rel="noopener">Order a print</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="i-artists">
+  <div class="head rv">
+    <span class="eyebrow">In this issue</span>
+  </div>
+  <div class="i-artist-rows">
+    <!-- {{ISSUE_ARTIST_ROWS}} -->
+  </div>
+</section>
+
+<section class="i-look">
+  <div class="head rv">
+    <span class="eyebrow">{{LOOK_INSIDE_LABEL}}</span>
+  </div>
+  <div class="i-look-row">
+    <!-- {{ISSUE_LOOK_INSIDE}} -->
+  </div>
+</section>
+
+<section class="claim rv">
+  <div class="inner">
+    <p class="statement">Every issue<br>starts with<br>a question.</p>
+  </div>
+</section>
+
+<section class="i-archive">
+  <div class="head rv">
+    <span class="eyebrow">The archive</span>
+  </div>
+  <div class="i-rows">
+    <!-- {{ISSUE_ARCHIVE_ROWS}} -->
+  </div>
+</section>
+</main>
+
+<!-- @include: footer -->
+
+<script src="/js/motion.js" defer></script>
+<script>
+document.addEventListener('gis-motion:ready', function () {
+  // Statement rise: reuse the generic .rv reveal for everything except the
+  // .claim panel's own translateY(105%->0) (CSS-driven, needs .is-in on the
+  // ancestor), same two-line pattern as build/pages/magazine.html's archive.
+  var claim = document.querySelector('.claim');
+  if (claim) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) { claim.classList.add('is-in'); io.unobserve(claim); }
+      });
+    }, { threshold: .2 });
+    io.observe(claim);
+  }
+
+  // Cover tilt: up to 4deg, pointer:fine only, off under reduced motion
+  // (matches the acceptance criteria: no tilt on touch, no tilt under
+  // reduced motion).
+  if (!window.GISMotion.reduced && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    var wrap = document.querySelector('.i-cover-wrap');
+    var cover = document.getElementById('issueCover');
+    if (wrap && cover) {
+      wrap.addEventListener('mousemove', function (e) {
+        var r = wrap.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width - .5;
+        var py = (e.clientY - r.top) / r.height - .5;
+        cover.style.transform = 'rotateY(' + (px * 8) + 'deg) rotateX(' + (py * -8) + 'deg)';
+      });
+      wrap.addEventListener('mouseleave', function () { cover.style.transform = ''; });
+    }
+  }
+});
+</script>
+</body>
+</html>

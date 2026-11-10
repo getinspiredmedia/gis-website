@@ -55,10 +55,10 @@ function run() {
     assert(errors.some(e => e.includes(name)), 'an unbalanced marker is reported, got: ' + JSON.stringify(errors));
     reset();
 
-    const extra = path.join(tmp, 'public', 'magazine', 'zz-new-issue');
-    fs.mkdirSync(extra);
+    const extra = path.join(tmp, 'public', 'magazine', 'zz-new-issue', 'read');
+    fs.mkdirSync(extra, { recursive: true });
     fs.writeFileSync(path.join(extra, 'index.html'), '<!DOCTYPE html><html><body>copy-paste gone wrong</body></html>');
-    assert(listReaderPages(tmp).includes('public/magazine/zz-new-issue/index.html'), 'a new reader folder is picked up without editing any list');
+    assert(listReaderPages(tmp).includes('public/magazine/zz-new-issue/read/index.html'), 'a new reader folder is picked up without editing any list');
     errors = checkReaderDrift(tmp);
     assert(errors.some(e => e.includes('zz-new-issue') && e.includes('no issue:start')), 'the new, unmarked reader is reported, got: ' + JSON.stringify(errors));
     fs.copyFileSync(path.join(REAL_ROOT, readers[0]), path.join(extra, 'index.html'));

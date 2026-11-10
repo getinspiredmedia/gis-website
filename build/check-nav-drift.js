@@ -17,7 +17,7 @@ const ROOT = path.resolve(__dirname, '..');
 
 // Hand-maintained copies of build/partials/nav.html's toggle. Add a page here
 // the moment it gets its own copy of the shared nav. The magazine readers are
-// not listed: every public/magazine/<slug>/index.html counts (see readers.js).
+// not listed: every public/magazine/<slug>/read/index.html counts (see readers.js).
 const HAND_MAINTAINED_COPIES = [
   'public/on-view/index.html',
   'public/work/index.html',

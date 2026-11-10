@@ -382,6 +382,20 @@ app.get('/society', (req, res) => res.redirect(301, '/'));
 // this match both /on-view/leaderboard and /on-view/leaderboard/.
 app.get('/on-view/leaderboard', (req, res) => res.redirect(301, '/on-view'));
 
+// /magazine/:issue used to be the reader itself; it is now the issue page,
+// and the reader moved to /magazine/:issue/read. An old link carrying a
+// spread indicator as a query string (e.g. ?spread=5, the reader's own
+// convention, see public/magazine/<slug>/read/index.html) still has to open
+// the reader at that spread, so it's redirected straight to /read with the
+// same query string. A bare /magazine/:issue (no query) falls through to
+// express.static below and serves the new issue page. A hash-only old link
+// (e.g. #spread-5) can't be seen here (fragments never reach the server);
+// the issue page's own inline script handles that case client-side instead.
+app.get('/magazine/:issue', (req, res, next) => {
+  if (Object.keys(req.query).length === 0) return next();
+  res.redirect(301, `/magazine/${req.params.issue}/read${req.url.slice(req.path.length)}`);
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Plausible analytics proxy ───────────────────────────────────────────────────
