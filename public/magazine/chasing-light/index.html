@@ -59,7 +59,14 @@ a{color:inherit;text-decoration:none}
 .i-hero{background:var(--ink);color:#fff;padding:clamp(120px,16vh,170px) 28px clamp(60px,9vh,100px)}
 .i-hero-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:minmax(0,320px) 1fr;gap:clamp(32px,6vw,72px);align-items:center}
 .i-cover-wrap{perspective:1200px}
-.i-cover{aspect-ratio:3/4;width:100%;object-fit:cover;box-shadow:0 30px 70px rgba(0,0,0,.45);will-change:transform;transition:transform .3s var(--ease)}
+/* No aspect-ratio or object-fit here on purpose: the box takes its ratio
+   straight from the <img>'s own width/height attributes (set per issue
+   from the real cover file, see build/data/issues.js's heroCover), so the
+   cover is always shown whole, never cropped. max-width:100% (not a fixed
+   width) lets it shrink to fit .i-cover-wrap's own width (the grid column
+   on desktop, the max-width below on mobile) while height:auto keeps the
+   real ratio; max-height is added on mobile below for the 70vh cap. */
+.i-cover{display:block;max-width:100%;height:auto;box-shadow:0 30px 70px rgba(0,0,0,.45);will-change:transform;transition:transform .3s var(--ease)}
 .i-hero .eyebrow{color:rgba(255,255,255,.6)}
 .i-hero h1{margin:14px 0 10px;font-weight:700;line-height:.96;letter-spacing:-.02em;font-variation-settings:'wdth' 116;font-size:clamp(2.4rem,6vw,4.6rem)}
 .i-hero .lede{font-size:clamp(1rem,1.7vw,1.35rem);color:rgba(255,255,255,.78);line-height:1.4}
@@ -117,6 +124,12 @@ a{color:inherit;text-decoration:none}
 @media(max-width:860px){
   .i-hero-grid{grid-template-columns:1fr}
   .i-cover-wrap{max-width:260px;margin:0 auto}
+  /* Both a width and a height cap, no fixed width/height on the <img>
+     itself: the browser's default replaced-element sizing shrinks
+     whichever dimension is more restrictive while preserving the real
+     ratio, so the cover still never crops even when 70vh is the tighter
+     limit (a very tall viewport-relative cover on a short phone screen). */
+  .i-cover{max-height:70vh}
   .i-artist-row{flex-direction:column;align-items:flex-start;gap:12px}
   .i-artist-row .tile{width:100%}
   .i-row{grid-template-columns:1fr 60px;gap:14px;padding:20px 14px;margin:0 -14px}
@@ -264,7 +277,10 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
 <section class="i-hero">
   <div class="i-hero-grid">
     <div class="i-cover-wrap rv" data-reveal-group="hero">
-      <img class="i-cover" id="issueCover" src="/magazine/chasing-light/assets/covers/chasing-light.webp" alt="Cover of Get Inspired Society, Issue 3, Chasing Light." style="view-transition-name:issue-03" width="500" height="707">
+      <picture>
+
+        <img class="i-cover" id="issueCover" src="/magazine/chasing-light/assets/covers/chasing-light.webp" alt="Cover of Get Inspired Society, Issue 3, Chasing Light." style="view-transition-name:issue-03" width="500" height="707" decoding="async">
+      </picture>
     </div>
     <div>
       <span class="eyebrow rv" data-reveal-group="hero">Issue 03</span>

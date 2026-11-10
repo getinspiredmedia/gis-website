@@ -16,6 +16,21 @@
 // spreadsWord is the word form already used in each reader's own meta
 // description (e.g. "...seventeen spreads."), reused for the issue page's
 // meta line instead of writing a new phrase.
+//
+// heroCover is the hero's own cover image, separate from `cover` (which
+// stays the existing small 500x707 webp, used for og:image and the
+// archive-row thumbnails, unchanged): width/height are the real pixel
+// dimensions of whichever file heroCover.src actually points at, used as
+// the <img>'s width/height attributes so the hero box takes that file's
+// own aspect ratio, never a hardcoded one (see CLAUDE.md's "Issue-pagina's
+// hero-cover" entry for why a hardcoded aspect-ratio silently loses to the
+// width/height attributes in Chromium when they're both present). Only
+// Bloom has a higher-resolution master (bloom-master.jpg, 1414x2000);
+// origins/no-algorithm/chasing-light have no such master in this repo, so
+// their hero reuses the existing 500x707 cover at the one size, not
+// upscaled, and `responsiveBase` is left unset. **Higher-resolution
+// covers are needed for origins, no-algorithm and chasing-light** to match
+// Bloom's hero sharpness, not supplied for this task, see the Eindrapport.
 const ISSUES = [
   {
     slug: 'origins',
@@ -24,6 +39,7 @@ const ISSUES = [
     line: 'Before mastery. Before style. There is the spark.',
     cover: '/assets/covers/origins.webp',
     coverAlt: 'Cover of Get Inspired Society, Issue 1, Origins.',
+    heroCover: { src: '/assets/covers/origins.webp', width: 500, height: 707 },
     pdf: '/assets/pdf/origins.pdf',
     peecho: 'https://www.peecho.com/print/en/2140141',
     spreadCount: 27,
@@ -43,6 +59,7 @@ const ISSUES = [
     line: 'Before the feed. Before the scroll. There is attention.',
     cover: '/assets/covers/no-algorithm.webp',
     coverAlt: 'Cover of Get Inspired Society, Issue 2, No Algorithm.',
+    heroCover: { src: '/assets/covers/no-algorithm.webp', width: 500, height: 707 },
     pdf: '/assets/pdf/no-algorithm.pdf',
     peecho: 'https://www.peecho.com/print/en/2198517',
     spreadCount: 22,
@@ -62,6 +79,7 @@ const ISSUES = [
     line: 'The same sun. Never the same light.',
     cover: '/magazine/chasing-light/assets/covers/chasing-light.webp',
     coverAlt: 'Cover of Get Inspired Society, Issue 3, Chasing Light.',
+    heroCover: { src: '/magazine/chasing-light/assets/covers/chasing-light.webp', width: 500, height: 707 },
     pdf: '/assets/pdf/chasing-light.pdf',
     peecho: 'https://www.peecho.com/print/en/2273132',
     spreadCount: 22,
@@ -81,6 +99,13 @@ const ISSUES = [
     line: 'Nothing opens on command.',
     cover: '/assets/covers/bloom.webp',
     coverAlt: 'Cover of Bloom, Issue 4: tulips rising from a lit drawer beneath the shadow of a crown. Photograph by Dina Belenko.',
+    heroCover: {
+      src: '/assets/covers/bloom-master.jpg',
+      width: 1414,
+      height: 2000,
+      responsiveBase: '/assets/responsive/bloom-cover-hero',
+      responsiveWidths: [600, 900, 1200],
+    },
     pdf: '/assets/pdf/bloom.pdf',
     peecho: 'https://www.peecho.com/print/en/2397702',
     spreadCount: 17,

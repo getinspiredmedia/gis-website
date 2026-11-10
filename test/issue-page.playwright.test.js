@@ -2,12 +2,17 @@
 /*
  * Playwright checks for the issue page (/magazine/<slug>) that a plain HTML
  * assertion can't cover: the Tile component's hover/focus colour change on
- * an artist row, and that clicking a spread (an artist row or a "look
- * inside" item) actually opens the reader at that exact spread.
+ * an artist row, that clicking a spread (an artist row or a "look inside"
+ * item) actually opens the reader at that exact spread, the hero cover's
+ * real (never cropped) rendered aspect ratio across breakpoints, and that
+ * the home -> issue page -> reader -> back round trip raises no console
+ * error (the cross-document View Transition opt-in bugfix).
  */
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+
+const { ISSUES } = require('../build/data/issues');
 
 const ROOT = path.resolve(__dirname, '..');
 const DB_PATH = path.join(ROOT, 'test', '.issue-page-playwright-test.db');
@@ -100,6 +105,72 @@ async function checkLookInsideClickOpensReader(browserType) {
   console.log('PASS - clicking a "look inside" item opens the reader at that exact spread (Spread 08 / 17)');
 }
 
+// Criterion 1: the hero cover's rendered box ratio stays within 1% of the
+// real source file's own ratio (from build/data/issues.js's heroCover
+// width/height), at every required breakpoint, never cropped.
+async function checkCoverRatioNeverCropped(browserType) {
+  const SIZES = [
+    { width: 375, height: 812 },
+    { width: 768, height: 1024 },
+    { width: 1440, height: 900 },
+    { width: 2560, height: 1440 },
+  ];
+  for (const issue of ISSUES) {
+    const sourceRatio = issue.heroCover.width / issue.heroCover.height;
+    for (const size of SIZES) {
+      const page = await browserType.newPage({ viewport: size });
+      await page.goto(`${BASE}/magazine/${issue.slug}`, { waitUntil: 'load' });
+      const info = await page.evaluate(() => {
+        const img = document.getElementById('issueCover');
+        const r = img.getBoundingClientRect();
+        return { w: r.width, h: r.height, objectFit: getComputedStyle(img).objectFit };
+      });
+      const boxRatio = info.w / info.h;
+      const deviation = Math.abs(boxRatio - sourceRatio) / sourceRatio * 100;
+      assert(deviation <= 1, `${issue.slug} at ${size.width}x${size.height}: hero cover box ratio (${boxRatio.toFixed(4)}) deviates ${deviation.toFixed(2)}% from the source ratio (${sourceRatio.toFixed(4)}), must be <=1%`);
+      assert(info.objectFit !== 'cover', `${issue.slug} at ${size.width}x${size.height}: hero cover must not use object-fit:cover`);
+      await page.close();
+    }
+  }
+  console.log('PASS - hero cover box ratio stays within 1% of the real source ratio on every issue page, at 375x812/768x1024/1440x900/2560x1440, never object-fit:cover');
+}
+
+// Criterion 3: no console error or pageerror on the full home -> issue page
+// -> reader -> back round trip, in Chromium (the ViewTransition opt-in bug).
+async function checkNoConsoleErrorsRoundTrip(browserType) {
+  const page = await browserType.newPage({ viewport: { width: 1440, height: 900 } });
+  const errors = [];
+  page.on('console', m => { if (m.type() === 'error' && !/502|Bad Gateway/.test(m.text())) errors.push('console: ' + m.text()); });
+  page.on('pageerror', e => errors.push('pageerror: ' + e.message));
+
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(2000);
+
+  const bloomCard = page.locator('a.card[href="/magazine/bloom"]');
+  await bloomCard.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(400);
+  await bloomCard.click();
+  await page.waitForTimeout(1500);
+
+  const readBtn = page.locator('a.btn', { hasText: 'Read the issue' });
+  await readBtn.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+  await readBtn.click();
+  await page.waitForTimeout(1500);
+
+  const magLink = page.locator('footer a[href="/magazine/bloom"]');
+  await magLink.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+  await magLink.click();
+  await page.waitForTimeout(1500);
+
+  assert(page.url().includes('/magazine/bloom'), `round trip ends back on the issue page — got ${page.url()}`);
+  assert(errors.length === 0, `no console errors on the round trip — got ${JSON.stringify(errors)}`);
+
+  await page.close();
+  console.log('PASS - home -> Bloom issue page -> reader -> back to the issue page: no console errors or pageerrors');
+}
+
 async function run() {
   cleanupFiles();
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -119,6 +190,8 @@ async function run() {
       await checkTileHoverAndFocus(browser);
       await checkSpreadClickOpensReader(browser);
       await checkLookInsideClickOpensReader(browser);
+      await checkCoverRatioNeverCropped(browser);
+      await checkNoConsoleErrorsRoundTrip(browser);
     } finally {
       await browser.close();
     }

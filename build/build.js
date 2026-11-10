@@ -133,6 +133,26 @@ function renderArchiveRows(issue) {
     </a>`).join('\n');
 }
 
+// The hero's own cover <picture>: when heroCover has a responsiveBase (only
+// Bloom, from its full-resolution master, see build/data/issues.js), AVIF
+// and WebP <source>s are generated at each responsiveWidths entry, the img
+// itself falling back to the largest JPEG. Without a responsiveBase, no
+// <source>s at all, just the single existing file as the img's plain src,
+// at its own real size, never upscaled.
+function renderHeroCoverSources(heroCover) {
+  if (!heroCover.responsiveBase) return '';
+  const { responsiveBase, responsiveWidths } = heroCover;
+  const srcset = ext => responsiveWidths.map(w => `${responsiveBase}-${w}.${ext} ${w}w`).join(', ');
+  return `        <source type="image/avif" srcset="${srcset('avif')}" sizes="(min-width:861px) 320px, 70vw">
+        <source type="image/webp" srcset="${srcset('webp')}" sizes="(min-width:861px) 320px, 70vw">`;
+}
+
+function heroCoverSrc(heroCover) {
+  if (!heroCover.responsiveBase) return heroCover.src;
+  const widest = heroCover.responsiveWidths[heroCover.responsiveWidths.length - 1];
+  return `${heroCover.responsiveBase}-${widest}.jpg`;
+}
+
 function injectIssuePage(html, issue) {
   const room = String(issue.number).padStart(2, '0');
   return html
@@ -142,10 +162,14 @@ function injectIssuePage(html, issue) {
     .split('{{ISSUE_LINE}}').join(issue.line)
     .split('{{ISSUE_COVER}}').join(issue.cover)
     .split('{{ISSUE_COVER_ALT}}').join(issue.coverAlt)
+    .split('{{ISSUE_HERO_COVER_SRC}}').join(heroCoverSrc(issue.heroCover))
+    .split('{{ISSUE_HERO_COVER_WIDTH}}').join(String(issue.heroCover.width))
+    .split('{{ISSUE_HERO_COVER_HEIGHT}}').join(String(issue.heroCover.height))
     .split('{{ISSUE_PDF}}').join(issue.pdf)
     .split('{{ISSUE_PEECHO}}').join(issue.peecho)
     .split('{{ISSUE_SPREADS_WORD}}').join(cap(issue.spreadsWord))
     .split('{{LOOK_INSIDE_LABEL}}').join(UNAPPROVED_COPY.lookInsideLabel)
+    .replace('        <!-- {{ISSUE_HERO_COVER_SOURCES}} -->', renderHeroCoverSources(issue.heroCover))
     .replace('    <!-- {{ISSUE_ARTIST_ROWS}} -->', renderArtistRows(issue))
     .replace('    <!-- {{ISSUE_LOOK_INSIDE}} -->', renderLookInside(issue))
     .replace('    <!-- {{ISSUE_ARCHIVE_ROWS}} -->', renderArchiveRows(issue));

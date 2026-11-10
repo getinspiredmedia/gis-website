@@ -27,6 +27,11 @@ const ROOT = path.resolve(__dirname, '..');
 // no extract: no further crop is correct for either.
 const JOBS = [
   { src: 'public/assets/covers/bloom.webp',        outDir: 'public/assets/responsive', base: 'bloom-cover',        widths: [375, 500, 750, 900, 1125] },
+  // The issue page's own hero cover (build/pages/issue.html), full-size and
+  // uncropped, from the full-resolution master instead of the small
+  // 500x707 bloom-cover.webp above (which stays the strip/OG/archive-row
+  // image, unchanged).
+  { src: 'public/assets/covers/bloom-master.jpg',  outDir: 'public/assets/responsive', base: 'bloom-cover-hero',   widths: [600, 900, 1200] },
   { src: 'public/assets/hero/bloom-hero-desktop.png', outDir: 'public/assets/responsive', base: 'bloom-hero-desktop', widths: [768, 1152, 1536] },
   { src: 'public/assets/hero/bloom-hero-mobile.png',  outDir: 'public/assets/responsive', base: 'bloom-hero-mobile',  widths: [512, 768, 1024] },
   { src: 'public/assets/covers/chasing-light.webp', outDir: 'public/assets/responsive', base: 'chasing-light-cover', widths: [250, 500] },

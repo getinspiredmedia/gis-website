@@ -90,7 +90,21 @@ async function run() {
 
       assert(html.includes(`data-reveal-group="hero">${issue.title}</h1>`), `${issue.slug}: hero title is "${issue.title}"`);
       assert(html.includes(`<p class="lede rv" data-reveal-group="hero">${issue.line}</p>`), `${issue.slug}: hero lede is the issue's own line`);
-      assert(html.includes(`src="${issue.cover}"`), `${issue.slug}: hero cover src is ${issue.cover}`);
+      // The hero's own cover (heroCover): for Bloom, the responsive srcset
+      // generated from its master; for the other three (no master), the
+      // existing cover file used as-is, no object-fit:cover cropping and
+      // real width/height attributes so the box takes the real ratio.
+      const hc = issue.heroCover;
+      if (hc.responsiveBase) {
+        const widest = hc.responsiveWidths[hc.responsiveWidths.length - 1];
+        assert(html.includes(`src="${hc.responsiveBase}-${widest}.jpg"`), `${issue.slug}: hero cover fallback src is the widest JPEG variant`);
+        assert(html.includes(`srcset="${hc.responsiveBase}-${hc.responsiveWidths[0]}.avif`), `${issue.slug}: hero cover has an AVIF srcset from the master`);
+      } else {
+        assert(html.includes(`src="${hc.src}"`), `${issue.slug}: hero cover src is ${hc.src}`);
+      }
+      assert(html.includes(`width="${hc.width}" height="${hc.height}"`), `${issue.slug}: hero cover carries its real width/height attributes (${hc.width}x${hc.height})`);
+      assert(!/\.i-cover\{[^}]*object-fit:\s*cover/.test(html), `${issue.slug}: .i-cover has no object-fit:cover rule (would crop the cover)`);
+      assert(!/\.i-cover\{[^}]*aspect-ratio/.test(html), `${issue.slug}: .i-cover has no hardcoded aspect-ratio (the box takes the real cover ratio instead)`);
       assert(html.includes(`view-transition-name:issue-${room}`), `${issue.slug}: hero cover carries view-transition-name:issue-${room}`);
       assert(html.includes(`data-reveal-group="hero">Issue ${room}</span>`), `${issue.slug}: eyebrow reads "Issue ${room}"`);
 
