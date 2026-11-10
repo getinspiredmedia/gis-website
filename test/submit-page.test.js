@@ -1,6 +1,6 @@
 'use strict';
 /*
- * /submit is the WONDER open call page (build/pages/submit.html ->
+ * /submit is the Wonder open call page (build/pages/submit.html ->
  * public/submit/index.html), a build-system page using the standard nav,
  * analytics and footer partials. This checks the generated
  * public/submit/index.html directly (no DOM runner in this repo), same
@@ -50,7 +50,7 @@ function run() {
 
   // 1. Literal content, section by section, word for word from the brief.
   const literalStrings = [
-    'Open Call: WONDER',
+    'Open Call: Wonder',
     'Free to enter',
     'Whatever made you stop and look twice.',
     'Deadline: 6 December 2026',
@@ -60,7 +60,7 @@ function run() {
     'Photographers, illustrators, digital artists, painters and mixed media makers from anywhere in the world. Emerging or established, it makes no difference. We look at the work, not the name.',
     "AI-assisted and AI-generated work is welcome. We only ask that you're open about how your work was made.",
     'Up to 3 works, plus one or two sentences about each piece.',
-    'Selected works will be featured twice: in the WONDER issue of Get Inspired Magazine, in print and online, and in a WONDER exhibition in the GIS digital gallery.',
+    'Selected works will be featured twice: in the Wonder issue of Get Inspired Magazine, in print and online, and in a Wonder exhibition in the GIS digital gallery.',
     'one work will be chosen for the cover. Its maker receives a free printed copy of the issue.',
     'three artists will be invited for an extended feature with a series of their work and an interview.',
     'All selected artists get 20% off the printed issue.',

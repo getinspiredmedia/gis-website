@@ -9,7 +9,7 @@
  * same email (only an active pending/approved submission should).
  *
  * The form itself moved from /submit to /on-view/submit when /submit
- * became the WONDER open call page (build/pages/submit.html, see
+ * became the Wonder open call page (build/pages/submit.html, see
  * CLAUDE.md and test/submit-page.test.js). On View is on hold, its
  * weekly form is reachable but no longer promoted. /submit/:token still
  * redirects to /submit unchanged (old shared links, archive-expiry mails):
@@ -112,7 +112,7 @@ async function run() {
     }).webp().toBuffer();
 
     // GET /on-view/submit loads without a token (moved off /submit, which
-    // is now the WONDER open call page, see test/submit-page.test.js)
+    // is now the Wonder open call page, see test/submit-page.test.js)
     {
       const r = await fetch(`${BASE}/on-view/submit`);
       assert(r.status === 200, `GET /on-view/submit responds 200 without a token — got ${r.status}`);

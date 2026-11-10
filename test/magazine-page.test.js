@@ -118,6 +118,35 @@ function run() {
   assert(!/community/i.test(rowBody), 'no "community" in the issue 05 row');
   console.log('PASS - no long dash or "community" in the new issue 05 row copy');
 
+  // Criterion 4: issue titles are always written in sentence case, never
+  // shouted in all caps, not even for a name that looks like an acronym
+  // ("Wonder", not "WONDER"). Checked two ways: the shared constant itself
+  // (the single place every "Wonder" occurrence on the site is drawn from),
+  // and a source-wide, case-sensitive scan for the literal string "WONDER"
+  // across build/ (templates, partials, data and config — the one place a
+  // future edit could reintroduce it) and public/ (the built output, so a
+  // stray hardcoded occurrence that bypasses pages.config.js is caught too).
+  assert(ISSUE_05_TITLE === 'Wonder', `ISSUE_05_TITLE is written in sentence case ("Wonder") — got "${ISSUE_05_TITLE}"`);
+  function listSourceFiles(dir, exts) {
+    const out = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || entry.name === 'vendor') continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) out.push(...listSourceFiles(full, exts));
+      else if (exts.some(ext => entry.name.endsWith(ext))) out.push(full);
+    }
+    return out;
+  }
+  const shoutOffenders = [];
+  for (const file of listSourceFiles(path.join(ROOT, 'build'), ['.html', '.js'])) {
+    if (fs.readFileSync(file, 'utf8').includes('WONDER')) shoutOffenders.push(path.relative(ROOT, file));
+  }
+  for (const file of listHtmlFiles(path.join(ROOT, 'public'))) {
+    if (fs.readFileSync(file, 'utf8').includes('WONDER')) shoutOffenders.push(path.relative(ROOT, file));
+  }
+  assert(shoutOffenders.length === 0, `the literal string "WONDER" (all caps) appears nowhere in build/ or public/ — got ${JSON.stringify(shoutOffenders)}`);
+  console.log('PASS - the issue title is "Wonder", never shouted as "WONDER", anywhere in build/ or the built public/ site');
+
   console.log('\nALL PASS');
 }
 

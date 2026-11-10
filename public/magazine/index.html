@@ -66,8 +66,10 @@ a{color:inherit;text-decoration:none}
 /* The issue 05 row is a real destination (links to /submit) like every
    other row, so it no longer gets the inert, non-blue-hover treatment a
    "nothing here yet" placeholder needed; only its cover slot stays a
-   centred text label instead of an image. */
-.row.next .cover{background:var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;transition:transform .45s var(--ease),color .35s}
+   centred text label instead of an image. No text-transform:uppercase
+   here (unlike most small labels on this page): this slot's text is the
+   issue title itself, and titles are always written in sentence case. */
+.row.next .cover{background:var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;letter-spacing:.14em;color:var(--muted);transition:transform .45s var(--ease),color .35s}
 .row.next:hover .cover{color:rgba(255,255,255,.75)}
 
 /* statement */
@@ -317,9 +319,9 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
 
     <a class="row next rv" href="/submit">
       <span class="no">No. 05</span>
-      <div><h3>WONDER</h3><p class="q">Whatever made you stop and look twice.</p></div>
+      <div><h3>Wonder</h3><p class="q">Whatever made you stop and look twice.</p></div>
       <p class="names">Free to enter. Deadline 6 December 2026.<br>Magazine and gallery launch: 15 January 2027</p>
-      <div class="cover">WONDER</div>
+      <div class="cover">Wonder</div>
     </a>
 
   </div>

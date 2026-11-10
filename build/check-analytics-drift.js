@@ -4,7 +4,7 @@
  * hand-maintained copy of build/partials/analytics.html's Plausible script
  * tags: public/on-view/index.html, public/work/index.html,
  * public/on-view/submit/index.html (the On View submission form, moved
- * off /submit when that path became the WONDER open call build page), and
+ * off /submit when that path became the Wonder open call build page), and
  * every magazine reader page (found by glob, see readers.js).
  * This guards against any of them silently
  * drifting from the partial — e.g. if the script hash, domain, or init

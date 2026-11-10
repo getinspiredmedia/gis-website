@@ -1,7 +1,7 @@
 'use strict';
 /*
  * The homepage (build/pages/index.html -> public/index.html) is a static
- * showcase for the issues, the gallery and the WONDER open call: a Bloom
+ * showcase for the issues, the gallery and the Wonder open call: a Bloom
  * cold-open hero, a five-card issue strip, one blue statement, an exhibition
  * band and the doors. This checks the generated public/index.html directly
  * (no DOM runner in this repo): the five issue cards and their hrefs, that
@@ -12,8 +12,8 @@
  *
  * The issue 05 card and the "To be seen" door use ISSUE_CALL_URL,
  * ISSUE_CALL_CARD_LINE and ISSUE_CALL_DOOR_LINE from build/pages.config.js,
- * not a hardcoded link or claim. Since the WONDER open call opened on 9
- * November 2026, ISSUE_CALL_URL points at /submit (the WONDER open call
+ * not a hardcoded link or claim. Since the Wonder open call opened on 9
+ * November 2026, ISSUE_CALL_URL points at /submit (the Wonder open call
  * page, build/pages/submit.html) and the copy states the real deadline.
  * Swapping all three in that one file is how a future open call replaces
  * this one.
@@ -70,7 +70,7 @@ console.log('PASS - both doors are whole-door links, with no separate button ins
 
 // Nothing on the page links to /on-view: the homepage no longer promotes
 // the On View wall at all. It does link to /submit now (ISSUE_CALL_URL,
-// the WONDER open call page, since 9 November 2026): that is deliberate,
+// the Wonder open call page, since 9 November 2026): that is deliberate,
 // not the thing this check used to guard against.
 assert(!/href="\/on-view"/.test(html), 'no link on the homepage points at /on-view');
 console.log('PASS - no link on the homepage points at /on-view');

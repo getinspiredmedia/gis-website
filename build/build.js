@@ -67,7 +67,7 @@ function injectIssueCallUrl(html) {
     .split('{{ISSUE_05_LAUNCH_LINE}}').join(ISSUE_05_LAUNCH_LINE);
 }
 
-// The WONDER open call's Tally form link (see pages.config.js), used only
+// The Wonder open call's Tally form link (see pages.config.js), used only
 // by build/pages/submit.html. Aborting the build on a malformed value is
 // cheaper than shipping a submit page whose three buttons silently go
 // nowhere useful. Two checks, not one: the shape must be a real Tally

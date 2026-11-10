@@ -37,6 +37,7 @@
     "test:issue-pages": "node test/issue-pages.test.js",
     "test:issue-page-playwright": "node test/issue-page.playwright.test.js",
     "test:magazine-page": "node test/magazine-page.test.js",
+    "test:issue-title-casing": "node test/issue-title-casing.playwright.test.js",
     "start": "exec node server.js"
   },
   "engines": {
