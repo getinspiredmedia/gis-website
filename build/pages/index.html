@@ -143,6 +143,27 @@ a{color:inherit;text-decoration:none}
 .corr-work img{display:block;width:100%;height:auto;border:8px solid #fff;box-shadow:0 20px 50px rgba(0,0,0,.5)}
 .corr-work .plaque{font-size:12px;letter-spacing:.04em;color:rgba(255,255,255,.62)}
 .corr-work .plaque b{display:block;margin-bottom:2px;color:#fff;font-size:14px;font-weight:600;letter-spacing:-.01em}
+
+/* Loading scrim (JS-added .corridor--js-lazy on #corridor, see the
+   lazy-load script below): a dimmed band-coloured panel fills the frame
+   until that work's image has decoded, the plaque stays readable the
+   whole time (it's a figcaption sibling, outside this picture, never
+   touched here). A 404 or a decode slower than the 4000ms timeout simply
+   never gets .is-loaded, so the panel+plaque stay in place for good,
+   never an empty black frame or a broken-image icon. Without JS this
+   block never applies: the plain src/srcset above is the only fallback
+   and shows the image itself, as always. */
+.corridor--js-lazy .corr-work picture{position:relative;display:block}
+.corridor--js-lazy .corr-work .corr-scrim{position:absolute;inset:0;background:var(--band);opacity:1;transition:opacity .3s}
+.corridor--js-lazy .corr-work.is-loaded .corr-scrim{opacity:0;pointer-events:none}
+.corridor--js-lazy .corr-work img{opacity:0;transition:opacity .3s}
+.corridor--js-lazy .corr-work.is-loaded img{opacity:1}
+/* The door has no separate scrim panel: its own --band background and
+   warm glow (.corridor-door-media, ::after below) already serve that
+   role, so only the image itself needs the same fade-in. */
+.corridor--js-lazy .corridor-door-media img{opacity:0;transition:opacity .3s}
+.corridor--js-lazy .corridor-door.is-loaded .corridor-door-media img{opacity:1}
+
 .corridor-door{background:var(--ink);display:grid;grid-template-columns:1fr}
 .corridor-door-media{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--band)}
 .corridor-door-media picture,.corridor-door-media img{position:absolute;left:0;top:-12%;width:100%;height:124%;object-fit:cover}
@@ -327,7 +348,7 @@ a{color:inherit;text-decoration:none}
           <picture>
             <source type="image/avif" srcset="/assets/responsive/bloom-exhibition-500.avif 500w, /assets/responsive/bloom-exhibition-697.avif 697w" sizes="(min-width:861px) 55vw, 100vw">
             <source type="image/webp" srcset="/assets/responsive/bloom-exhibition-500.webp 500w, /assets/responsive/bloom-exhibition-697.webp 697w" sizes="(min-width:861px) 55vw, 100vw">
-            <img src="/assets/responsive/bloom-exhibition-697.jpg" srcset="/assets/responsive/bloom-exhibition-500.jpg 500w, /assets/responsive/bloom-exhibition-697.jpg 697w" sizes="(min-width:861px) 55vw, 100vw" alt="Artwork by Dina Belenko from issue 04, Bloom" loading="eager" decoding="async" width="697" height="392">
+            <img src="/assets/responsive/bloom-exhibition-697.jpg" srcset="/assets/responsive/bloom-exhibition-500.jpg 500w, /assets/responsive/bloom-exhibition-697.jpg 697w" sizes="(min-width:861px) 55vw, 100vw" alt="Artwork by Dina Belenko from issue 04, Bloom" loading="lazy" decoding="async" width="697" height="392">
           </picture>
         </div>
         <div class="corridor-door-copy rv" data-reveal-group="corridor-door">
@@ -519,6 +540,89 @@ document.addEventListener('gis-motion:ready', function () {
     };
   });
 
+  // Corridor image loading: shared by every variant (3D, row, and the
+  // no-JS default), set up once outside matchMedia so a resize across the
+  // 860px breakpoint never re-triggers it. The five works' and the door's
+  // img/source elements keep their real src/srcset in the markup
+  // (loading="lazy", see build/build.js and the door figure above) so a
+  // visitor without JS
+  // still gets working images via the browser's own native lazy loading,
+  // completely untouched by anything below. With JS, this block takes over
+  // instead: it moves each real src/srcset into a data- attribute and
+  // clears the live one before the browser can act on it, then only
+  // restores them once an IntersectionObserver reports the corridor is
+  // within 1.5 viewport heights (rootMargin below), so no corridor image
+  // request fires before then. Each frame shows a dimmed, band-coloured
+  // scrim (plus the always-visible plaque) until its own image has
+  // decoded, then fades the real image in over 300ms; a decode error or a
+  // decode slower than 4000ms simply leaves that one frame's scrim in
+  // place for good, the rest of the corridor keeps working regardless.
+  (function () {
+    var corridor = document.getElementById('corridor');
+    if (!corridor) return;
+    var frames = Array.prototype.slice.call(corridor.querySelectorAll('.corr-work, .corridor-door'));
+    if (!frames.length) return;
+
+    frames.forEach(function (frame) {
+      var img = frame.querySelector('img');
+      if (!img || !img.getAttribute('src')) return;
+      img.dataset.src = img.getAttribute('src');
+      img.removeAttribute('src');
+      if (img.getAttribute('srcset')) {
+        img.dataset.srcset = img.getAttribute('srcset');
+        img.removeAttribute('srcset');
+      }
+      Array.prototype.slice.call(frame.querySelectorAll('picture source')).forEach(function (source) {
+        source.dataset.srcset = source.getAttribute('srcset');
+        source.removeAttribute('srcset');
+      });
+    });
+    corridor.classList.add('corridor--js-lazy');
+
+    function loadFrame(frame) {
+      var img = frame.querySelector('img');
+      if (!img || !img.dataset.src) return;
+      // loading="lazy" is still on the img element from the markup; left
+      // in place, restoring src/srcset here would just hand the fetch back
+      // to the browser's own native lazy-load heuristic, with its own,
+      // different proximity threshold, instead of actually starting it
+      // now the way this IntersectionObserver already decided to.
+      img.loading = 'eager';
+      Array.prototype.slice.call(frame.querySelectorAll('picture source')).forEach(function (source) {
+        if (source.dataset.srcset) source.setAttribute('srcset', source.dataset.srcset);
+      });
+      if (img.dataset.srcset) img.setAttribute('srcset', img.dataset.srcset);
+      img.setAttribute('src', img.dataset.src);
+      delete img.dataset.src;
+      delete img.dataset.srcset;
+
+      var settled = false;
+      var timer = setTimeout(function () { settled = true; }, 4000);
+      function reveal() {
+        if (settled) return; // past the 4000ms timeout: leave the scrim+plaque in place for good
+        settled = true;
+        clearTimeout(timer);
+        frame.classList.add('is-loaded');
+      }
+      if (img.complete && img.naturalWidth > 0) { reveal(); return; }
+      if (typeof img.decode === 'function') img.decode().then(reveal).catch(function () {});
+      else img.addEventListener('load', reveal);
+      // A load/decode error (404 included) never calls reveal, so the
+      // scrim and plaque simply stay; nothing else to do here.
+    }
+
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        if (!entries.some(function (e) { return e.isIntersecting; })) return;
+        io.disconnect();
+        frames.forEach(loadFrame);
+      }, { rootMargin: '150% 0px 150% 0px' });
+      io.observe(corridor);
+    } else {
+      frames.forEach(loadFrame);
+    }
+  }());
+
   // Corridor ("the gang"): desktop gets a pinned CSS-3D walk past the five
   // Bloom works, ending at a door that grows to fullscreen. Mobile and
   // reduced motion both get the plain .corridor--row horizontal scroll-snap
@@ -585,7 +689,6 @@ document.addEventListener('gis-motion:ready', function () {
       var restX = (isLeft ? -1 : 1) * SLOT_X_FRACTION[slot] * innerWidth;
       return {
         el: el,
-        img: el.querySelector('img'),
         spot: el.querySelector('.spot'),
         floor: el.querySelector('.floor'),
         plaque: el.querySelector('.plaque'),
@@ -595,23 +698,6 @@ document.addEventListener('gis-motion:ready', function () {
         passRot: (isLeft ? 1 : -1) * PASS_ROT,
       };
     });
-
-    // Every work loaded and decoded before the pin can do anything: the
-    // images are loading="eager" (set server-side, see build/build.js), so
-    // by the time a visitor has scrolled down past the hero/strip/statement
-    // to reach the corridor these have almost always already resolved;
-    // decode() is called regardless, with a short fallback so a slow image
-    // never blocks the walk indefinitely.
-    function decodeAll() {
-      var promises = state.map(function (s) {
-        if (!s.img || typeof s.img.decode !== 'function') return Promise.resolve();
-        return s.img.decode().catch(function () {});
-      });
-      return Promise.race([
-        Promise.all(promises),
-        new Promise(function (resolve) { setTimeout(resolve, 1200); }),
-      ]);
-    }
 
     function setWork(s, cameraZ) {
       var effZ = s.baseZ + cameraZ;
@@ -679,30 +765,31 @@ document.addEventListener('gis-motion:ready', function () {
     setWorks(0);
     setDoor(0);
 
-    var st; // set once decodeAll() resolves
-    var cancelled = false;
-    decodeAll().then(function () {
-      if (cancelled) return; // matchMedia context already torn down (e.g. a resize mid-decode)
-      st = ScrollTrigger.create({
-        trigger: pin,
-        start: 'top top',
-        end: '+=' + Math.round(innerHeight * 3.5),
-        scrub: true,
-        pin: true,
-        onUpdate: function (self) {
-          var cameraZ = Math.min(self.progress / DOOR_AT, 1) * totalDepth;
-          setWorks(cameraZ);
-          setDoor(self.progress);
-          if (fill) fill.style.width = (self.progress * 100) + '%';
-        },
-        onLeave: function () { setWorks(totalDepth); setDoor(1); },
-        onLeaveBack: function () { setWorks(0); setDoor(0); },
-      });
+    // The pin exists from the moment this callback runs, exactly like the
+    // issue strip's own ScrollTrigger above: it never waits on image
+    // decoding (that's handled separately, see the lazy-load block below,
+    // which only fades individual frames in/out and never touches the
+    // pin's existence or scroll range). A visitor who scrolls fast on a
+    // slow connection always finds the pin already in place, so the page
+    // never jumps and the walk never silently fails to start.
+    var st = ScrollTrigger.create({
+      trigger: pin,
+      start: 'top top',
+      end: '+=' + Math.round(innerHeight * 3.5),
+      scrub: true,
+      pin: true,
+      onUpdate: function (self) {
+        var cameraZ = Math.min(self.progress / DOOR_AT, 1) * totalDepth;
+        setWorks(cameraZ);
+        setDoor(self.progress);
+        if (fill) fill.style.width = (self.progress * 100) + '%';
+      },
+      onLeave: function () { setWorks(totalDepth); setDoor(1); },
+      onLeaveBack: function () { setWorks(0); setDoor(0); },
     });
 
     return function () {
-      cancelled = true;
-      if (st) st.kill();
+      st.kill();
       corridor.classList.remove('corridor--3d');
       state.forEach(function (s) {
         s.el.style.transform = '';
