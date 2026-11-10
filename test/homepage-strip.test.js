@@ -43,6 +43,13 @@
  * Runs in Chromium at every size in "SIZES" below, always; Firefox and
  * WebKit too if their Playwright browser binaries are installed in this
  * environment (skipped, not failed, otherwise).
+ *
+ * Also covers a separate bugfix: the strip's covers used to crop via
+ * object-fit:cover inside a hardcoded aspect-ratio:3/4 box, cutting off
+ * the logo/issue-number footer on every cover (whose real ratio is
+ * 500/707, not 3/4). checkStripCoversNeverCropped asserts every card's box
+ * ratio stays within 1% of 500/707, and that no cover <img> still has
+ * object-fit:cover, at 375x812 and 1440x900 (Chromium only).
  */
 const { spawn } = require('child_process');
 const path = require('path');
@@ -245,6 +252,34 @@ async function checkSize(browserType, label, size) {
   console.log(`PASS - ${label}: 0..${expectedCardCount - 1} in order both directions, hover/focus override and release correctly, no console errors`);
 }
 
+// Each strip cover's real file ratio is 500/707 (every <img> here carries
+// width="500" height="707"); the box must take that same ratio (no
+// object-fit:cover left to crop it), within 1%, at the two sizes named in
+// the task brief. The empty issue-05 card shares .card's own aspect-ratio
+// (no image of its own), so it's checked the same way via its box rect.
+async function checkStripCoversNeverCropped(browserType) {
+  const REAL_RATIO = 500 / 707;
+  const SIZES = [{ width: 375, height: 812 }, { width: 1440, height: 900 }];
+  for (const size of SIZES) {
+    const page = await browserType.newPage({ viewport: size });
+    await page.goto(BASE + '/', { waitUntil: 'load' });
+    await page.waitForTimeout(300);
+    const info = await page.evaluate(() => Array.from(document.querySelectorAll('.card')).map(c => {
+      const r = c.getBoundingClientRect();
+      const img = c.querySelector('img');
+      return { w: r.width, h: r.height, objectFit: img ? getComputedStyle(img).objectFit : null, isEmpty: c.classList.contains('is-empty') };
+    }));
+    info.forEach((card, i) => {
+      const boxRatio = card.w / card.h;
+      const deviation = Math.abs(boxRatio - REAL_RATIO) / REAL_RATIO * 100;
+      assert(deviation <= 1, `${size.width}x${size.height} card ${i}: box ratio (${boxRatio.toFixed(4)}) deviates ${deviation.toFixed(2)}% from the real cover ratio (${REAL_RATIO.toFixed(4)}), must be <=1%`);
+      if (!card.isEmpty) assert(card.objectFit !== 'cover', `${size.width}x${size.height} card ${i}: cover <img> must not use object-fit:cover`);
+    });
+    await page.close();
+  }
+  console.log('PASS - every strip card (including the empty issue-05 card) takes the real 500/707 cover ratio within 1%, at 375x812 and 1440x900, no object-fit:cover left on a cover <img>');
+}
+
 async function runInBrowser(browserType, label) {
   let launched;
   try {
@@ -276,6 +311,13 @@ async function run() {
     await runInBrowser(chromium, 'chromium');
     await runInBrowser(firefox, 'firefox');
     await runInBrowser(webkit, 'webkit');
+
+    const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+    try {
+      await checkStripCoversNeverCropped(browser);
+    } finally {
+      await browser.close();
+    }
 
     console.log('\nALL PASS');
   } finally {

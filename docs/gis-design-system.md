@@ -131,7 +131,11 @@ A build-system page since 10 November 2026 (`build/pages/issue.html`, one templa
 
 **`/magazine`'s issue 05 row, corrected (bugfix):** it used to show stale, self-written placeholder copy ("January" / "The theme goes out with the open call on 1 November." / "Five places, still open." / "Not yet") that stopped being true the moment Wonder opened on 9 November 2026. It now reuses `/submit`'s own existing copy exactly, via three new `build/pages.config.js` constants (`ISSUE_05_TITLE` = "Wonder", `ISSUE_05_STATEMENT` = "Whatever made you stop and look twice.", `ISSUE_05_LAUNCH_LINE` = "Magazine and gallery launch: 15 January 2027"), alongside the existing `ISSUE_CALL_URL`/`CARD_LINE`/`DOOR_LINE`: "No. 05" / title / statement / `ISSUE_CALL_CARD_LINE` + launch line / title again as a text-only cover slot. The row is now a real link (`<a href="{{ISSUE_CALL_URL}}">`) like every other archive row, no longer styled as inert. `/submit` itself is untouched; all six constants swap together in `build/pages.config.js` the moment this call closes or the next one replaces it.
 
-**New copy pending approval:** the "Look inside" section's eyebrow label doesn't appear anywhere else on the site. It's held as `UNAPPROVED_COPY.lookInsideLabel` in `build/data/issues.js` with an explicit comment; the build does not fail on it, but `test/issue-pages.test.js` reports it on every run until it's approved or replaced.
+**André's decisions on the issue page, approved:** four things that started as open questions or pending-approval copy on the issue page are now final, not to be revisited without a new decision:
+1. The "Look inside" section's eyebrow label. Approved; it now lives as the plain `LOOK_INSIDE_LABEL` constant in `build/data/issues.js`, not in `UNAPPROVED_COPY` (that mechanism stays in the file, empty, for the next piece of copy that needs sign-off).
+2. `?spread=N` is the official way to link to a specific spread (e.g. `/magazine/bloom?spread=5`), not a placeholder convention.
+3. The three button labels are final: "Read the issue", "Download the PDF", "Order a print".
+4. An artist row (and its matching "Look inside" tile) always opens the reader at that artist's own spread.
 
 **Open decision — `/on-view` (resolve before building)**
 

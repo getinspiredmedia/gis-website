@@ -96,9 +96,14 @@ a{color:inherit;text-decoration:none}
 .strip-head .meta{display:block;margin-top:14px;font-size:12px;color:rgba(255,255,255,.6)}
 .strip-pin{position:relative;height:100svh;min-height:520px;display:flex;align-items:center;overflow:hidden;margin-top:40px}
 .strip-track{display:flex;align-items:center;gap:clamp(28px,5vw,64px);padding:0 10vw;will-change:transform}
-.card{position:relative;flex:0 0 auto;width:min(60vw,320px);aspect-ratio:3/4;filter:grayscale(1) brightness(.85);transform:scale(.82);transition:filter .5s var(--ease),transform .5s var(--ease)}
+/* 500/707 is the real ratio of every cover file this strip uses (every
+   cover image already carries width="500" height="707"), not the old
+   hardcoded 3/4: with the box ratio matching the image ratio exactly, no
+   object-fit:cover is needed to fill it, so none is left on the cover
+   image below to crop anything. */
+.card{position:relative;flex:0 0 auto;width:min(60vw,320px);aspect-ratio:500/707;filter:grayscale(1) brightness(.85);transform:scale(.82);transition:filter .5s var(--ease),transform .5s var(--ease)}
 .card.is-active{filter:none;transform:scale(1)}
-.card picture,.card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:var(--band)}
+.card picture,.card img{position:absolute;inset:0;width:100%;height:100%;background:var(--band)}
 .card .num{position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);z-index:-1;font-size:clamp(7rem,22vw,14rem);font-weight:700;font-variation-settings:'wdth' 125;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.9);text-stroke:2px rgba(255,255,255,.9);opacity:0;transition:opacity .5s var(--ease);pointer-events:none}
 .card.is-active .num{opacity:1}
 .card-label{position:absolute;left:0;right:0;bottom:0;padding:14px 16px;font-size:12px;letter-spacing:.04em;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.72))}

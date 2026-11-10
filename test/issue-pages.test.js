@@ -12,14 +12,16 @@
  *      a bare /magazine/<slug> serves the issue page, not a redirect;
  *   5. the reader's footer "Magazine" link (its "Close", see CLAUDE.md)
  *      points back at its own issue page, not the generic archive;
- *   6. the pending-approval new-copy marker is reported, not silently lost.
+ *   6. any pending-approval new copy (build/data/issues.js's
+ *      UNAPPROVED_COPY) is reported, not silently lost, if the mechanism
+ *      is ever used again.
  */
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const vm = require('vm');
 
-const { ISSUES, UNAPPROVED_COPY } = require('../build/data/issues');
+const { ISSUES, LOOK_INSIDE_LABEL, UNAPPROVED_COPY } = require('../build/data/issues');
 
 const ROOT = path.resolve(__dirname, '..');
 const DB_PATH = path.join(ROOT, 'test', '.issue-pages-test.db');
@@ -134,7 +136,7 @@ async function run() {
         assert(html.includes(`href="/magazine/${o.slug}"`), `${issue.slug}: archive row links to /magazine/${o.slug}`);
       });
 
-      assert(html.includes(UNAPPROVED_COPY.lookInsideLabel), `${issue.slug}: the pending-approval "Look inside" label is present on the page`);
+      assert(html.includes(LOOK_INSIDE_LABEL), `${issue.slug}: the approved "Look inside" label is present on the page`);
 
       // Checked against the visible text only (HTML comments and script
       // bodies stripped first) — pre-existing shared partials (nav,
@@ -150,7 +152,12 @@ async function run() {
       assert(!visibleText.includes('Get Inspired Magazine'), `${issue.slug}: "Get Inspired Magazine" is not in the visible text`);
     }
     console.log('PASS - all four issue pages: title/line/cover/eyebrow, three buttons with the reader\'s own exact labels, five artist rows linking to their own spread, exactly one statement, OG tags, archive links to the other three issues, no long dash/"community"/"Get Inspired Magazine"');
-    console.log(`REPORTED (pending approval, see build/data/issues.js UNAPPROVED_COPY): lookInsideLabel = ${JSON.stringify(UNAPPROVED_COPY.lookInsideLabel)}`);
+    const pendingKeys = Object.keys(UNAPPROVED_COPY);
+    if (pendingKeys.length > 0) {
+      console.log(`REPORTED (pending approval, see build/data/issues.js UNAPPROVED_COPY): ${JSON.stringify(UNAPPROVED_COPY)}`);
+    } else {
+      console.log('PASS - no pending-approval copy in build/data/issues.js UNAPPROVED_COPY');
+    }
 
     // ── 3: data source vs. reader consistency ──────────────────────────────
     for (const issue of ISSUES) {

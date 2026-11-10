@@ -120,13 +120,17 @@ const ISSUES = [
   },
 ];
 
+// "Look inside" (the issue page's spread-strip heading) was new copy
+// pending André's approval; now approved, so it lives here as a plain
+// constant like any other copy, not in UNAPPROVED_COPY below.
+const LOOK_INSIDE_LABEL = 'Look inside';
+
 // NEW COPY — not anywhere on the site yet (not in any reader, the archive,
-// or the homepage). Needs André's approval; see the task's Eindrapport.
+// or the homepage). Needs André's approval before it's used anywhere.
 // The build does not fail on this (see build/build.js), but
 // test/issue-pages.test.js reports it on every run so it stays visible
-// until it's either approved or replaced.
-const UNAPPROVED_COPY = {
-  lookInsideLabel: 'Look inside',
-};
+// until it's either approved or replaced. Currently empty: nothing is
+// pending approval, but the mechanism stays in place for next time.
+const UNAPPROVED_COPY = {};
 
-module.exports = { ISSUES, UNAPPROVED_COPY };
+module.exports = { ISSUES, LOOK_INSIDE_LABEL, UNAPPROVED_COPY };

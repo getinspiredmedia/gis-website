@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE, ISSUE_05_TITLE, ISSUE_05_STATEMENT, ISSUE_05_LAUNCH_LINE, TALLY_URL } = require('./pages.config');
 const { CORRIDOR_ARTISTS } = require('./corridor-artists');
-const { ISSUES, UNAPPROVED_COPY } = require('./data/issues');
+const { ISSUES, LOOK_INSIDE_LABEL } = require('./data/issues');
 
 const ROOT = path.resolve(__dirname, '..');
 const PARTIALS = path.join(__dirname, 'partials');
@@ -172,7 +172,7 @@ function injectIssuePage(html, issue) {
     .split('{{ISSUE_PDF}}').join(issue.pdf)
     .split('{{ISSUE_PEECHO}}').join(issue.peecho)
     .split('{{ISSUE_SPREADS_WORD}}').join(cap(issue.spreadsWord))
-    .split('{{LOOK_INSIDE_LABEL}}').join(UNAPPROVED_COPY.lookInsideLabel)
+    .split('{{LOOK_INSIDE_LABEL}}').join(LOOK_INSIDE_LABEL)
     .replace('        <!-- {{ISSUE_HERO_COVER_SOURCES}} -->', renderHeroCoverSources(issue.heroCover))
     .replace('    <!-- {{ISSUE_ARTIST_ROWS}} -->', renderArtistRows(issue))
     .replace('    <!-- {{ISSUE_LOOK_INSIDE}} -->', renderLookInside(issue))
