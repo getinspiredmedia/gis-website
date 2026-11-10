@@ -1,7 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE, TALLY_URL } = require('./pages.config');
+const { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE, ISSUE_05_TITLE, ISSUE_05_STATEMENT, ISSUE_05_LAUNCH_LINE, TALLY_URL } = require('./pages.config');
 const { CORRIDOR_ARTISTS } = require('./corridor-artists');
 const { ISSUES, UNAPPROVED_COPY } = require('./data/issues');
 
@@ -53,14 +53,18 @@ function injectAnalytics(html) {
   return html.replace('<!-- @include: analytics -->', partial);
 }
 
-// The issue 05 open call's link and copy (see pages.config.js) — only the
-// homepage references these tokens. All three are swapped together, in
-// pages.config.js alone, once the real form exists.
+// The issue 05 open call's link and copy (see pages.config.js) — the
+// homepage and /magazine's issue-05 archive row both reference these
+// tokens. All six are swapped together, in pages.config.js alone, once the
+// next open call replaces this one.
 function injectIssueCallUrl(html) {
   return html
     .split('{{ISSUE_CALL_URL}}').join(ISSUE_CALL_URL)
     .split('{{ISSUE_CALL_CARD_LINE}}').join(ISSUE_CALL_CARD_LINE)
-    .split('{{ISSUE_CALL_DOOR_LINE}}').join(ISSUE_CALL_DOOR_LINE);
+    .split('{{ISSUE_CALL_DOOR_LINE}}').join(ISSUE_CALL_DOOR_LINE)
+    .split('{{ISSUE_05_TITLE}}').join(ISSUE_05_TITLE)
+    .split('{{ISSUE_05_STATEMENT}}').join(ISSUE_05_STATEMENT)
+    .split('{{ISSUE_05_LAUNCH_LINE}}').join(ISSUE_05_LAUNCH_LINE);
 }
 
 // The WONDER open call's Tally form link (see pages.config.js), used only
@@ -129,7 +133,7 @@ function renderArchiveRows(issue) {
   return ISSUES.filter(i => i.slug !== issue.slug).map(i => `    <a class="i-row rv" href="/magazine/${i.slug}" data-cursor="Read">
       <span class="no">No. ${room(i.number)}</span>
       <div><h2>${i.title}</h2><p class="q">${i.line}</p></div>
-      <img class="cover" src="${i.cover}" alt="${i.coverAlt}" loading="lazy" decoding="async" style="view-transition-name:issue-${room(i.number)}">
+      <img class="cover" src="${i.cover}" alt="${i.coverAlt}" loading="lazy" decoding="async" width="500" height="707" style="view-transition-name:issue-${room(i.number)}">
     </a>`).join('\n');
 }
 

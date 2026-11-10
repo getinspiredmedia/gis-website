@@ -8,6 +8,18 @@ const ISSUE_CALL_URL = '/submit';
 const ISSUE_CALL_CARD_LINE = 'Free to enter. Deadline 6 December 2026.';
 const ISSUE_CALL_DOOR_LINE = 'Free to enter. Deadline 6 December 2026.';
 
+// The issue 05 archive row on /magazine (build/pages/magazine.html) reuses
+// these, copied verbatim from build/pages/submit.html (its eyebrow's
+// "WONDER", its hero statement, and its closing section's launch line), so
+// that row can never drift out of date the way its old placeholder text
+// did. Not used by submit.html itself (its own copy is left exactly as
+// written, see CLAUDE.md), only by the /magazine row; swap all of these
+// (plus ISSUE_CALL_URL/CARD_LINE/DOOR_LINE above) together the moment this
+// call closes or a new one replaces it.
+const ISSUE_05_TITLE = 'WONDER';
+const ISSUE_05_STATEMENT = 'Whatever made you stop and look twice.';
+const ISSUE_05_LAUNCH_LINE = 'Magazine and gallery launch: 15 January 2027';
+
 // The Tally form WONDER submissions go through, André's real one (live
 // since the open call launched 9 November 2026). build/build.js checks
 // this against a strict pattern (a real /r/<id> link, no leftover
@@ -70,4 +82,4 @@ const pages = [
   },
 ];
 
-module.exports = { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE, TALLY_URL };
+module.exports = { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE, ISSUE_05_TITLE, ISSUE_05_STATEMENT, ISSUE_05_LAUNCH_LINE, TALLY_URL };

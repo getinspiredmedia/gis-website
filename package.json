@@ -36,6 +36,7 @@
     "test:mail-escaping": "node test/mail-escaping.test.js",
     "test:issue-pages": "node test/issue-pages.test.js",
     "test:issue-page-playwright": "node test/issue-page.playwright.test.js",
+    "test:magazine-page": "node test/magazine-page.test.js",
     "start": "exec node server.js"
   },
   "engines": {

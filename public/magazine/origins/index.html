@@ -116,7 +116,13 @@ a{color:inherit;text-decoration:none}
 .i-row .no{font-size:11px;letter-spacing:.2em;color:var(--muted);transition:color .35s}
 .i-row h2{font-weight:700;line-height:1;letter-spacing:-.02em;font-variation-settings:'wdth' 112;font-size:clamp(1.3rem,2.8vw,2rem)}
 .i-row .q{margin-top:6px;font-size:14px;color:var(--muted);transition:color .35s}
-.i-row .cover{aspect-ratio:3/4;background:var(--line);width:100%;object-fit:cover;transition:transform .45s var(--ease)}
+/* No aspect-ratio/object-fit here either (see .i-cover above): the real
+   width/height attributes (all four covers are 500x707) plus height:auto
+   give the real ratio, never cropped. The grid column itself (86px, see
+   .i-row above) stays fixed, so every thumbnail still lines up neatly;
+   since all four covers share the same ratio their rendered heights come
+   out identical anyway. */
+.i-row .cover{width:100%;height:auto;background:var(--line);transition:transform .45s var(--ease)}
 .i-row:hover{background:var(--blue);color:#fff}
 .i-row:hover .no,.i-row:hover .q{color:rgba(255,255,255,.75)}
 .i-row:hover .cover{transform:translateY(-6px) scale(1.06)}
@@ -361,17 +367,17 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
     <a class="i-row rv" href="/magazine/no-algorithm" data-cursor="Read">
       <span class="no">No. 02</span>
       <div><h2>No Algorithm</h2><p class="q">Before the feed. Before the scroll. There is attention.</p></div>
-      <img class="cover" src="/assets/covers/no-algorithm.webp" alt="Cover of Get Inspired Society, Issue 2, No Algorithm." loading="lazy" decoding="async" style="view-transition-name:issue-02">
+      <img class="cover" src="/assets/covers/no-algorithm.webp" alt="Cover of Get Inspired Society, Issue 2, No Algorithm." loading="lazy" decoding="async" width="500" height="707" style="view-transition-name:issue-02">
     </a>
     <a class="i-row rv" href="/magazine/chasing-light" data-cursor="Read">
       <span class="no">No. 03</span>
       <div><h2>Chasing Light</h2><p class="q">The same sun. Never the same light.</p></div>
-      <img class="cover" src="/magazine/chasing-light/assets/covers/chasing-light.webp" alt="Cover of Get Inspired Society, Issue 3, Chasing Light." loading="lazy" decoding="async" style="view-transition-name:issue-03">
+      <img class="cover" src="/magazine/chasing-light/assets/covers/chasing-light.webp" alt="Cover of Get Inspired Society, Issue 3, Chasing Light." loading="lazy" decoding="async" width="500" height="707" style="view-transition-name:issue-03">
     </a>
     <a class="i-row rv" href="/magazine/bloom" data-cursor="Read">
       <span class="no">No. 04</span>
       <div><h2>Bloom</h2><p class="q">Nothing opens on command.</p></div>
-      <img class="cover" src="/assets/covers/bloom.webp" alt="Cover of Bloom, Issue 4: tulips rising from a lit drawer beneath the shadow of a crown. Photograph by Dina Belenko." loading="lazy" decoding="async" style="view-transition-name:issue-04">
+      <img class="cover" src="/assets/covers/bloom.webp" alt="Cover of Bloom, Issue 4: tulips rising from a lit drawer beneath the shadow of a crown. Photograph by Dina Belenko." loading="lazy" decoding="async" width="500" height="707" style="view-transition-name:issue-04">
     </a>
   </div>
 </section>
