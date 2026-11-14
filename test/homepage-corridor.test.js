@@ -398,9 +398,9 @@ async function checkMobile(browserType) {
 // The door's end image is a real screenshot of the Bloom room in the
 // gis-gallery virtual gallery (public/assets/gallery/room-bloom.png), not
 // the old bloom-exhibition crop (a piece of Dina Belenko's own artwork) or
-// gallery-poster.webp (used on /gallery, not here). One shared markup
-// block for the door across all corridor variants (3D/row/reduced-motion/
-// no-JS), so checking it once at a normal desktop size covers all of them.
+// the now-removed gallery-poster.webp. One shared markup block for the
+// door across all corridor variants (3D/row/reduced-motion/no-JS), so
+// checking it once at a normal desktop size covers all of them.
 async function checkDoorUsesRoomBloom(browserType) {
   const page = await browserType.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(BASE + '/', { waitUntil: 'load' });
@@ -408,7 +408,7 @@ async function checkDoorUsesRoomBloom(browserType) {
   const html = await page.content();
   assert(/room-bloom-\d+\.(avif|webp|jpg)/.test(html), 'the door picture references room-bloom, not the old bloom-exhibition crop');
   assert(!html.includes('bloom-exhibition'), 'the door no longer uses the bloom-exhibition crop');
-  assert(!html.includes('gallery-poster.webp'), 'the door does not use gallery-poster.webp (that stays on /gallery only)');
+  assert(!html.includes('gallery-poster.webp'), 'the door does not use the now-removed gallery-poster.webp');
   const alt = await page.evaluate(() => {
     const img = document.querySelector('.corridor-door-media img');
     return img ? img.getAttribute('alt') : null;

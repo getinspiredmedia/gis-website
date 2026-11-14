@@ -796,7 +796,7 @@ fs.mkdirSync(OG_CACHE_DIR, { recursive: true });
 
 async function loadSourceImageBuffer(imageUrl) {
   if (!imageUrl) {
-    return fs.readFileSync(path.join(__dirname, 'public', 'assets', 'gallery-poster.webp'));
+    return fs.readFileSync(path.join(__dirname, 'public', 'assets', 'gallery', 'room-bloom.png'));
   }
   if (/^https?:\/\//i.test(imageUrl)) {
     const r = await fetch(imageUrl);
