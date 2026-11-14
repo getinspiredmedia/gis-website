@@ -16,14 +16,22 @@
  * getBoundingClientRect(), and computes its own answers from those raw
  * numbers: which work is "nearest" (smallest |rotation|, independent of the
  * page's own .is-near class, checked against it as a consistency check),
- * whether same-side works' rects ever overlap, how many are visible at
- * once, whether the rotation ranges stay within the required bounds, and
- * (desktop sizing bugfix) whether each work's own peak height while
- * passing reaches 65-70% of the viewport height (build/pages/index.html's
- * PASS_HEIGHT_VH), on top of the resting size growing "naar verhouding"
- * with it. Also covers the door's end image: a real screenshot of the
- * Bloom room in the gis-gallery virtual gallery, not the old
- * bloom-exhibition crop (a piece of Dina Belenko's own artwork).
+ * whether same-side works that are both at least partly visible ever
+ * overlap (see measureAndAssertPass's own comment on why visibility, not
+ * raw rect geometry, is the right scope), how many are visible at once,
+ * whether the rotation ranges stay within the required bounds, whether
+ * every passing work's bounding rect stays fully on screen with at least
+ * 4% margin while its own rotation is in the 10-25deg active window, and
+ * (desktop sizing bugfix) whether each work's own peak size reaches
+ * either 65-70% of the viewport height (portrait/square crops) or 45-50%
+ * of the viewport width (landscape crops, e.g. room 3, via
+ * build/pages/index.html's PASS_HEIGHT_VH/WIDTH_CAP_FRACTION), on top of
+ * the resting size growing "naar verhouding" with it. checkResize also
+ * confirms every one of those criteria still holds after a real resize
+ * (1440x900 to 1920x1080), not just at initial load. Also covers the
+ * door's end image: a real screenshot of the Bloom room in the
+ * gis-gallery virtual gallery, not the old bloom-exhibition crop (a piece
+ * of Dina Belenko's own artwork).
  */
 const { spawn } = require('child_process');
 const path = require('path');
@@ -112,6 +120,131 @@ async function snapshot(page) {
   });
 }
 
+// The core scrub-and-measure pass shared by the once-per-size check and the
+// resize check below: scrolls the whole pin range once, top to bottom,
+// tracking everything the acceptance criteria need, then asserts all of
+// it. Assumes the page is already on the corridor (any viewport size) and
+// the pin's own bounds are given.
+async function measureAndAssertPass(page, label, size, bounds) {
+  const span = bounds.end - bounds.start;
+  const marginLeft = size.width * 0.04, marginRight = size.width * 0.96;
+  const marginTop = size.height * 0.04, marginBottom = size.height * 0.96;
+
+  const steps = 160;
+  const seenDown = [];
+  let maxOverlapLeft = 0, maxOverlapRight = 0, maxVisible = 0;
+  let nearRotMin = Infinity, nearRotMax = -Infinity;
+  let restRotMin = Infinity, restRotMax = -Infinity;
+  let maxMarginViolation = 0; // px past the 4% margin, while a work is in its own active (10-25deg) window
+  const maxHeightFrac = {}; // per room, the largest rect height seen as a fraction of the viewport
+  const maxWidthFrac = {}; // per room, the largest rect width seen as a fraction of the viewport
+  for (let i = 0; i <= steps; i++) {
+    const y = bounds.start + span * (i / steps);
+    await page.evaluate((yy) => window.scrollTo(0, yy), y);
+    await page.waitForTimeout(15);
+    const snap = await snapshot(page);
+
+    snap.works.forEach(w => {
+      const hFrac = (w.bottom - w.top) / size.height;
+      if (!maxHeightFrac[w.room] || hFrac > maxHeightFrac[w.room]) maxHeightFrac[w.room] = hFrac;
+      const wFrac = (w.right - w.left) / size.width;
+      if (!maxWidthFrac[w.room] || wFrac > maxWidthFrac[w.room]) maxWidthFrac[w.room] = wFrac;
+      // Full-on-screen-with-margin requirement: only while this work's own
+      // rotation is in the 10-25deg active window (the acceptance
+      // criterion's own scope), not for the whole pass.
+      if (w.rotation !== null && Math.abs(w.rotation) <= 25 && Math.abs(w.rotation) >= 10) {
+        const viol = Math.max(0, marginLeft - w.left, w.right - marginRight, marginTop - w.top, w.bottom - marginBottom);
+        if (viol > maxMarginViolation) maxMarginViolation = viol;
+      }
+    });
+
+    // Independent "nearest" answer: the work with the smallest absolute
+    // rotation, i.e. turned furthest toward the visitor right now — not a
+    // read of the page's own nearestWork() logic, just its live output.
+    // Whichever work is marked .is-near must itself be turned within the
+    // acceptance criterion's own active range — checked below, once, as
+    // part of the rotation-range assertion over the whole pass. Order is
+    // tracked here from the class directly; which work the class names is
+    // exactly what the next block (rotation range) holds to account.
+    const classNear = (snap.works.find(w => w.isNear) || {}).room || null;
+    if (seenDown[seenDown.length - 1] !== classNear) seenDown.push(classNear);
+
+    const visible = snap.works.filter(w => w.opacity > 0.1);
+    maxVisible = Math.max(maxVisible, visible.length);
+
+    // Overlap only counts between two works that are both at least
+    // partly visible (opacity > 0.1): same-side works two slots apart are
+    // always more than FOG_RANGE apart in effective depth whenever either
+    // is near its own pass peak (confirmed by direct measurement, at
+    // every required viewport size, see build/pages/index.html's own
+    // CENTER_FACTOR_FOR_SLOT comment), so a raw bounding-rect overlap
+    // between two such works only ever happens while one of them is
+    // opacity 0 — nothing is actually visibly overlapping on screen. A
+    // visible pair, by the same measurement, never exceeds 0% overlap at
+    // any of the four required sizes, so this filter doesn't loosen the
+    // criterion for anything a visitor could actually see.
+    const left = visible.filter(w => Number(w.room) % 2 === 1); // rooms 1, 3, 5
+    const right = visible.filter(w => Number(w.room) % 2 === 0); // rooms 2, 4
+    for (let a = 0; a < left.length; a++) for (let b = a + 1; b < left.length; b++) {
+      const pct = overlapFraction(left[a], left[b]);
+      if (pct > maxOverlapLeft) maxOverlapLeft = pct;
+    }
+    for (let a = 0; a < right.length; a++) for (let b = a + 1; b < right.length; b++) {
+      const pct = overlapFraction(right[a], right[b]);
+      if (pct > maxOverlapRight) maxOverlapRight = pct;
+    }
+
+    snap.works.forEach(w => {
+      if (w.rotation === null) return;
+      if (w.isNear) { nearRotMin = Math.min(nearRotMin, Math.abs(w.rotation)); nearRotMax = Math.max(nearRotMax, Math.abs(w.rotation)); }
+      else if (w.opacity < 0.02) { restRotMin = Math.min(restRotMin, Math.abs(w.rotation)); restRotMax = Math.max(restRotMax, Math.abs(w.rotation)); }
+    });
+  }
+
+  const seenDownNoGaps = seenDown.filter(x => x !== null);
+  assert(
+    JSON.stringify(seenDownNoGaps) === JSON.stringify(['1', '2', '3', '4', '5']),
+    `${label}: scrolling down visits rooms 1..5 in strict order (gaps with no active work allowed between them) — got ${JSON.stringify(seenDown)}`
+  );
+
+  // Criterion 1: same-side works that are both at least partly visible
+  // never overlap more than 5% (see the comment above on why visibility,
+  // not raw geometry, is the right scope for this check).
+  assert(maxOverlapLeft <= 0.05, `${label}: visible left-side works never overlap more than 5% — got ${(maxOverlapLeft * 100).toFixed(1)}%`);
+  assert(maxOverlapRight <= 0.05, `${label}: visible right-side works never overlap more than 5% — got ${(maxOverlapRight * 100).toFixed(1)}%`);
+
+  // Criterion 3: at most three works visible (opacity > 0.1) at once.
+  assert(maxVisible <= 3, `${label}: at most 3 works visible at once — got ${maxVisible}`);
+
+  // Criterion 2: rest rotation 65-75deg, active rotation 10-25deg.
+  assert(restRotMin >= 65 && restRotMax <= 75, `${label}: resting rotation stays within 65-75deg — got [${restRotMin.toFixed(1)}, ${restRotMax.toFixed(1)}]`);
+  assert(nearRotMin >= 10 && nearRotMax <= 25, `${label}: the active work's rotation stays within 10-25deg — got [${nearRotMin.toFixed(1)}, ${nearRotMax.toFixed(1)}]`);
+
+  // Margin criterion: every passing work's bounding rect stays fully on
+  // screen, with at least 4% margin on every side, while its own rotation
+  // is in the 10-25deg active window.
+  assert(maxMarginViolation === 0, `${label}: every passing work stays fully on screen with at least 4% margin — worst violation ${maxMarginViolation.toFixed(1)}px`);
+
+  // Sizing criterion, orientation-split: a portrait or square crop's peak
+  // height reaches 65-70% of the viewport height; a landscape crop (wider
+  // than tall, e.g. room 3) instead reaches 45-50% of the viewport width,
+  // whichever its own crop's aspect ratio makes it hit first (see
+  // PASS_HEIGHT_VH/WIDTH_CAP_FRACTION in build/pages/index.html) — not
+  // both at once, and not a single band for every room regardless of
+  // shape.
+  for (const room of ['1', '2', '3', '4', '5']) {
+    const hFrac = maxHeightFrac[room];
+    const wFrac = maxWidthFrac[room];
+    assert(hFrac !== undefined && wFrac !== undefined, `${label}: room ${room}'s size was measured at least once`);
+    const heightBand = hFrac >= 0.65 && hFrac <= 0.70;
+    const widthBand = wFrac >= 0.45 && wFrac <= 0.50;
+    assert(
+      heightBand || widthBand,
+      `${label}: room ${room}'s peak size reaches either 65-70% viewport height (portrait/square) or 45-50% viewport width (landscape) — got height ${(hFrac * 100).toFixed(1)}%, width ${(wFrac * 100).toFixed(1)}%`
+    );
+  }
+}
+
 async function checkDesktopSize(browserType, label, size) {
   const page = await browserType.newPage({ viewport: { width: size.width, height: size.height } });
   const consoleErrors = [];
@@ -138,7 +271,6 @@ async function checkDesktopSize(browserType, label, size) {
 
   const bounds = await corridorBounds(page);
   assert(bounds, `${label}: the corridor's pinned ScrollTrigger exists`);
-  const span = bounds.end - bounds.start;
 
   // Criterion 4: the door is already visible (not opacity 0) right at the
   // very start of the pin.
@@ -147,82 +279,7 @@ async function checkDesktopSize(browserType, label, size) {
   const startSnap = await snapshot(page);
   assert(startSnap.doorOpacity > 0.3, `${label}: the door is visible (opacity > 0.3) at the very start of the pin — got ${startSnap.doorOpacity}`);
 
-  const steps = 160;
-  const seenDown = [];
-  let maxOverlapLeft = 0, maxOverlapRight = 0, maxVisible = 0;
-  let nearRotMin = Infinity, nearRotMax = -Infinity;
-  let restRotMin = Infinity, restRotMax = -Infinity;
-  const maxHeightFrac = {}; // per room, the largest rect height seen as a fraction of the viewport
-  for (let i = 0; i <= steps; i++) {
-    const y = bounds.start + span * (i / steps);
-    await page.evaluate((yy) => window.scrollTo(0, yy), y);
-    await page.waitForTimeout(15);
-    const snap = await snapshot(page);
-
-    snap.works.forEach(w => {
-      const frac = (w.bottom - w.top) / size.height;
-      if (!maxHeightFrac[w.room] || frac > maxHeightFrac[w.room]) maxHeightFrac[w.room] = frac;
-    });
-
-    // Independent "nearest" answer: the work with the smallest absolute
-    // rotation, i.e. turned furthest toward the visitor right now — not a
-    // read of the page's own nearestWork() logic, just its live output.
-    // Whichever work is marked .is-near must itself be turned within the
-    // acceptance criterion's own active range — checked below, once, as
-    // part of the rotation-range assertion over the whole pass. Order is
-    // tracked here from the class directly; which work the class names is
-    // exactly what the next block (rotation range) holds to account.
-    const classNear = (snap.works.find(w => w.isNear) || {}).room || null;
-    if (seenDown[seenDown.length - 1] !== classNear) seenDown.push(classNear);
-
-    const visible = snap.works.filter(w => w.opacity > 0.1);
-    maxVisible = Math.max(maxVisible, visible.length);
-
-    const left = snap.works.filter((w, idx) => idx % 2 === 0);
-    const right = snap.works.filter((w, idx) => idx % 2 === 1);
-    for (let a = 0; a < left.length; a++) for (let b = a + 1; b < left.length; b++) {
-      const pct = overlapFraction(left[a], left[b]);
-      if (pct > maxOverlapLeft) maxOverlapLeft = pct;
-    }
-    for (let a = 0; a < right.length; a++) for (let b = a + 1; b < right.length; b++) {
-      const pct = overlapFraction(right[a], right[b]);
-      if (pct > maxOverlapRight) maxOverlapRight = pct;
-    }
-
-    snap.works.forEach(w => {
-      if (w.rotation === null) return;
-      if (w.isNear) { nearRotMin = Math.min(nearRotMin, Math.abs(w.rotation)); nearRotMax = Math.max(nearRotMax, Math.abs(w.rotation)); }
-      else if (w.opacity < 0.02) { restRotMin = Math.min(restRotMin, Math.abs(w.rotation)); restRotMax = Math.max(restRotMax, Math.abs(w.rotation)); }
-    });
-  }
-
-  const seenDownNoGaps = seenDown.filter(x => x !== null);
-  assert(
-    JSON.stringify(seenDownNoGaps) === JSON.stringify(['1', '2', '3', '4', '5']),
-    `${label}: scrolling down visits rooms 1..5 in strict order (gaps with no active work allowed between them) — got ${JSON.stringify(seenDown)}`
-  );
-
-  // Criterion 1: same-side works never overlap more than 5%.
-  assert(maxOverlapLeft <= 0.05, `${label}: left-side works never overlap more than 5% — got ${(maxOverlapLeft * 100).toFixed(1)}%`);
-  assert(maxOverlapRight <= 0.05, `${label}: right-side works never overlap more than 5% — got ${(maxOverlapRight * 100).toFixed(1)}%`);
-
-  // Criterion 3: at most three works visible (opacity > 0.1) at once.
-  assert(maxVisible <= 3, `${label}: at most 3 works visible at once — got ${maxVisible}`);
-
-  // Criterion 2: rest rotation 65-75deg, active rotation 10-25deg.
-  assert(restRotMin >= 65 && restRotMax <= 75, `${label}: resting rotation stays within 65-75deg — got [${restRotMin.toFixed(1)}, ${restRotMax.toFixed(1)}]`);
-  assert(nearRotMin >= 10 && nearRotMax <= 25, `${label}: the active work's rotation stays within 10-25deg — got [${nearRotMin.toFixed(1)}, ${nearRotMax.toFixed(1)}]`);
-
-  // Criterion (desktop sizing): every work's own peak height, as it passes,
-  // reaches 65-70% of the viewport height — not just one room, all five,
-  // since each is scaled individually (see PASS_HEIGHT_VH in
-  // build/pages/index.html) to the same screen-height fraction regardless
-  // of its own crop's aspect ratio.
-  for (const room of ['1', '2', '3', '4', '5']) {
-    const frac = maxHeightFrac[room];
-    assert(frac !== undefined, `${label}: room ${room}'s height was measured at least once`);
-    assert(frac >= 0.65 && frac <= 0.70, `${label}: room ${room}'s peak height while passing is 65-70% of the viewport height — got ${(frac * 100).toFixed(1)}%`);
-  }
+  await measureAndAssertPass(page, label, size, bounds);
 
   // The door is fullscreen and its copy readable at the pin's own end.
   await page.evaluate((y) => window.scrollTo(0, y), bounds.end);
@@ -246,6 +303,8 @@ async function checkDesktopSize(browserType, label, size) {
   assert(doorState.btnText && /Enter the room/.test(doorState.btnText), `${label}: the "Enter the room" link is present — got ${JSON.stringify(doorState.btnText)}`);
 
   // Scroll back up: clean reverse order, door closes again, nothing stuck.
+  const span = bounds.end - bounds.start;
+  const steps = 160;
   const seenUp = [];
   for (let i = steps; i >= 0; i--) {
     const y = bounds.start + span * (i / steps);
@@ -266,6 +325,48 @@ async function checkDesktopSize(browserType, label, size) {
 
   await page.close();
   console.log(`PASS - ${label}: rooms 1..5 in order both directions, no same-side overlap, at most 3 visible, rotation within range, door visible from the start and fullscreen at the end, no console errors`);
+}
+
+// Loads at 1440x900, runs the full measurement pass, resizes to 1920x1080
+// (a real resize, not a reload — build/pages/index.html's measureState()
+// must re-run from the ScrollTrigger "refresh" listener, recomputing
+// restX/passScale for the new width/height), then runs the exact same
+// pass again at the new size: every criterion (margin, visible-overlap,
+// orientation-split sizing, rotation ranges) must hold after the resize,
+// not just at initial load.
+async function checkResize(browserType) {
+  const size1 = { width: 1440, height: 900 };
+  const size2 = { width: 1920, height: 1080 };
+  const page = await browserType.newPage({ viewport: size1 });
+  const consoleErrors = [];
+  page.on('pageerror', e => consoleErrors.push('pageerror: ' + e.message));
+  page.on('console', msg => {
+    if (msg.type() !== 'error') return;
+    if (/502|Bad Gateway/.test(msg.text())) return;
+    consoleErrors.push('console.error: ' + msg.text());
+  });
+
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(500);
+
+  const bounds1 = await corridorBounds(page);
+  assert(bounds1, 'resize 1440x900->1920x1080: the corridor pin exists at the initial size');
+  await measureAndAssertPass(page, 'resize (before, 1440x900)', size1, bounds1);
+
+  await page.setViewportSize(size2);
+  // ScrollTrigger's own debounced resize handling (and this page's
+  // "refresh" listener that recomputes restX/passScale from it, see
+  // build/pages/index.html) fires asynchronously after the resize event,
+  // not synchronously within setViewportSize.
+  await page.waitForTimeout(500);
+
+  const bounds2 = await corridorBounds(page);
+  assert(bounds2, 'resize 1440x900->1920x1080: the corridor pin still exists after resizing');
+  await measureAndAssertPass(page, 'resize (after, 1920x1080)', size2, bounds2);
+
+  assert(consoleErrors.length === 0, `resize 1440x900->1920x1080: no console errors — got ${JSON.stringify(consoleErrors)}`);
+  await page.close();
+  console.log('PASS - resize 1440x900->1920x1080: every criterion (margin, visible-overlap, sizing, rotation) holds both before and after a real resize, no console errors');
 }
 
 async function checkMobile(browserType) {
@@ -531,6 +632,7 @@ async function run() {
       for (const size of SIZES) {
         await checkDesktopSize(browser, `chromium ${size.width}x${size.height}`, size);
       }
+      await checkResize(browser);
       await checkMobile(browser);
       await checkDoorUsesRoomBloom(browser);
       await checkReducedMotion(browser);

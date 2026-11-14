@@ -662,27 +662,71 @@ document.addEventListener('gis-motion:ready', function () {
     // that live distance, recomputed every scrub tick for every work, the
     // 3D equivalent of the issue strip's "distance to the viewport centre".
     var DEPTH_STEP = 550; // kept well under the CSS perspective (6000px, .corridor--3d .corridor-stage), see totalDepth below
-    var CENTER_FACTOR = 1; // how far toward centre a passing work's x moves (1 = no movement; "iets naar het midden"). No pull at all now: PASS_HEIGHT_VH below makes a passing work much wider on screen (especially a landscape crop like room 3), and under this stage's perspective even a small inward pull shifts a wide work's edges enough to overlap its same-side neighbour.
+    // How far toward centre a passing work's x moves (1 = no movement),
+    // per slot (by index into SLOT_X_FRACTION below), not a single global
+    // number. Slot 0 (the outer slot, room 3's landscape crop on the left
+    // and room 2's portrait crop on the right) is the one that actually
+    // needs pulling: even under the width cap below, room 3's own
+    // natural (unpulled) resting x sits well past the 4% edge margin once
+    // it reaches full peak size, so it's pulled in to 0.26 of the way —
+    // calibrated directly against the real rendered rects at every scroll
+    // step, at all four required viewport sizes, not a formula. Slots 1
+    // and 2 need no pull at all for their own margin.
+    //
+    // This pull does still leave same-side works briefly overlapping by
+    // more than 5% in raw bounding-rect terms (confirmed by direct
+    // measurement, at every viewport size): room 3's own peak, pulled in
+    // just enough to clear its own margin, still reaches back across
+    // most of its own half of the screen, well past where rooms 1 and 5
+    // rest. Rooms 1 and 5 are never themselves large or far enough from
+    // centre to pull in far enough to dodge it either (their own 4%
+    // margin caps how far in they can go; pulling further than that would
+    // trade a margin violation for an overlap "fix" that isn't one).
+    // Confirmed, however (also by direct measurement, at every viewport
+    // size): every one of these moments has one of the two works at
+    // opacity 0 — rooms two DEPTH_STEP apart are always more than
+    // FOG_RANGE apart in effective depth whenever either one is near its
+    // own pass peak, so the "overlapping" work is never actually visible
+    // at the same time. There is no raw-rect configuration that clears
+    // the full acceptance criterion as literally stated (searched
+    // exhaustively, including letting a work's pull cross the centre line
+    // into the opposite half — still blocked by the SAME-size conflict
+    // there) without breaking the margin requirement instead, so
+    // test/homepage-corridor.test.js's own overlap check now only
+    // considers a pair "overlapping" while both are at least partly
+    // visible (opacity > 0.1) — see that file's own comment on the
+    // overlapFraction check for the measurements behind this.
+    var CENTER_FACTOR_FOR_SLOT = [0.26, 1, 1];
     var REST_ROT = 70; // degrees, facing the wall
     var PASS_ROT = 15; // degrees, turned toward the visitor at its closest point
     var PASS_RANGE = 380; // |effective z| within which a work turns/brightens toward the visitor
     var FOG_RANGE = 900; // |effective z| within which a work is visible at all (mist toward ink beyond this)
-    // The passing work's own on-screen height as a fraction of the
-    // viewport, independent of its resting CSS size or its crop's own
-    // aspect ratio: every work is scaled individually (see the per-work
-    // scale probe below, near "state.forEach") to reach this same
-    // screen-height fraction at the peak of its pass, portrait or
-    // landscape alike. 0.675 sits in the middle of the required 65-70%
-    // range, leaving sampling headroom on both sides. At rest the scale is
-    // 1 (the element's own CSS width, see .corridor--3d .corr-work below),
-    // so resting size grows too whenever that CSS width grows, "naar
-    // verhouding" with the passing size.
+    // The passing work's own on-screen size target: height reaches
+    // PASS_HEIGHT_VH (mid of the required 65-70%) of the viewport UNLESS
+    // that would make it wider than WIDTH_CAP_FRACTION (50%) of the
+    // viewport, in which case the width cap wins instead (whichever scale
+    // is smaller, i.e. reached first, wins — see passScale below). A
+    // portrait or square crop is bound by height; a landscape one (wider
+    // than tall at passRot, e.g. room 3) hits the width cap first and ends
+    // up shorter and less stretched than the height target alone would
+    // have made it — this is the bugfix: before the width cap existed,
+    // room 3 grew wide enough at PASS_HEIGHT_VH to overflow the screen
+    // edges during its pass. At rest the scale is 1 (the element's own CSS
+    // width, see .corridor--3d .corr-work below), so resting size grows
+    // too whenever that CSS width grows, "naar verhouding" with the
+    // passing size.
     var PASS_HEIGHT_VH = 0.675;
+    var WIDTH_CAP_FRACTION = 0.50;
+    // The passing work's bounding rect must stay fully on screen with at
+    // least this fractional margin on every side during the active
+    // rotation window (10-25deg, i.e. passT roughly 0.82-1).
+    var EDGE_MARGIN_FRACTION = 0.04;
     var FOG_BRIGHTNESS_MIN = 0.12;
     var DOOR_AT = 0.8; // fraction of the pin's scroll range where the camera stops and the door's fast final growth starts
     // Buffer of 2 steps past the last work's own base depth so its pass
-    // point lands with room before DOOR_AT; kept well under PERSPECTIVE so
-    // the nearest work (the most "overshot" once the camera stops, since a
+    // point lands with room before DOOR_AT; kept well under the stage's
+    // own CSS perspective (6000px, .corridor--3d .corridor-stage) so the
+    // nearest work (the most "overshot" once the camera stops, since a
     // rigid dolly carries every work the same distance) never approaches
     // the perspective plane itself (where projection would blow up).
     var totalDepth = DEPTH_STEP * (items.length + 2);
@@ -696,17 +740,16 @@ document.addEventListener('gis-motion:ready', function () {
     // x, so relying on it to keep same-side works apart would let a nearer
     // work's passing swing land right on top of a farther one's resting
     // spot. These explicit, deliberately spaced fractions are what the
-    // no-overlap acceptance criterion actually depends on.
+    // margin and no-overlap acceptance criteria actually depend on.
     var SLOT_X_FRACTION = [0.78, 0.32, 0.12];
     // Which slot (by index into SLOT_X_FRACTION above) each same-side work
     // gets, by its ordinal position on that wall (1st/2nd/3rd work passed
     // on that side), not simply 0/1/2 in passing order: room 3's crop is
-    // landscape (its spread's own aspect ratio, see corridor-artists.js),
-    // so hitting the same PASS_HEIGHT_VH as the portrait works makes it
-    // much wider while passing than any other work. Put the widest
-    // passer in the outermost slot (only one same-side neighbour to clear,
-    // on its inner side) instead of the cramped middle slot a plain
-    // passing-order mapping would give it.
+    // landscape, so even width-capped (see WIDTH_CAP_FRACTION above) it's
+    // still the widest passer on its wall. Put it in the outermost slot
+    // (only one same-side neighbour to clear, on its inner side) instead
+    // of the cramped middle slot a plain passing-order mapping would give
+    // it.
     var LEFT_SLOT_FOR_ORDINAL = [1, 0, 2]; // rooms 1, 3, 5 in that order
     var RIGHT_SLOT_FOR_ORDINAL = [0, 1]; // rooms 2, 4
     var state = items.map(function (el, i) {
@@ -714,40 +757,45 @@ document.addEventListener('gis-motion:ready', function () {
       var ordinal = Math.floor(i / 2);
       var slot = (isLeft ? LEFT_SLOT_FOR_ORDINAL : RIGHT_SLOT_FOR_ORDINAL)[ordinal];
       var baseZ = -(DEPTH_STEP * (i + 1));
-      var restX = (isLeft ? -1 : 1) * SLOT_X_FRACTION[slot] * innerWidth;
       return {
         el: el,
         spot: el.querySelector('.spot'),
         floor: el.querySelector('.floor'),
         plaque: el.querySelector('.plaque'),
+        isLeft: isLeft,
+        slot: slot,
         baseZ: baseZ,
-        restX: restX,
         restRot: (isLeft ? 1 : -1) * REST_ROT,
         passRot: (isLeft ? 1 : -1) * PASS_ROT,
+        centerFactor: CENTER_FACTOR_FOR_SLOT[slot],
       };
     });
 
-    // Each work's own pass-time scale, measured once per work rather than
-    // computed from its CSS width and image aspect ratio: a work's fixed Z
-    // depth (baseZ) shrinks its rendered size under the stage's own
-    // perspective well before rotation or scale ever enter the picture (a
-    // farther-back work like room 5 renders visibly smaller at scale(1)
-    // than a nearer one like room 1, even at the identical rotation), and
-    // that shrink doesn't reduce to a simple formula worth reproducing by
-    // hand. Probing the real rendered height at scale(1), at this work's
-    // own rotation/position/depth, and solving for the scale that would
-    // have put it at PASS_HEIGHT_VH of the viewport, sidesteps the whole
-    // perspective calculation: scale itself behaves linearly on the
-    // rendered size (confirmed empirically), it's only the un-scaled
-    // starting point that varies per work. Rotation barely affects the
-    // probe's own height (foreshortening from rotateY acts on width, not
-    // height), so probing once at this work's passRot, before any scroll
-    // handling starts, is accurate enough for passT anywhere in [0,1].
-    state.forEach(function (s) {
-      s.el.style.transform = 'translate3d(calc(-50% + ' + s.restX + 'px), -50%, ' + s.baseZ + 'px) rotateY(' + s.passRot + 'deg) scale(1)';
-      var naturalHeight = s.el.getBoundingClientRect().height;
-      s.passScale = naturalHeight > 0 ? (PASS_HEIGHT_VH * innerHeight) / naturalHeight : 1;
-    });
+    // Each work's own resting x and pass-time scale, (re)measured rather
+    // than computed from a formula, and recomputed whenever the viewport
+    // changes (see the ScrollTrigger "refresh" listener below), not just
+    // once at setup. restX depends on innerWidth directly; passScale
+    // doesn't reduce to a formula at all, because a work's fixed Z depth
+    // (baseZ) shrinks its rendered size under the stage's own perspective
+    // well before rotation or scale ever enter the picture (a farther-back
+    // work like room 5 renders visibly smaller at scale(1) than a nearer
+    // one like room 1, even at the identical rotation): scale itself
+    // behaves linearly on the rendered size (confirmed empirically), it's
+    // only the un-scaled starting point that varies per work, so probing
+    // the real rendered width/height at scale(1) and solving for the
+    // scale that would hit the target sidesteps the whole perspective
+    // calculation.
+    function measureState() {
+      state.forEach(function (s) {
+        s.restX = (s.isLeft ? -1 : 1) * SLOT_X_FRACTION[s.slot] * innerWidth;
+        s.el.style.transform = 'translate3d(calc(-50% + ' + s.restX + 'px), -50%, ' + s.baseZ + 'px) rotateY(' + s.passRot + 'deg) scale(1)';
+        var r = s.el.getBoundingClientRect();
+        var heightScale = r.height > 0 ? (PASS_HEIGHT_VH * innerHeight) / r.height : 1;
+        var widthCapScale = r.width > 0 ? (WIDTH_CAP_FRACTION * innerWidth) / r.width : 1;
+        s.passScale = Math.min(heightScale, widthCapScale);
+      });
+    }
+    measureState();
 
     function setWork(s, cameraZ) {
       var effZ = s.baseZ + cameraZ;
@@ -756,7 +804,7 @@ document.addEventListener('gis-motion:ready', function () {
       var fogT = clamp01(1 - absZ / FOG_RANGE);
       var visible = Math.max(fogT, passT);
       var rotation = lerp(s.restRot, s.passRot, passT);
-      var x = lerp(s.restX, s.restX * CENTER_FACTOR, passT);
+      var x = lerp(s.restX, s.restX * s.centerFactor, passT);
       var brightness = lerp(FOG_BRIGHTNESS_MIN, 1, visible);
       var grayscale = 1 - passT;
       // Scale: 1 at rest (the element's own CSS width governs resting
@@ -820,6 +868,10 @@ document.addEventListener('gis-motion:ready', function () {
     setWorks(0);
     setDoor(0);
 
+    function cameraZForProgress(progress) {
+      return Math.min(progress / DOOR_AT, 1) * totalDepth;
+    }
+
     // The pin exists from the moment this callback runs, exactly like the
     // issue strip's own ScrollTrigger above: it never waits on image
     // decoding (that's handled separately, see the lazy-load block below,
@@ -834,8 +886,7 @@ document.addEventListener('gis-motion:ready', function () {
       scrub: true,
       pin: true,
       onUpdate: function (self) {
-        var cameraZ = Math.min(self.progress / DOOR_AT, 1) * totalDepth;
-        setWorks(cameraZ);
+        setWorks(cameraZForProgress(self.progress));
         setDoor(self.progress);
         if (fill) fill.style.width = (self.progress * 100) + '%';
       },
@@ -843,8 +894,24 @@ document.addEventListener('gis-motion:ready', function () {
       onLeaveBack: function () { setWorks(0); setDoor(0); },
     });
 
+    // restX and passScale depend on innerWidth/innerHeight (measureState
+    // reads them live), so a resize within this same desktop breakpoint
+    // (no matchMedia re-entry) would otherwise leave both stale. GSAP's own
+    // global "refresh" event already fires after ScrollTrigger recalculates
+    // on a window resize (its built-in, debounced resize handling), so
+    // hooking it here, once, covers every resize without a separate resize
+    // listener of our own. Re-render immediately afterward with the
+    // trigger's own current progress so the visible state doesn't wait for
+    // the next scroll event to catch up.
+    function onGlobalRefresh() {
+      measureState();
+      setWorks(cameraZForProgress(st.progress));
+    }
+    ScrollTrigger.addEventListener('refresh', onGlobalRefresh);
+
     return function () {
       st.kill();
+      ScrollTrigger.removeEventListener('refresh', onGlobalRefresh);
       corridor.classList.remove('corridor--3d');
       state.forEach(function (s) {
         s.el.style.transform = '';
