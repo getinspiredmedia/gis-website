@@ -6,7 +6,10 @@
 <title>Submit your work · Get Inspired Society</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<!-- Non-blocking font load, same pattern as build/pages/submit.html. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap"></noscript>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <!-- Privacy-friendly analytics by Plausible — proxied via own domain so adblockers don't skew the numbers -->
@@ -56,6 +59,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
 </style>
 </head>
 <body>
+<main id="main">
 <div class="wrap">
   <div id="state-form">
     <span class="eyebrow">Get Inspired Society &nbsp;<span style="font-weight:400;opacity:.55">On View</span></span>
@@ -106,6 +110,7 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
     <p class="meta"><a href="https://getinspiredsociety.com">getinspiredsociety.com</a></p>
   </div>
 </div>
+</main>
 
 <script>
 (function () {

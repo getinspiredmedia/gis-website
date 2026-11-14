@@ -6,7 +6,10 @@
 <title>Support · Get Inspired Society</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<!-- Non-blocking font load, same pattern as build/pages/submit.html. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap"></noscript>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <!-- @include: analytics -->
@@ -61,6 +64,7 @@ img{display:block;max-width:100%}
 <!-- @include: wipe -->
 <!-- @include: nav -->
 
+<main id="main">
 <section class="hero">
   <div class="wrap">
     <span class="eyebrow">Support</span>
@@ -106,6 +110,7 @@ img{display:block;max-width:100%}
     </div>
   </div>
 </section>
+</main>
 
 <!-- @include: footer -->
 

@@ -9,7 +9,10 @@
 <!-- issue:end -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<!-- Non-blocking font load, same pattern as build/pages/submit.html. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap"></noscript>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <!-- Privacy-friendly analytics by Plausible — proxied via own domain so adblockers don't skew the numbers -->
@@ -114,6 +117,7 @@ a,button{font-family:inherit;color:inherit;text-decoration:none}
 @keyframes wipe{0%{transform:scaleY(0);transform-origin:bottom}45%{transform:scaleY(1);transform-origin:bottom}55%{transform:scaleY(1);transform-origin:top}100%{transform:scaleY(0);transform-origin:top}}
 </style>
 <div id="wipe"></div>
+<a class="skip-link" href="#main">Skip to content</a>
 <script>
 (function(){
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -146,6 +150,8 @@ a,button{font-family:inherit;color:inherit;text-decoration:none}
 </script>
 
 <style>
+.skip-link{position:fixed;top:-60px;left:12px;z-index:1000;padding:10px 18px;background:#fff;color:var(--ink);font-size:13px;font-weight:600;border-radius:6px;text-decoration:none;transition:top .2s var(--ease)}
+.skip-link:focus{top:12px}
 nav{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid transparent;transition:transform .45s var(--ease),background .35s,border-color .35s,padding .35s var(--ease)}
 nav.solid{background:var(--ink);border-bottom-color:rgba(255,255,255,.14);padding:8px 22px}
 nav.hide{transform:translateY(-102%)}
@@ -273,6 +279,7 @@ nav{background:var(--ink)}
 }());
 </script>
 
+<main id="main">
 <section class="opening">
 <!-- issue:start -->
   <span class="eyebrow">Issue 3</span>
@@ -326,6 +333,7 @@ nav{background:var(--ink)}
     </div>
   </div>
 </section>
+</main>
 
 <style>
 footer{background:var(--ink);color:#fff;padding:clamp(60px,9vh,110px) 28px 40px;text-align:center}

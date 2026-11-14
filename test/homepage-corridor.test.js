@@ -486,6 +486,11 @@ async function checkPinAndHeightUnaffectedBySlowImages(browserType) {
   });
 
   await page.goto(BASE + '/', { waitUntil: 'load' });
+  // The page's own webfont now loads non-blocking (see CLAUDE.md), so its
+  // swap-in can land at any point after `load`, independently of the
+  // corridor's own (deliberately stalled) image requests. Settling it before
+  // the scrollHeight baseline below keeps this check about images, not fonts.
+  await page.evaluate(() => document.fonts && document.fonts.ready).catch(() => {});
   const bounds = await corridorBounds(page);
   assert(bounds, 'slow images: the pin exists even though every corridor image is still stuck loading');
 

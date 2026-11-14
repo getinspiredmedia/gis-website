@@ -6,7 +6,10 @@
 <title>Privacy · Get Inspired Society</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<!-- Non-blocking font load, same pattern as build/pages/submit.html. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap"></noscript>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <!-- Privacy-friendly analytics by Plausible — proxied via own domain so adblockers don't skew the numbers -->
@@ -72,6 +75,8 @@ a{color:inherit;text-decoration:none}
 </script>
 
 <style>
+.skip-link{position:fixed;top:-60px;left:12px;z-index:1000;padding:10px 18px;background:#fff;color:var(--ink);font-size:13px;font-weight:600;border-radius:6px;text-decoration:none;transition:top .2s var(--ease)}
+.skip-link:focus{top:12px}
 nav{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid transparent;transition:transform .45s var(--ease),background .35s,border-color .35s,padding .35s var(--ease)}
 nav.solid{background:var(--ink);border-bottom-color:rgba(255,255,255,.14);padding:8px 22px}
 nav.hide{transform:translateY(-102%)}
@@ -139,6 +144,7 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
   .nav-toggle span::before,.nav-toggle span::after{transition:none}
 }
 </style>
+<a class="skip-link" href="#main">Skip to content</a>
 <nav data-variant="light">
   <a href="/" aria-label="Get Inspired Society, home"><img class="mark" src="/assets/mark.png" alt="Get Inspired Society" width="110" height="88"></a>
   <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="Open menu">
@@ -196,6 +202,7 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
 </script>
 
 
+<main id="main">
 <section class="hero wrap">
   <span class="eyebrow">Privacy</span>
   <h1>How we use IP addresses.</h1>
@@ -205,6 +212,7 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
   <p>On every work page, we hash your IP address together with your browser's user agent before we store anything. That hash lets us recognise a repeat view of the same work within a day, so refreshing the page or running a script against it does not inflate the count. The address itself is never stored, only the hash, and hashes are deleted automatically after 30 days.</p>
   <p>On the contact form and the submission form, we hold your IP address in memory for a short time, to limit how many messages or submissions can be sent in a short period. It is not hashed there and not written to any persistent record. It is only kept long enough to apply that limit, and clears when the server restarts.</p>
 </section>
+</main>
 
 <style>
 footer{background:var(--ink);color:#fff;padding:clamp(60px,9vh,110px) 28px 40px;text-align:center}
