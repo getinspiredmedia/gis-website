@@ -18,13 +18,15 @@
 //                or the visitor prefers reduced motion (plain navigation).
 //   - nav scroll: the masthead shrinks/hides on scroll, same timings as the
 //                design system's Masthead component.
-//   - Lenis:     smooth scroll, wired to GSAP's ScrollTrigger when present.
-//                Off under reduced motion and below the 860px breakpoint,
-//                where the design calls for native scrolling.
-// Page-specific choreography (the issue strip's pin, the hero's letter
-// stagger, mouse parallax) stays on the page itself, built with the globals
-// this module leaves in place (gsap, ScrollTrigger, Lenis) plus the flags on
-// window.GISMotion — see build/pages/index.html for the first consumer.
+//   - Lenis:     smooth scroll, wired to GSAP's ScrollTrigger when present
+//                (neither is currently loaded by any page; initLenis() is a
+//                no-op without them). Off under reduced motion and below
+//                the 860px breakpoint, where the design calls for native
+//                scrolling.
+// Page-specific choreography, if a page ever needs any (a scroll-driven pin,
+// a letter stagger, mouse parallax), stays on the page itself, built with
+// the globals this module leaves in place (gsap, ScrollTrigger, Lenis, if
+// that page loads them) plus the flags on window.GISMotion.
 (function () {
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var isMobile = matchMedia('(max-width: 860px)').matches;

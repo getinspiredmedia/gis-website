@@ -18,13 +18,6 @@ const ROOT = path.resolve(__dirname, '..');
 // magazine spread (artist photo + a page of bio/poem text on white), and the
 // exhibition band needs just the photo — the crop below is the left page's
 // artwork only, picked by hand against the source file.
-// bloom-hero: the hero no longer crops public/assets/covers/bloom-master.jpg
-// (the full cover page with margins and typography). André provided two
-// already-composed, art-directed studio photos of the printed Bloom issue
-// instead, bloom-hero-desktop.png (1536x1024, magazine right of centre,
-// dark ground left for the title) and bloom-hero-mobile.png (1024x1536,
-// magazine upper area, dark ground lower for the title), each used whole,
-// no extract: no further crop is correct for either.
 const JOBS = [
   { src: 'public/assets/covers/bloom.webp',        outDir: 'public/assets/responsive', base: 'bloom-cover',        widths: [375, 500, 750, 900, 1125] },
   // The issue page's own hero cover (build/pages/issue.html), full-size and
@@ -32,26 +25,13 @@ const JOBS = [
   // 500x707 bloom-cover.webp above (which stays the strip/OG/archive-row
   // image, unchanged).
   { src: 'public/assets/covers/bloom-master.jpg',  outDir: 'public/assets/responsive', base: 'bloom-cover-hero',   widths: [600, 900, 1200] },
-  { src: 'public/assets/hero/bloom-hero-desktop.png', outDir: 'public/assets/responsive', base: 'bloom-hero-desktop', widths: [768, 1152, 1536] },
-  { src: 'public/assets/hero/bloom-hero-mobile.png',  outDir: 'public/assets/responsive', base: 'bloom-hero-mobile',  widths: [512, 768, 1024] },
   { src: 'public/assets/covers/chasing-light.webp', outDir: 'public/assets/responsive', base: 'chasing-light-cover', widths: [250, 500] },
   { src: 'public/assets/covers/no-algorithm.webp',  outDir: 'public/assets/responsive', base: 'no-algorithm-cover',  widths: [250, 500] },
   { src: 'public/assets/covers/origins.webp',       outDir: 'public/assets/responsive', base: 'origins-cover',       widths: [250, 500] },
   { src: 'public/assets/spreads/bloom/02.webp',     outDir: 'public/assets/responsive', base: 'bloom-exhibition',    widths: [500, 697], extract: { left: 48, top: 330, width: 697, height: 392 } },
-  // The homepage corridor ("de gang"): one photo-only crop per Bloom artist,
-  // picked by hand from their reader spread (public/assets/spreads/bloom/),
-  // excluding the facing text page and the page border. base matches each
-  // artist's `slug` in build/corridor-artists.js.
-  { src: 'public/assets/spreads/bloom/02.webp', outDir: 'public/assets/responsive', base: 'corridor-room-01', widths: [450, 900], extract: { left: 48, top: 125, width: 698, height: 870 } },
-  { src: 'public/assets/spreads/bloom/05.webp', outDir: 'public/assets/responsive', base: 'corridor-room-02', widths: [450, 900], extract: { left: 841, top: 212, width: 697, height: 697 } },
-  { src: 'public/assets/spreads/bloom/08.webp', outDir: 'public/assets/responsive', base: 'corridor-room-03', widths: [450, 900], extract: { left: 90, top: 358, width: 612, height: 407 } },
-  { src: 'public/assets/spreads/bloom/11.webp', outDir: 'public/assets/responsive', base: 'corridor-room-04', widths: [450, 900], extract: { left: 903, top: 138, width: 575, height: 846 } },
-  { src: 'public/assets/spreads/bloom/14.webp', outDir: 'public/assets/responsive', base: 'corridor-room-05', widths: [450, 900], extract: { left: 48, top: 125, width: 698, height: 870 } },
-  // The corridor door's end image: a real screenshot of the Bloom room in
-  // the gis-gallery virtual gallery (public/assets/gallery/room-bloom.png,
-  // 1904x964, supplied whole, no extract), replacing the old
-  // bloom-exhibition crop (a piece of Dina Belenko's own artwork, not the
-  // gallery itself).
+  // The homepage's gallery-end section: a real screenshot of the Bloom room
+  // in the gis-gallery virtual gallery (1904x964, supplied whole, no
+  // extract). Also /gallery's own poster.
   { src: 'public/assets/gallery/room-bloom.png', outDir: 'public/assets/responsive', base: 'room-bloom', widths: [960, 1440, 1904] },
 ];
 

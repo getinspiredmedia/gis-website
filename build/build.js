@@ -1,8 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE, ISSUE_05_TITLE, ISSUE_05_STATEMENT, ISSUE_05_LAUNCH_LINE, TALLY_URL } = require('./pages.config');
-const { CORRIDOR_ARTISTS } = require('./corridor-artists');
+const { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_05_TITLE, ISSUE_05_STATEMENT, ISSUE_05_LAUNCH_LINE, TALLY_URL } = require('./pages.config');
 const { ISSUES, LOOK_INSIDE_LABEL } = require('./data/issues');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -53,15 +52,23 @@ function injectAnalytics(html) {
   return html.replace('<!-- @include: analytics -->', partial);
 }
 
+// The current issue + archive block, shared verbatim between /magazine
+// (build/pages/magazine.html) and the homepage (build/pages/index.html, since
+// the homepage's own hero/strip/corridor/doors were retired in favour of
+// showing the magazine itself). A no-op on any page without the marker.
+function injectMagazineBlock(html) {
+  const partial = read(path.join(PARTIALS, 'magazine-block.html'));
+  return html.replace('<!-- @include: magazine-block -->', partial);
+}
+
 // The issue 05 open call's link and copy (see pages.config.js) — the
-// homepage and /magazine's issue-05 archive row both reference these
-// tokens. All six are swapped together, in pages.config.js alone, once the
-// next open call replaces this one.
+// homepage and /magazine's shared magazine-block (build/partials/magazine-block.html)
+// both reference these tokens. All five are swapped together, in
+// pages.config.js alone, once the next open call replaces this one.
 function injectIssueCallUrl(html) {
   return html
     .split('{{ISSUE_CALL_URL}}').join(ISSUE_CALL_URL)
     .split('{{ISSUE_CALL_CARD_LINE}}').join(ISSUE_CALL_CARD_LINE)
-    .split('{{ISSUE_CALL_DOOR_LINE}}').join(ISSUE_CALL_DOOR_LINE)
     .split('{{ISSUE_05_TITLE}}').join(ISSUE_05_TITLE)
     .split('{{ISSUE_05_STATEMENT}}').join(ISSUE_05_STATEMENT)
     .split('{{ISSUE_05_LAUNCH_LINE}}').join(ISSUE_05_LAUNCH_LINE);
@@ -80,41 +87,6 @@ const TALLY_URL_PLACEHOLDER_WORDS = /REPLACE|TODO|TEMP|EXAMPLE|PLACEHOLDER/i;
 
 function injectTallyUrl(html) {
   return html.split('{{TALLY_URL}}').join(TALLY_URL);
-}
-
-// The homepage corridor's five artist works, rendered server-side from the
-// shared build/corridor-artists.js so the plain-HTML fallback (no JS, see
-// CLAUDE.md's corridor entry) needs no client-side rendering at all — the
-// same markup is simply repositioned/animated by the page's own inline
-// script when JS and motion are available.
-function injectCorridorWorks(html) {
-  const room = n => String(n).padStart(2, '0');
-  const figures = CORRIDOR_ARTISTS.map(a => {
-    const base = `/assets/responsive/corridor-${a.slug}`;
-    // Desktop now scales the passing work up to 65-70% of the viewport
-    // height (see build/pages/index.html's PASS_HEIGHT_VH), well past the
-    // resting CSS box size the "900w" srcset entry was originally sized
-    // for. None of these five crops has a higher-resolution source than
-    // its own reader spread (checked, see CLAUDE.md), so the "900w" file
-    // is already capped at the crop's own native size by
-    // generate-responsive-images.js (withoutEnlargement) — this sizes
-    // value just makes sure the browser always requests that largest
-    // available variant on desktop, instead of picking a smaller one
-    // sized for the old, smaller resting box.
-    const sizes = '(min-width:861px) 700px, 68vw';
-    return `    <figure class="corr-work" data-room="${a.room}">
-      <span class="spot" aria-hidden="true"></span>
-      <span class="floor" aria-hidden="true"></span>
-      <picture>
-        <span class="corr-scrim" aria-hidden="true"></span>
-        <source type="image/avif" srcset="${base}-450.avif 450w, ${base}-900.avif 900w" sizes="${sizes}">
-        <source type="image/webp" srcset="${base}-450.webp 450w, ${base}-900.webp 900w" sizes="${sizes}">
-        <img src="${base}-900.jpg" srcset="${base}-450.jpg 450w, ${base}-900.jpg 900w" sizes="${sizes}" alt="Work by ${a.name}, Room ${room(a.room)}" loading="lazy" decoding="async" width="${a.width}" height="${a.height}">
-      </picture>
-      <figcaption class="plaque"><b>${a.name}</b><span>Room ${room(a.room)}</span></figcaption>
-    </figure>`;
-  }).join('\n');
-  return html.replace('    <!-- {{CORRIDOR_WORKS}} -->', figures);
 }
 
 // Issue pages (/magazine/<slug>), one per build/data/issues.js entry, built
@@ -233,9 +205,9 @@ pages.forEach(config => {
   html = injectFooter(html, config.nav, config.footer);
   if (config.wipe !== false) html = injectWipe(html);
   html = injectAnalytics(html);
+  html = injectMagazineBlock(html);
   html = injectIssueCallUrl(html);
   html = injectTallyUrl(html);
-  if (config.input === 'build/pages/index.html') html = injectCorridorWorks(html);
   const outPath = path.join(ROOT, config.output);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, html, 'utf8');
@@ -259,22 +231,7 @@ ISSUES.forEach(issue => {
 
 // Responsive image variants (AVIF/WebP/JPEG) for the homepage — idempotent,
 // only encodes a size that isn't already on disk.
-require('./generate-responsive-images').run().then(() => {
-  // Self-hosted GSAP + Lenis: copied from node_modules into public/js/vendor
-  // so the homepage never loads them from a third-party CDN. Copied, not
-  // symlinked, so public/ stays a plain static tree Railway can serve as-is.
-  const VENDOR_FILES = [
-    ['gsap/dist/gsap.min.js', 'gsap.min.js'],
-    ['gsap/dist/ScrollTrigger.min.js', 'ScrollTrigger.min.js'],
-    ['lenis/dist/lenis.min.js', 'lenis.min.js'],
-  ];
-  const vendorDir = path.join(ROOT, 'public', 'js', 'vendor');
-  fs.mkdirSync(vendorDir, { recursive: true });
-  VENDOR_FILES.forEach(([from, to]) => {
-    fs.copyFileSync(path.join(ROOT, 'node_modules', from), path.join(vendorDir, to));
-    console.log(`Vendored: public/js/vendor/${to}`);
-  });
-}).catch(e => {
-  console.error('[build] Aborting — could not generate responsive images or vendor files:', e.message);
+require('./generate-responsive-images').run().catch(e => {
+  console.error('[build] Aborting — could not generate responsive images:', e.message);
   process.exit(1);
 });

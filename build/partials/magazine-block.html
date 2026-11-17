@@ -1,0 +1,123 @@
+<style>
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+
+/* current issue */
+.current{background:var(--ink);color:#fff;padding:clamp(150px,20vh,230px) 28px clamp(70px,10vh,120px);position:relative;overflow:hidden}
+.current .field{position:absolute;inset:0;background:radial-gradient(120% 80% at 70% 20%,#1a2240 0%,#0d1020 60%,#0b0c10 100%);opacity:.85}
+.current .grid{position:relative;z-index:2;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:minmax(0,320px) 1fr;gap:clamp(30px,5vw,64px);align-items:center}
+/* 500/707 is the real ratio of every cover file this page uses (confirmed
+   against each source), not a hardcoded 3/4: with the box ratio matching
+   the image ratio exactly, background-size:cover never needs to crop. */
+.current .cover{aspect-ratio:500/707;background:var(--blue);position:relative;background-size:cover;background-position:center}
+.current .cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.5) 0%,transparent 60%);pointer-events:none}
+.current .cover span{position:absolute;left:16px;right:16px;bottom:16px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.85;z-index:1}
+.current .eyebrow{color:rgba(255,255,255,.6)}
+.current h1{margin:14px 0 10px;font-weight:700;line-height:.96;letter-spacing:-.02em;font-variation-settings:'wdth' 116;font-size:clamp(2.4rem,6vw,4.8rem)}
+.current .sub{font-size:clamp(1rem,1.7vw,1.35rem);color:rgba(255,255,255,.78);line-height:1.4}
+.current .names{margin-top:26px;font-size:13px;line-height:2;color:rgba(255,255,255,.62);border-top:1px solid rgba(255,255,255,.16);padding-top:18px}
+.current .names b{color:#fff;font-weight:500}
+.current .meta{margin-top:14px;font-size:12px;font-weight:400;color:rgba(255,255,255,.62)}
+.acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.btn{display:inline-flex;align-items:center;gap:9px;border:1px solid currentColor;border-radius:999px;padding:12px 22px;font-size:13px;font-weight:600;letter-spacing:.04em;transition:background .3s,color .3s,gap .3s}
+.btn.solid{background:var(--blue);border-color:var(--blue)}
+.btn.solid:hover{background:#fff;color:var(--blue);border-color:#fff;gap:14px}
+.btn.ghost:hover{background:#fff;color:var(--ink);gap:14px}
+
+/* archive */
+.archive{padding:clamp(70px,10vh,120px) 28px}
+.archive .head{max-width:1100px;margin:0 auto 30px;display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap}
+.archive .head .eyebrow{color:var(--muted)}
+.rows{max-width:1100px;margin:0 auto}
+.row{display:grid;grid-template-columns:64px 1fr 230px 86px;gap:24px;align-items:center;padding:26px 20px;margin:0 -20px;border-top:1px solid var(--line);transition:background .35s var(--ease),color .35s}
+.row:last-of-type{border-bottom:1px solid var(--line)}
+.row .no{font-size:11px;letter-spacing:.2em;color:var(--muted);transition:color .35s}
+.row h2{font-weight:700;line-height:1;letter-spacing:-.02em;font-variation-settings:'wdth' 112;font-size:clamp(1.5rem,3.2vw,2.5rem)}
+.row .q{margin-top:8px;font-size:14px;color:var(--muted);transition:color .35s}
+.row .names{font-size:12px;line-height:1.75;color:var(--muted);transition:color .35s}
+.row .cover{aspect-ratio:500/707;background:var(--line);position:relative;background-size:cover;background-position:center;transition:transform .45s var(--ease)}
+.row:hover{background:var(--blue);color:#fff}
+.row:hover .no,.row:hover .q,.row:hover .names{color:rgba(255,255,255,.75)}
+.row:hover .cover{transform:translateY(-6px) scale(1.06)}
+/* The issue 05 row is a real destination (links to /submit) like every
+   other row, so it no longer gets the inert, non-blue-hover treatment a
+   "nothing here yet" placeholder needed; only its cover slot stays a
+   centred text label instead of an image. No text-transform:uppercase
+   here (unlike most small labels on this page): this slot's text is the
+   issue title itself, and titles are always written in sentence case. */
+.row.next .cover{background:var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;letter-spacing:.14em;color:var(--muted);transition:transform .45s var(--ease),color .35s}
+.row.next:hover .cover{color:rgba(255,255,255,.75)}
+
+@media(max-width:900px){
+  .current .grid{grid-template-columns:1fr}
+  .current .cover{max-width:230px}
+  .row{grid-template-columns:1fr 76px;gap:16px;padding:22px 16px;margin:0 -16px}
+  .row .no{grid-column:1/-1;margin-bottom:-8px}
+  .row .names{display:none}
+}
+</style>
+<section class="current">
+  <div class="field"></div>
+  <div class="grid">
+    <div class="cover" style="background-image:url('/assets/covers/bloom.webp')"></div>
+    <div>
+      <span class="eyebrow">Out now: Issue No. 4</span>
+      <h1>Bloom</h1>
+      <p class="sub">Nothing opens on command.</p>
+      <div class="names">
+        <b>Dina Belenko</b> · <b>Kylli Sparre</b> · <b>Sara Fraysse</b> · <b>Martina Dorigatti</b> · <b>Clemens Maurer</b><br>
+        Seventeen spreads. Free to read, no account.
+      </div>
+      <p class="meta">Cover: Dina Belenko</p>
+      <div class="acts">
+        <a class="btn solid" href="/magazine/bloom">Read the issue</a>
+        <a class="btn ghost" href="/assets/pdf/bloom.pdf" download>Download the PDF</a>
+        <a class="btn ghost" href="https://www.peecho.com/print/en/2397702" target="_blank" rel="noopener">Order the print, &euro;25</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="archive">
+  <div class="head rv">
+    <span class="eyebrow">The archive</span>
+    <span class="eyebrow">Four issues a year, five artists each</span>
+  </div>
+  <div class="rows">
+
+    <a class="row rv" href="/magazine/bloom">
+      <span class="no">No. 04</span>
+      <div><h2>Bloom</h2><p class="q">Nothing opens on command.</p></div>
+      <p class="names">Dina Belenko, Kylli Sparre, Sara Fraysse, Martina Dorigatti, Clemens Maurer</p>
+      <div class="cover" style="background-image:url('/assets/covers/bloom.webp')"></div>
+    </a>
+
+    <a class="row rv" href="/magazine/chasing-light">
+      <span class="no">No. 03</span>
+      <div><h2>Chasing Light</h2><p class="q">The same sun. Never the same light.</p></div>
+      <p class="names">Will Corvara, Jeff Vonk, Ulf Berglund, Janusz Furrer, Joaquin Pastor Genzor</p>
+      <div class="cover" style="background-image:url('/assets/covers/chasing-light.webp')"></div>
+    </a>
+
+    <a class="row rv" href="/magazine/no-algorithm">
+      <span class="no">No. 02</span>
+      <div><h2>No Algorithm</h2><p class="q">Before the feed. Before the scroll. There is attention.</p></div>
+      <p class="names">Tommi Viitala, Silke Seybold, Dina Belenko, Anna Lena Raab, Jordi Piris</p>
+      <div class="cover" style="background-image:url('/assets/covers/no-algorithm.webp')"></div>
+    </a>
+
+    <a class="row rv" href="/magazine/origins">
+      <span class="no">No. 01</span>
+      <div><h2>Origins</h2><p class="q">Before mastery. Before style. There is the spark.</p></div>
+      <p class="names">Clemens Maurer, Dina Belenko, Michael Duckworth, Michelle Quiros, Oscar Rey</p>
+      <div class="cover" style="background-image:url('/assets/covers/origins.webp')"></div>
+    </a>
+
+    <a class="row next rv" href="{{ISSUE_CALL_URL}}">
+      <span class="no">No. 05</span>
+      <div><h2>{{ISSUE_05_TITLE}}</h2><p class="q">{{ISSUE_05_STATEMENT}}</p></div>
+      <p class="names">{{ISSUE_CALL_CARD_LINE}}<br>{{ISSUE_05_LAUNCH_LINE}}</p>
+      <div class="cover">{{ISSUE_05_TITLE}}</div>
+    </a>
+
+  </div>
+</section>

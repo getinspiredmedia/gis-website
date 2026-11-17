@@ -3,10 +3,10 @@
 // The open call Wonder opened 9 November 2026: /submit is now the Wonder
 // open call page (build/pages/submit.html), not André's weekly On View form
 // any more (that form moved to /on-view/submit, see CLAUDE.md). Used by the
-// homepage's issue-05 card and its "Show your work." door.
+// shared magazine-block's issue-05 archive row (build/partials/magazine-block.html,
+// now shown on both /magazine and the homepage).
 const ISSUE_CALL_URL = '/submit';
 const ISSUE_CALL_CARD_LINE = 'Free to enter. Deadline 6 December 2026.';
-const ISSUE_CALL_DOOR_LINE = 'Free to enter. Deadline 6 December 2026.';
 
 // The issue 05 archive row on /magazine (build/pages/magazine.html) reuses
 // these, copied verbatim from build/pages/submit.html (its eyebrow's
@@ -84,4 +84,4 @@ const pages = [
   },
 ];
 
-module.exports = { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_CALL_DOOR_LINE, ISSUE_05_TITLE, ISSUE_05_STATEMENT, ISSUE_05_LAUNCH_LINE, TALLY_URL };
+module.exports = { pages, ISSUE_CALL_URL, ISSUE_CALL_CARD_LINE, ISSUE_05_TITLE, ISSUE_05_STATEMENT, ISSUE_05_LAUNCH_LINE, TALLY_URL };

@@ -146,10 +146,10 @@ async function checkNoConsoleErrorsRoundTrip(browserType) {
   await page.goto(BASE + '/', { waitUntil: 'load' });
   await page.waitForTimeout(2000);
 
-  const bloomCard = page.locator('a.card[href="/magazine/bloom"]');
-  await bloomCard.scrollIntoViewIfNeeded();
+  const bloomRow = page.locator('a.row[href="/magazine/bloom"]');
+  await bloomRow.scrollIntoViewIfNeeded();
   await page.waitForTimeout(400);
-  await bloomCard.click();
+  await bloomRow.click();
   await page.waitForTimeout(1500);
 
   const readBtn = page.locator('a.btn', { hasText: 'Read the issue' });

@@ -13,19 +13,6 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap"></noscript>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
-<!-- Two art-directed hero photos (not one photo cropped two ways): the mobile
-     preload fires only in the same (max-width:860px) and (orientation:portrait)
-     case the <picture> below switches on, its exact negation preloads the
-     desktop photo everywhere else, so only one hero image is ever fetched.
-     type="image/avif" matches the <picture>'s own first (most preferred)
-     source below: a browser that would pick AVIF from the <picture> gets it
-     preloaded too, instead of preloading webp (never used by that browser)
-     while the real fetch goes to avif, doubling the request. A browser
-     without AVIF support just skips these two preloads (per the type
-     attribute) and falls through to the <picture>'s webp/jpg sources as
-     before, uncached. -->
-<link rel="preload" as="image" type="image/avif" media="(max-width: 860px) and (orientation: portrait)" href="/assets/responsive/bloom-hero-mobile-1024.avif" imagesrcset="/assets/responsive/bloom-hero-mobile-512.avif 512w, /assets/responsive/bloom-hero-mobile-768.avif 768w, /assets/responsive/bloom-hero-mobile-1024.avif 1024w" imagesizes="100vw" fetchpriority="high">
-<link rel="preload" as="image" type="image/avif" media="(min-width: 861px), (orientation: landscape)" href="/assets/responsive/bloom-hero-desktop-1536.avif" imagesrcset="/assets/responsive/bloom-hero-desktop-768.avif 768w, /assets/responsive/bloom-hero-desktop-1152.avif 1152w, /assets/responsive/bloom-hero-desktop-1536.avif 1536w" imagesizes="100vw" fetchpriority="high">
 <!-- Privacy-friendly analytics by Plausible — proxied via own domain so adblockers don't skew the numbers -->
 <script async src="/js/pa-MH-OTeJcc74k86JrwLa7k.js"></script>
 <script>
@@ -40,95 +27,16 @@
    motion) and runs the block wipe instead, so the two never fight. */
 @view-transition { navigation: auto; }
 
-:root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--wall:#111319;--band:#0f1118;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1);--doorglow:#ff9d52}
+:root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--band:#0f1118;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 img{display:block;max-width:100%}
 a{color:inherit;text-decoration:none}
-.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
 .statement{font-weight:700;line-height:.94;letter-spacing:-.02em;font-variation-settings:'wdth' 118;font-size:clamp(2.6rem,7.4vw,6.6rem)}
-.lede{font-size:clamp(1rem,1.5vw,1.2rem);line-height:1.55;max-width:34ch}
-.btn{margin-top:26px;align-self:flex-start;display:inline-flex;align-items:center;gap:10px;border:1px solid currentColor;border-radius:999px;padding:12px 22px;font-size:13px;font-weight:600;letter-spacing:.04em;transition:background .3s,color .3s,gap .3s}
 .rv{opacity:0;transform:translateY(22px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
 .rv.is-in{opacity:1;transform:none}
 :focus-visible{outline:2px solid currentColor;outline-offset:3px}
-
-/* ── Hero: cold open on the Bloom cover ──
-   Driven by JS (the inline script right after the hero markup), not a fixed
-   timer from page parse: on a slow connection the old timers ran out while
-   the image itself was still loading, so the sequence could finish (or even
-   look stuck mid-way) before there was anything to see. The default state
-   below is the pre-open frame (zoomed in, copy hidden); .is-opening (added
-   once the hero image's decode() resolves, or after a 2500ms fallback) runs
-   the three keyframe animations from that same zero point. .is-static
-   (reduced motion, set by that same script) and the <noscript> fallback
-   below both skip straight to the end state. */
-.hero{position:relative;height:100svh;min-height:600px;background:var(--ink);overflow:hidden;display:flex;align-items:flex-end;color:#fff}
-.hero-media{position:absolute;inset:0;overflow:hidden}
-.hero-media picture,.hero-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;transform:scale(1.08)}
-.hero.is-opening .hero-media picture,.hero.is-opening .hero-media img{animation:heroZoom 1600ms var(--ease) forwards}
-.hero.is-static .hero-media picture,.hero.is-static .hero-media img{transform:none}
-@keyframes heroZoom{to{transform:scale(1)}}
-.hero-media::after{content:'';position:absolute;inset:0;background:linear-gradient(rgba(11,12,16,.08) 0,rgba(11,12,16,.12) 40%,rgba(11,12,16,.82) 100%)}
-@media(max-width:860px) and (orientation:portrait){
-  /* The mobile source (bloom-hero-mobile.png) has the magazine high in
-     frame with the dark ground reserved for the title at the bottom, so a
-     lower anchor than the desktop photo keeps the magazine fully in frame
-     while still leaving that dark ground under the hero copy. */
-  .hero-media picture,.hero-media img{object-position:center 30%}
-}
-.hero-copy{position:relative;z-index:2;padding:0 28px clamp(56px,10vh,110px);max-width:620px;opacity:0}
-.hero.is-opening .hero-copy{animation:heroCopyIn 1300ms var(--ease) 700ms forwards}
-.hero.is-static .hero-copy{opacity:1}
-@keyframes heroCopyIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-.hero-copy .eyebrow{display:block;margin-bottom:16px;color:rgba(255,255,255,.72)}
-.hero-copy h1{font-weight:700;font-size:clamp(3rem,10vw,7.5rem);line-height:.9;letter-spacing:-.02em}
-.hero-copy h1 .lt{display:inline-block;font-variation-settings:'wdth' 75}
-.hero.is-opening .hero-copy h1 .lt{animation:wdthIn 700ms var(--ease) both}
-.hero.is-static .hero-copy h1 .lt{font-variation-settings:'wdth' 118}
-@keyframes wdthIn{to{font-variation-settings:'wdth' 118}}
-.hero-copy .lede{margin:18px 0 0;max-width:30ch;color:rgba(255,255,255,.82)}
-.hero-copy .btn:hover{background:#fff;color:var(--ink);gap:16px}
-@media(prefers-reduced-motion:reduce){
-  .hero-media img,.hero-media picture{transform:none}
-  .hero-copy{opacity:1}
-  .hero-copy h1 .lt{font-variation-settings:'wdth' 118}
-}
-
-/* ── Issue strip: pinned, cards slide horizontally as the page scrolls ── */
-.strip{background:var(--ink);color:#fff;padding-top:clamp(70px,10vh,120px)}
-.strip-head{padding:0 28px;max-width:640px}
-.strip-head .eyebrow{display:block;margin-bottom:16px;color:rgba(255,255,255,.72)}
-.strip-head h2{font-size:clamp(1.8rem,4.2vw,3.2rem);font-weight:700;line-height:1.02;letter-spacing:-.02em;font-variation-settings:'wdth' 110}
-.strip-head .meta{display:block;margin-top:14px;font-size:12px;color:rgba(255,255,255,.6)}
-.strip-pin{position:relative;height:100svh;min-height:520px;display:flex;align-items:center;overflow:hidden;margin-top:40px}
-.strip-track{display:flex;align-items:center;gap:clamp(28px,5vw,64px);padding:0 10vw;will-change:transform}
-/* 500/707 is the real ratio of every cover file this strip uses (every
-   cover image already carries width="500" height="707"), not the old
-   hardcoded 3/4: with the box ratio matching the image ratio exactly, no
-   object-fit:cover is needed to fill it, so none is left on the cover
-   image below to crop anything. */
-.card{position:relative;flex:0 0 auto;width:min(60vw,320px);aspect-ratio:500/707;filter:grayscale(1) brightness(.85);transform:scale(.82);transition:filter .5s var(--ease),transform .5s var(--ease)}
-.card.is-active{filter:none;transform:scale(1)}
-.card picture,.card img{position:absolute;inset:0;width:100%;height:100%;background:var(--band)}
-.card .num{position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);z-index:-1;font-size:clamp(7rem,22vw,14rem);font-weight:700;font-variation-settings:'wdth' 125;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.9);text-stroke:2px rgba(255,255,255,.9);opacity:0;transition:opacity .5s var(--ease);pointer-events:none}
-.card.is-active .num{opacity:1}
-.card-label{position:absolute;left:0;right:0;bottom:0;padding:14px 16px;font-size:12px;letter-spacing:.04em;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.72))}
-.card.is-empty{border:1px dashed rgba(255,255,255,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px}
-.card.is-empty .card-empty-label{font-size:15px;font-weight:600}
-.card.is-empty .card-label{position:static;background:none;padding:0;color:rgba(255,255,255,.66)}
-.strip-progress{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(255,255,255,.14)}
-.strip-progress span{display:block;height:100%;width:0;background:var(--blue)}
-@media(max-width:860px){
-  .strip-pin{height:auto;min-height:0;margin-top:28px}
-  .strip-track{overflow-x:auto;scroll-snap-type:x mandatory;padding:0 22px 20px;scrollbar-width:none}
-  .strip-track::-webkit-scrollbar{display:none}
-  .card{width:68vw;scroll-snap-align:center;filter:none;transform:none}
-  .card .num{opacity:1}
-  .strip-progress{display:none}
-}
 
 /* ── Statement ── */
 .claim{background:var(--blue);color:#fff;padding:clamp(80px,14vh,180px) 28px;display:flex;justify-content:center}
@@ -137,106 +45,21 @@ a{color:inherit;text-decoration:none}
 .claim .statement{transform:translateY(105%);transition:transform 1100ms var(--ease)}
 .claim.is-in .statement{transform:none}
 
-/* ── Corridor ("the gang"): a scroll-driven walk past the five Bloom
-   artists, ending at a door into the gallery. Default (no JS, or JS that
-   hasn't run yet) is the lightest possible version: the five works stacked
-   vertically, then the door as a plain poster+copy block, exactly the
-   previous "exhibition band" layout, renamed. The page's own inline script
-   (after gis-motion:ready) upgrades this to one of two modes by adding a
-   class to #corridor: .corridor--row (mobile, or reduced motion: a
-   horizontal scroll-snap row, no pin, no 3D) or .corridor--3d (desktop,
-   motion allowed: the pinned CSS-3D version). Only transform/opacity (and,
-   for the colour/fog read, filter, itself only ever a function of
-   transform/opacity-driving state) are touched anywhere in 3d mode, for
-   60fps; nothing in 3d mode relies on a CSS transition, every value that
-   changes during the pin is written by the script on every scrub tick, from
-   real scroll progress, never a toggled class. ── */
-.corridor{background:var(--ink);color:#fff}
-.corridor-works{display:flex;flex-direction:column;gap:32px;padding:56px 28px}
-.corr-work{position:relative;display:flex;flex-direction:column;gap:10px;flex:0 0 auto}
-.corr-work img{display:block;width:100%;height:auto;border:8px solid #fff;box-shadow:0 20px 50px rgba(0,0,0,.5)}
-.corr-work .plaque{font-size:12px;letter-spacing:.04em;color:rgba(255,255,255,.62)}
-.corr-work .plaque b{display:block;margin-bottom:2px;color:#fff;font-size:14px;font-weight:600;letter-spacing:-.01em}
+/* ── Gallery end image: the room, full bleed, same dark-gradient-readable
+   treatment the old corridor door used at its own fullscreen end state, now
+   a plain static section (no pin, no 3D) since this is the only gallery
+   mention on the page. ── */
+.gallery-end{position:relative;min-height:100svh;background:var(--band);color:#fff;display:flex;align-items:flex-end;overflow:hidden}
+.gallery-end-media{position:absolute;inset:0}
+.gallery-end-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 45%}
+.gallery-end-media::after{content:'';position:absolute;inset:0;background:linear-gradient(rgba(11,12,16,.08) 0,rgba(11,12,16,.12) 40%,rgba(11,12,16,.82) 100%)}
+.gallery-end-copy{position:relative;z-index:2;padding:clamp(48px,8vh,88px) 28px;max-width:620px}
+.gallery-end-copy .eyebrow{display:block;margin-bottom:16px;color:rgba(255,255,255,.66)}
+.gallery-end-copy h2{margin:0 0 16px;font-size:clamp(1.8rem,4vw,3rem);font-weight:700;line-height:1.05;letter-spacing:-.02em;font-variation-settings:'wdth' 112}
+.gallery-end-copy p{color:rgba(255,255,255,.72);font-size:15px;line-height:1.6;max-width:34ch}
+.gallery-end-copy .btn{margin-top:22px}
+.gallery-end-copy .btn:hover{background:#fff;color:var(--ink);gap:16px}
 
-/* Loading scrim (JS-added .corridor--js-lazy on #corridor, see the
-   lazy-load script below): a dimmed band-coloured panel fills the frame
-   until that work's image has decoded, the plaque stays readable the
-   whole time (it's a figcaption sibling, outside this picture, never
-   touched here). A 404 or a decode slower than the 4000ms timeout simply
-   never gets .is-loaded, so the panel+plaque stay in place for good,
-   never an empty black frame or a broken-image icon. Without JS this
-   block never applies: the plain src/srcset above is the only fallback
-   and shows the image itself, as always. */
-.corridor--js-lazy .corr-work picture{position:relative;display:block}
-.corridor--js-lazy .corr-work .corr-scrim{position:absolute;inset:0;background:var(--band);opacity:1;transition:opacity .3s}
-.corridor--js-lazy .corr-work.is-loaded .corr-scrim{opacity:0;pointer-events:none}
-.corridor--js-lazy .corr-work img{opacity:0;transition:opacity .3s}
-.corridor--js-lazy .corr-work.is-loaded img{opacity:1}
-/* The door has no separate scrim panel: its own --band background and
-   warm glow (.corridor-door-media, ::after below) already serve that
-   role, so only the image itself needs the same fade-in. */
-.corridor--js-lazy .corridor-door-media img{opacity:0;transition:opacity .3s}
-.corridor--js-lazy .corridor-door.is-loaded .corridor-door-media img{opacity:1}
-
-.corridor-door{background:var(--ink);display:grid;grid-template-columns:1fr}
-.corridor-door-media{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--band)}
-.corridor-door-media picture,.corridor-door-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 45%}
-.corridor-door-copy{padding:clamp(48px,8vh,88px) 28px}
-.corridor-door-copy .eyebrow{color:rgba(255,255,255,.66)}
-.corridor-door-copy h2{margin:16px 0 16px;font-size:clamp(1.8rem,4vw,3rem);font-weight:700;line-height:1.05;letter-spacing:-.02em;font-variation-settings:'wdth' 112}
-.corridor-door-copy p{color:rgba(255,255,255,.72);font-size:15px;line-height:1.6;max-width:34ch}
-.corridor-door-copy .btn:hover{background:#fff;color:var(--ink);gap:16px}
-@media(min-width:861px){
-  .corridor-door{grid-template-columns:1.2fr 1fr;align-items:center}
-  .corridor-door-copy{padding:0 clamp(40px,6vw,80px)}
-}
-
-/* Mobile row / reduced-motion row (JS-added .corridor--row): a horizontal
-   scroll-snap strip instead of the stacked default, no pin, no 3D. */
-.corridor--row .corridor-works{flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;gap:20px;padding:28px 22px;scrollbar-width:none}
-.corridor--row .corridor-works::-webkit-scrollbar{display:none}
-.corridor--row .corr-work{width:68vw;scroll-snap-align:center}
-
-/* Desktop 3D pin (JS-added .corridor--3d, ≥861px + no-preference motion
-   only). No separate "scene" element: .corridor-works itself becomes the
-   transformed 3D container; its five .corr-work children get transform,
-   opacity and filter written every scrub tick by the script (rotateY,
-   x-offset, fog, colour), never a static init-time value and never a CSS
-   transition. .corridor-door is a plain sibling inside the same perspective
-   ancestor (.corridor-stage), its own scale/opacity likewise written every
-   tick: small and warmly glowing from the start, fullscreen by the end. */
-.corridor--3d .corridor-pin{position:relative;height:100svh;overflow:hidden}
-.corridor--3d .corridor-stage{position:absolute;inset:0;perspective:6000px;perspective-origin:50% 42%;background:linear-gradient(to bottom,var(--band) 0%,var(--ink) 18%,var(--ink) 82%,var(--band) 100%)}
-.corridor--3d .corridor-works{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;will-change:transform;display:block;padding:0;gap:0}
-.corridor--3d .corr-work{position:absolute;top:50%;left:50%;width:min(24vw,300px);margin:0;will-change:transform,opacity,filter}
-.corridor--3d .corr-work .plaque{margin-top:8px;will-change:opacity}
-.corridor--3d .corr-work .spot{position:absolute;inset:-40% -60%;border-radius:50%;background:radial-gradient(closest-side,var(--doorglow),transparent 70%);opacity:0;pointer-events:none;z-index:-1;will-change:opacity}
-.corridor--3d .corr-work .floor{position:absolute;left:10%;right:10%;bottom:-18%;height:30%;border-radius:50%;background:radial-gradient(closest-side,var(--doorglow),transparent 75%);opacity:0;filter:blur(2px);pointer-events:none;z-index:-1;will-change:opacity}
-.corridor--3d .corridor-door{position:absolute;inset:0;display:block;transform:scale(.1);opacity:.35;will-change:transform,opacity}
-.corridor--3d .corridor-door-media{position:absolute;inset:0;aspect-ratio:auto}
-.corridor--3d .corridor-door-media::after{content:'';position:absolute;inset:0;background:radial-gradient(closest-side,var(--doorglow) 0%,transparent 72%);mix-blend-mode:screen;opacity:.6}
-.corridor--3d .corridor-door-copy{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 clamp(28px,6vw,90px);opacity:0;transform:translateY(16px);will-change:transform,opacity}
-.corridor-progress{display:none}
-.corridor--3d .corridor-progress{display:block;position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(255,255,255,.14);z-index:2}
-.corridor--3d .corridor-progress span{display:block;height:100%;width:0;background:var(--blue)}
-
-/* ── Doors: the whole half is the link, no separate button ── */
-.doors{display:grid;grid-template-columns:1fr 1fr}
-.door{padding:clamp(60px,10vh,130px) 34px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;min-height:56svh;transition:background .3s}
-.door.look{background:var(--paper);border-right:1px solid var(--line)}
-.door.look:hover,.door.look:focus-visible{background:var(--line)}
-.door.seen{background:var(--blue);color:#fff}
-.door.seen:hover,.door.seen:focus-visible{background:#1127a8}
-.door .eyebrow{opacity:.6}
-.door h2{margin:16px 0 14px;font-size:clamp(1.7rem,3.4vw,2.6rem);font-weight:700;line-height:1.04;letter-spacing:-.02em;font-variation-settings:'wdth' 110}
-.door p{font-size:15px;line-height:1.6;max-width:30ch}
-.door.look p{color:var(--muted)}
-.door.seen p{color:rgba(255,255,255,.78)}
-
-@media(max-width:860px){
-  .doors{grid-template-columns:1fr}
-  .door.look{border-right:0;border-bottom:1px solid var(--line)}
-}
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
   .claim .statement{transform:none}
@@ -374,103 +197,130 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
 
 
 <main id="main">
-<section class="hero" id="hero">
-  <div class="hero-media">
-    <picture>
-      <source media="(max-width: 860px) and (orientation: portrait)" type="image/avif" srcset="/assets/responsive/bloom-hero-mobile-512.avif 512w, /assets/responsive/bloom-hero-mobile-768.avif 768w, /assets/responsive/bloom-hero-mobile-1024.avif 1024w" sizes="100vw">
-      <source media="(max-width: 860px) and (orientation: portrait)" type="image/webp" srcset="/assets/responsive/bloom-hero-mobile-512.webp 512w, /assets/responsive/bloom-hero-mobile-768.webp 768w, /assets/responsive/bloom-hero-mobile-1024.webp 1024w" sizes="100vw">
-      <source media="(max-width: 860px) and (orientation: portrait)" srcset="/assets/responsive/bloom-hero-mobile-512.jpg 512w, /assets/responsive/bloom-hero-mobile-768.jpg 768w, /assets/responsive/bloom-hero-mobile-1024.jpg 1024w" sizes="100vw">
-      <source type="image/avif" srcset="/assets/responsive/bloom-hero-desktop-768.avif 768w, /assets/responsive/bloom-hero-desktop-1152.avif 1152w, /assets/responsive/bloom-hero-desktop-1536.avif 1536w" sizes="100vw">
-      <source type="image/webp" srcset="/assets/responsive/bloom-hero-desktop-768.webp 768w, /assets/responsive/bloom-hero-desktop-1152.webp 1152w, /assets/responsive/bloom-hero-desktop-1536.webp 1536w" sizes="100vw">
-      <img src="/assets/responsive/bloom-hero-desktop-1536.jpg" srcset="/assets/responsive/bloom-hero-desktop-768.jpg 768w, /assets/responsive/bloom-hero-desktop-1152.jpg 1152w, /assets/responsive/bloom-hero-desktop-1536.jpg 1536w" sizes="100vw" alt="Issue 04, Bloom: the printed cover, photograph by Dina Belenko." width="1536" height="1024" fetchpriority="high">
-    </picture>
-  </div>
-  <div class="hero-copy" id="hero-copy">
-    <span class="eyebrow">Issue 04 &middot; out now</span>
-    <h1 id="hero-title">
-      <span aria-hidden="true" class="lt-wrap"><span class="lt" style="animation-delay:700ms">B</span><span class="lt" style="animation-delay:760ms">l</span><span class="lt" style="animation-delay:820ms">o</span><span class="lt" style="animation-delay:880ms">o</span><span class="lt" style="animation-delay:940ms">m</span><span class="lt" style="animation-delay:1000ms">.</span></span>
-      <span class="sr-only">Bloom.</span>
-    </h1>
-    <p class="lede">Nothing opens on command.</p>
-    <a class="btn" href="/magazine/bloom">Read the issue &rarr;</a>
-  </div>
-</section>
-<noscript><style>.hero-media img,.hero-media picture{transform:none}.hero-copy{opacity:1}.hero-copy h1 .lt{font-variation-settings:'wdth' 118}</style></noscript>
-<script>
-(function () {
-  'use strict';
-  var hero = document.getElementById('hero');
-  if (!hero) return;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    hero.classList.add('is-static');
-    return;
-  }
-  var started = false;
-  function start() {
-    if (started) return;
-    started = true;
-    hero.classList.add('is-opening');
-  }
-  var img = hero.querySelector('.hero-media img');
-  if (img && typeof img.decode === 'function') img.decode().then(start, start);
-  else start();
-  setTimeout(start, 2500);
-}());
-</script>
+<style>
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
 
-<section class="strip" id="strip">
-  <div class="strip-head rv" data-reveal-group="strip-head">
-    <span class="eyebrow">The magazine</span>
-    <h2>Five artists. One theme.<br>Four times a year.</h2>
-    <span class="meta">Free to read.</span>
-  </div>
-  <div class="strip-pin">
-    <div class="strip-track" id="strip-track">
-      <a class="card is-active" href="/magazine/bloom" data-cursor="Read" style="view-transition-name:issue-04">
-        <span class="num">04</span>
-        <picture>
-          <source type="image/avif" srcset="/assets/responsive/bloom-cover-500.avif">
-          <source type="image/webp" srcset="/assets/responsive/bloom-cover-500.webp">
-          <img src="/assets/responsive/bloom-cover-500.jpg" alt="Cover of issue 04, Bloom, by Dina Belenko" loading="lazy" decoding="async" width="500" height="707">
-        </picture>
-        <span class="card-label">Issue 04 &middot; Bloom</span>
-      </a>
-      <a class="card" href="/magazine/chasing-light" data-cursor="Read" style="view-transition-name:issue-03">
-        <span class="num">03</span>
-        <picture>
-          <source type="image/avif" srcset="/assets/responsive/chasing-light-cover-500.avif">
-          <source type="image/webp" srcset="/assets/responsive/chasing-light-cover-500.webp">
-          <img src="/assets/responsive/chasing-light-cover-500.jpg" alt="Cover of issue 03, Chasing Light" loading="lazy" decoding="async" width="500" height="707">
-        </picture>
-        <span class="card-label">Issue 03 &middot; Chasing Light</span>
-      </a>
-      <a class="card" href="/magazine/no-algorithm" data-cursor="Read" style="view-transition-name:issue-02">
-        <span class="num">02</span>
-        <picture>
-          <source type="image/avif" srcset="/assets/responsive/no-algorithm-cover-500.avif">
-          <source type="image/webp" srcset="/assets/responsive/no-algorithm-cover-500.webp">
-          <img src="/assets/responsive/no-algorithm-cover-500.jpg" alt="Cover of issue 02, No Algorithm" loading="lazy" decoding="async" width="500" height="707">
-        </picture>
-        <span class="card-label">Issue 02 &middot; No Algorithm</span>
-      </a>
-      <a class="card" href="/magazine/origins" data-cursor="Read" style="view-transition-name:issue-01">
-        <span class="num">01</span>
-        <picture>
-          <source type="image/avif" srcset="/assets/responsive/origins-cover-500.avif">
-          <source type="image/webp" srcset="/assets/responsive/origins-cover-500.webp">
-          <img src="/assets/responsive/origins-cover-500.jpg" alt="Cover of issue 01, Origins" loading="lazy" decoding="async" width="500" height="707">
-        </picture>
-        <span class="card-label">Issue 01 &middot; Origins</span>
-      </a>
-      <a class="card is-empty" href="/submit" data-cursor="Read" style="view-transition-name:issue-05">
-        <span class="num">05</span>
-        <span class="card-empty-label">Wonder</span>
-        <span class="card-label">Free to enter. Deadline 6 December 2026.</span>
-      </a>
+/* current issue */
+.current{background:var(--ink);color:#fff;padding:clamp(150px,20vh,230px) 28px clamp(70px,10vh,120px);position:relative;overflow:hidden}
+.current .field{position:absolute;inset:0;background:radial-gradient(120% 80% at 70% 20%,#1a2240 0%,#0d1020 60%,#0b0c10 100%);opacity:.85}
+.current .grid{position:relative;z-index:2;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:minmax(0,320px) 1fr;gap:clamp(30px,5vw,64px);align-items:center}
+/* 500/707 is the real ratio of every cover file this page uses (confirmed
+   against each source), not a hardcoded 3/4: with the box ratio matching
+   the image ratio exactly, background-size:cover never needs to crop. */
+.current .cover{aspect-ratio:500/707;background:var(--blue);position:relative;background-size:cover;background-position:center}
+.current .cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.5) 0%,transparent 60%);pointer-events:none}
+.current .cover span{position:absolute;left:16px;right:16px;bottom:16px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.85;z-index:1}
+.current .eyebrow{color:rgba(255,255,255,.6)}
+.current h1{margin:14px 0 10px;font-weight:700;line-height:.96;letter-spacing:-.02em;font-variation-settings:'wdth' 116;font-size:clamp(2.4rem,6vw,4.8rem)}
+.current .sub{font-size:clamp(1rem,1.7vw,1.35rem);color:rgba(255,255,255,.78);line-height:1.4}
+.current .names{margin-top:26px;font-size:13px;line-height:2;color:rgba(255,255,255,.62);border-top:1px solid rgba(255,255,255,.16);padding-top:18px}
+.current .names b{color:#fff;font-weight:500}
+.current .meta{margin-top:14px;font-size:12px;font-weight:400;color:rgba(255,255,255,.62)}
+.acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.btn{display:inline-flex;align-items:center;gap:9px;border:1px solid currentColor;border-radius:999px;padding:12px 22px;font-size:13px;font-weight:600;letter-spacing:.04em;transition:background .3s,color .3s,gap .3s}
+.btn.solid{background:var(--blue);border-color:var(--blue)}
+.btn.solid:hover{background:#fff;color:var(--blue);border-color:#fff;gap:14px}
+.btn.ghost:hover{background:#fff;color:var(--ink);gap:14px}
+
+/* archive */
+.archive{padding:clamp(70px,10vh,120px) 28px}
+.archive .head{max-width:1100px;margin:0 auto 30px;display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap}
+.archive .head .eyebrow{color:var(--muted)}
+.rows{max-width:1100px;margin:0 auto}
+.row{display:grid;grid-template-columns:64px 1fr 230px 86px;gap:24px;align-items:center;padding:26px 20px;margin:0 -20px;border-top:1px solid var(--line);transition:background .35s var(--ease),color .35s}
+.row:last-of-type{border-bottom:1px solid var(--line)}
+.row .no{font-size:11px;letter-spacing:.2em;color:var(--muted);transition:color .35s}
+.row h2{font-weight:700;line-height:1;letter-spacing:-.02em;font-variation-settings:'wdth' 112;font-size:clamp(1.5rem,3.2vw,2.5rem)}
+.row .q{margin-top:8px;font-size:14px;color:var(--muted);transition:color .35s}
+.row .names{font-size:12px;line-height:1.75;color:var(--muted);transition:color .35s}
+.row .cover{aspect-ratio:500/707;background:var(--line);position:relative;background-size:cover;background-position:center;transition:transform .45s var(--ease)}
+.row:hover{background:var(--blue);color:#fff}
+.row:hover .no,.row:hover .q,.row:hover .names{color:rgba(255,255,255,.75)}
+.row:hover .cover{transform:translateY(-6px) scale(1.06)}
+/* The issue 05 row is a real destination (links to /submit) like every
+   other row, so it no longer gets the inert, non-blue-hover treatment a
+   "nothing here yet" placeholder needed; only its cover slot stays a
+   centred text label instead of an image. No text-transform:uppercase
+   here (unlike most small labels on this page): this slot's text is the
+   issue title itself, and titles are always written in sentence case. */
+.row.next .cover{background:var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;letter-spacing:.14em;color:var(--muted);transition:transform .45s var(--ease),color .35s}
+.row.next:hover .cover{color:rgba(255,255,255,.75)}
+
+@media(max-width:900px){
+  .current .grid{grid-template-columns:1fr}
+  .current .cover{max-width:230px}
+  .row{grid-template-columns:1fr 76px;gap:16px;padding:22px 16px;margin:0 -16px}
+  .row .no{grid-column:1/-1;margin-bottom:-8px}
+  .row .names{display:none}
+}
+</style>
+<section class="current">
+  <div class="field"></div>
+  <div class="grid">
+    <div class="cover" style="background-image:url('/assets/covers/bloom.webp')"></div>
+    <div>
+      <span class="eyebrow">Out now: Issue No. 4</span>
+      <h1>Bloom</h1>
+      <p class="sub">Nothing opens on command.</p>
+      <div class="names">
+        <b>Dina Belenko</b> · <b>Kylli Sparre</b> · <b>Sara Fraysse</b> · <b>Martina Dorigatti</b> · <b>Clemens Maurer</b><br>
+        Seventeen spreads. Free to read, no account.
+      </div>
+      <p class="meta">Cover: Dina Belenko</p>
+      <div class="acts">
+        <a class="btn solid" href="/magazine/bloom">Read the issue</a>
+        <a class="btn ghost" href="/assets/pdf/bloom.pdf" download>Download the PDF</a>
+        <a class="btn ghost" href="https://www.peecho.com/print/en/2397702" target="_blank" rel="noopener">Order the print, &euro;25</a>
+      </div>
     </div>
-    <div class="strip-progress"><span id="strip-progress-fill"></span></div>
   </div>
 </section>
+
+<section class="archive">
+  <div class="head rv">
+    <span class="eyebrow">The archive</span>
+    <span class="eyebrow">Four issues a year, five artists each</span>
+  </div>
+  <div class="rows">
+
+    <a class="row rv" href="/magazine/bloom">
+      <span class="no">No. 04</span>
+      <div><h2>Bloom</h2><p class="q">Nothing opens on command.</p></div>
+      <p class="names">Dina Belenko, Kylli Sparre, Sara Fraysse, Martina Dorigatti, Clemens Maurer</p>
+      <div class="cover" style="background-image:url('/assets/covers/bloom.webp')"></div>
+    </a>
+
+    <a class="row rv" href="/magazine/chasing-light">
+      <span class="no">No. 03</span>
+      <div><h2>Chasing Light</h2><p class="q">The same sun. Never the same light.</p></div>
+      <p class="names">Will Corvara, Jeff Vonk, Ulf Berglund, Janusz Furrer, Joaquin Pastor Genzor</p>
+      <div class="cover" style="background-image:url('/assets/covers/chasing-light.webp')"></div>
+    </a>
+
+    <a class="row rv" href="/magazine/no-algorithm">
+      <span class="no">No. 02</span>
+      <div><h2>No Algorithm</h2><p class="q">Before the feed. Before the scroll. There is attention.</p></div>
+      <p class="names">Tommi Viitala, Silke Seybold, Dina Belenko, Anna Lena Raab, Jordi Piris</p>
+      <div class="cover" style="background-image:url('/assets/covers/no-algorithm.webp')"></div>
+    </a>
+
+    <a class="row rv" href="/magazine/origins">
+      <span class="no">No. 01</span>
+      <div><h2>Origins</h2><p class="q">Before mastery. Before style. There is the spark.</p></div>
+      <p class="names">Clemens Maurer, Dina Belenko, Michael Duckworth, Michelle Quiros, Oscar Rey</p>
+      <div class="cover" style="background-image:url('/assets/covers/origins.webp')"></div>
+    </a>
+
+    <a class="row next rv" href="/submit">
+      <span class="no">No. 05</span>
+      <div><h2>Wonder</h2><p class="q">Whatever made you stop and look twice.</p></div>
+      <p class="names">Free to enter. Deadline 6 December 2026.<br>Magazine and gallery launch: 15 January 2027</p>
+      <div class="cover">Wonder</div>
+    </a>
+
+  </div>
+</section>
+
 
 <section class="claim rv">
   <div class="inner">
@@ -478,97 +328,20 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
   </div>
 </section>
 
-<section class="corridor" id="corridor">
-  <div class="corridor-pin" id="corridor-pin">
-    <div class="corridor-stage" id="corridor-stage">
-      <div class="corridor-works" id="corridor-works">
-    <figure class="corr-work" data-room="1">
-      <span class="spot" aria-hidden="true"></span>
-      <span class="floor" aria-hidden="true"></span>
-      <picture>
-        <span class="corr-scrim" aria-hidden="true"></span>
-        <source type="image/avif" srcset="/assets/responsive/corridor-room-01-450.avif 450w, /assets/responsive/corridor-room-01-900.avif 900w" sizes="(min-width:861px) 700px, 68vw">
-        <source type="image/webp" srcset="/assets/responsive/corridor-room-01-450.webp 450w, /assets/responsive/corridor-room-01-900.webp 900w" sizes="(min-width:861px) 700px, 68vw">
-        <img src="/assets/responsive/corridor-room-01-900.jpg" srcset="/assets/responsive/corridor-room-01-450.jpg 450w, /assets/responsive/corridor-room-01-900.jpg 900w" sizes="(min-width:861px) 700px, 68vw" alt="Work by Dina Belenko, Room 01" loading="lazy" decoding="async" width="698" height="870">
-      </picture>
-      <figcaption class="plaque"><b>Dina Belenko</b><span>Room 01</span></figcaption>
-    </figure>
-    <figure class="corr-work" data-room="2">
-      <span class="spot" aria-hidden="true"></span>
-      <span class="floor" aria-hidden="true"></span>
-      <picture>
-        <span class="corr-scrim" aria-hidden="true"></span>
-        <source type="image/avif" srcset="/assets/responsive/corridor-room-02-450.avif 450w, /assets/responsive/corridor-room-02-900.avif 900w" sizes="(min-width:861px) 700px, 68vw">
-        <source type="image/webp" srcset="/assets/responsive/corridor-room-02-450.webp 450w, /assets/responsive/corridor-room-02-900.webp 900w" sizes="(min-width:861px) 700px, 68vw">
-        <img src="/assets/responsive/corridor-room-02-900.jpg" srcset="/assets/responsive/corridor-room-02-450.jpg 450w, /assets/responsive/corridor-room-02-900.jpg 900w" sizes="(min-width:861px) 700px, 68vw" alt="Work by Kylli Sparre, Room 02" loading="lazy" decoding="async" width="697" height="697">
-      </picture>
-      <figcaption class="plaque"><b>Kylli Sparre</b><span>Room 02</span></figcaption>
-    </figure>
-    <figure class="corr-work" data-room="3">
-      <span class="spot" aria-hidden="true"></span>
-      <span class="floor" aria-hidden="true"></span>
-      <picture>
-        <span class="corr-scrim" aria-hidden="true"></span>
-        <source type="image/avif" srcset="/assets/responsive/corridor-room-03-450.avif 450w, /assets/responsive/corridor-room-03-900.avif 900w" sizes="(min-width:861px) 700px, 68vw">
-        <source type="image/webp" srcset="/assets/responsive/corridor-room-03-450.webp 450w, /assets/responsive/corridor-room-03-900.webp 900w" sizes="(min-width:861px) 700px, 68vw">
-        <img src="/assets/responsive/corridor-room-03-900.jpg" srcset="/assets/responsive/corridor-room-03-450.jpg 450w, /assets/responsive/corridor-room-03-900.jpg 900w" sizes="(min-width:861px) 700px, 68vw" alt="Work by Sara Fraysse, Room 03" loading="lazy" decoding="async" width="612" height="407">
-      </picture>
-      <figcaption class="plaque"><b>Sara Fraysse</b><span>Room 03</span></figcaption>
-    </figure>
-    <figure class="corr-work" data-room="4">
-      <span class="spot" aria-hidden="true"></span>
-      <span class="floor" aria-hidden="true"></span>
-      <picture>
-        <span class="corr-scrim" aria-hidden="true"></span>
-        <source type="image/avif" srcset="/assets/responsive/corridor-room-04-450.avif 450w, /assets/responsive/corridor-room-04-900.avif 900w" sizes="(min-width:861px) 700px, 68vw">
-        <source type="image/webp" srcset="/assets/responsive/corridor-room-04-450.webp 450w, /assets/responsive/corridor-room-04-900.webp 900w" sizes="(min-width:861px) 700px, 68vw">
-        <img src="/assets/responsive/corridor-room-04-900.jpg" srcset="/assets/responsive/corridor-room-04-450.jpg 450w, /assets/responsive/corridor-room-04-900.jpg 900w" sizes="(min-width:861px) 700px, 68vw" alt="Work by Martina Dorigatti, Room 04" loading="lazy" decoding="async" width="575" height="846">
-      </picture>
-      <figcaption class="plaque"><b>Martina Dorigatti</b><span>Room 04</span></figcaption>
-    </figure>
-    <figure class="corr-work" data-room="5">
-      <span class="spot" aria-hidden="true"></span>
-      <span class="floor" aria-hidden="true"></span>
-      <picture>
-        <span class="corr-scrim" aria-hidden="true"></span>
-        <source type="image/avif" srcset="/assets/responsive/corridor-room-05-450.avif 450w, /assets/responsive/corridor-room-05-900.avif 900w" sizes="(min-width:861px) 700px, 68vw">
-        <source type="image/webp" srcset="/assets/responsive/corridor-room-05-450.webp 450w, /assets/responsive/corridor-room-05-900.webp 900w" sizes="(min-width:861px) 700px, 68vw">
-        <img src="/assets/responsive/corridor-room-05-900.jpg" srcset="/assets/responsive/corridor-room-05-450.jpg 450w, /assets/responsive/corridor-room-05-900.jpg 900w" sizes="(min-width:861px) 700px, 68vw" alt="Work by Clemens Maurer, Room 05" loading="lazy" decoding="async" width="698" height="870">
-      </picture>
-      <figcaption class="plaque"><b>Clemens Maurer</b><span>Room 05</span></figcaption>
-    </figure>
-      </div>
-      <div class="corridor-door" id="corridor-door" data-cursor="Enter">
-        <div class="corridor-door-media">
-          <picture>
-            <source type="image/avif" srcset="/assets/responsive/room-bloom-960.avif 960w, /assets/responsive/room-bloom-1440.avif 1440w, /assets/responsive/room-bloom-1904.avif 1904w" sizes="100vw">
-            <source type="image/webp" srcset="/assets/responsive/room-bloom-960.webp 960w, /assets/responsive/room-bloom-1440.webp 1440w, /assets/responsive/room-bloom-1904.webp 1904w" sizes="100vw">
-            <img src="/assets/responsive/room-bloom-1904.jpg" srcset="/assets/responsive/room-bloom-960.jpg 960w, /assets/responsive/room-bloom-1440.jpg 1440w, /assets/responsive/room-bloom-1904.jpg 1904w" sizes="100vw" alt="The Bloom room in the Get Inspired Society gallery" loading="lazy" decoding="async" width="1904" height="964">
-          </picture>
-        </div>
-        <div class="corridor-door-copy rv" data-reveal-group="corridor-door">
-          <span class="eyebrow">Exhibition no. 4</span>
-          <h2>Walk through<br>Bloom.</h2>
-          <p>The fourth issue, hung in a room you can move through.</p>
-          <a class="btn" href="/gallery">Enter the room &rarr;</a>
-        </div>
-      </div>
-    </div>
-    <div class="corridor-progress" id="corridor-progress"><span id="corridor-progress-fill"></span></div>
+<section class="gallery-end">
+  <div class="gallery-end-media">
+    <picture>
+      <source type="image/avif" srcset="/assets/responsive/room-bloom-960.avif 960w, /assets/responsive/room-bloom-1440.avif 1440w, /assets/responsive/room-bloom-1904.avif 1904w" sizes="100vw">
+      <source type="image/webp" srcset="/assets/responsive/room-bloom-960.webp 960w, /assets/responsive/room-bloom-1440.webp 1440w, /assets/responsive/room-bloom-1904.webp 1904w" sizes="100vw">
+      <img src="/assets/responsive/room-bloom-1904.jpg" srcset="/assets/responsive/room-bloom-960.jpg 960w, /assets/responsive/room-bloom-1440.jpg 1440w, /assets/responsive/room-bloom-1904.jpg 1904w" sizes="100vw" alt="The Bloom room in the Get Inspired Society gallery" loading="lazy" decoding="async" width="1904" height="964">
+    </picture>
   </div>
-</section>
-
-<section class="doors" id="doors">
-  <a class="door look rv" href="/magazine">
-    <span class="eyebrow">To look</span>
-    <h2>Come and see.</h2>
-    <p>The work and the magazine are open. No account, no wall.</p>
-  </a>
-  <a class="door seen rv" href="/submit">
-    <span class="eyebrow">To be seen</span>
-    <h2>Show your work.</h2>
-    <p>Free to enter. Deadline 6 December 2026.</p>
-  </a>
+  <div class="gallery-end-copy rv" data-reveal-group="gallery-end">
+    <span class="eyebrow">Exhibition no. 4</span>
+    <h2>Walk through<br>Bloom.</h2>
+    <p>The fourth issue, hung in a room you can move through.</p>
+    <a class="btn" href="/gallery">Enter the room &rarr;</a>
+  </div>
 </section>
 </main>
 
@@ -589,562 +362,6 @@ footer .stamp{margin-top:26px;font-size:11px;color:rgba(255,255,255,.55);letter-
 </footer>
 
 
-<script src="/js/vendor/gsap.min.js" defer></script>
-<script src="/js/vendor/ScrollTrigger.min.js" defer></script>
-<script src="/js/vendor/lenis.min.js" defer></script>
 <script src="/js/motion.js" defer></script>
-<script defer>
-document.addEventListener('gis-motion:ready', function () {
-  var hasGsap = typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined';
-  if (!hasGsap) return;
-  gsap.registerPlugin(ScrollTrigger);
-
-  var mm = gsap.matchMedia();
-
-  // Hero mouse parallax + issue strip pin: desktop (>860px) and motion
-  // allowed only. gsap.matchMedia() re-runs this whenever that condition's
-  // match state flips (a resize across the breakpoint, or a live change to
-  // prefers-reduced-motion) and automatically reverts every GSAP tween and
-  // ScrollTrigger this callback created before re-running it — so crossing
-  // the breakpoint back and forth never doubles up the pin. The pointermove
-  // listener and the DOM state it touches aren't GSAP's to revert, so the
-  // returned cleanup function undoes those by hand, restoring the static
-  // default (Bloom active, no parallax offset) that the mobile/scroll-snap
-  // CSS layout expects.
-  mm.add('(min-width: 861px) and (prefers-reduced-motion: no-preference)', function () {
-    var media = document.querySelector('.hero-media');
-    function onMove(e) {
-      var dx = (e.clientX / innerWidth - .5) * 24; // -12..12
-      var dy = (e.clientY / innerHeight - .5) * 24;
-      media.style.transform = 'translate3d(' + (-dx) + 'px,' + (-dy) + 'px,0)';
-    }
-    if (media) addEventListener('pointermove', onMove, { passive: true });
-
-    var pinSection = document.querySelector('.strip-pin');
-    var track = document.getElementById('strip-track');
-    var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
-    var fill = document.getElementById('strip-progress-fill');
-
-    // The track's start and end translateX, measured live from
-    // offsetLeft/offsetWidth (layout values, unaffected by the track's own
-    // current transform or by scroll position, so these stay correct on a
-    // refresh mid-scroll too; no CSS numbers duplicated here): startX
-    // centres card 0 on the viewport, endX centres the last card. At rest
-    // (x:0, the untransformed CSS position) neither is actually centred on
-    // any viewport width tried — .card has a fixed max-width (320px) that
-    // stops scaling with the viewport past ~533px, while the track's side
-    // padding (10vw) keeps growing, so which card is nearest centre at x:0
-    // drifts further into the row as the viewport widens (card 1 at
-    // ~1280px, card 2 at ~1920px already). The old formula (x animating
-    // from 0 to -(track.scrollWidth - innerWidth), "shift just far enough
-    // that the track's own right edge is flush with the viewport's") both
-    // undershot badly at wide viewports (a couple hundred px of travel, or
-    // a negative one, nowhere near enough room for 5 cards to each take a
-    // turn at centre) and, because it always started at x:0, made it
-    // mathematically impossible for card 0 (and sometimes card 1 too) to
-    // ever be nearest centre during the pin at all: their exact-centre
-    // track position requires shifting the track right of 0, which an
-    // animation that only ever moves left from 0 can never reach. Reported:
-    // "02 No Algorithm lights up and stays put" — card 2 was simply the
-    // first card whose centre point the animation's range could reach.
-    // Animating from startX to endX instead (both measured the same way)
-    // guarantees every card's own exact-centre point falls somewhere in
-    // between, in order, on any viewport width, since the cards are evenly
-    // spaced; gsap.set() below applies startX immediately (not gated by
-    // scroll) so there is no visible jump the moment the pin engages.
-    function startX() {
-      var first = cards[0];
-      return innerWidth / 2 - (first.offsetLeft + first.offsetWidth / 2);
-    }
-    function endX() {
-      var last = cards[cards.length - 1];
-      return innerWidth / 2 - (last.offsetLeft + last.offsetWidth / 2);
-    }
-    gsap.set(track, { x: startX() });
-
-    // The card nearest the viewport's centre, right now, from real
-    // getBoundingClientRect() positions, no cached values.
-    function nearestCenter() {
-      var center = innerWidth / 2, best = cards[0], bestDist = Infinity;
-      cards.forEach(function (card) {
-        var r = card.getBoundingClientRect();
-        var d = Math.abs((r.left + r.right) / 2 - center);
-        if (d < bestDist) { bestDist = d; best = card; }
-      });
-      return best;
-    }
-
-    // Two sources for which card is "active": the scroll position (while
-    // inside the pin) and a hover/focus override, which always wins while
-    // present. render() is the only place .is-active is actually written,
-    // so the two sources can never disagree about which single card has it.
-    var scrollActive = cards[0];
-    var hoverActive = null;
-    function render() {
-      var target = hoverActive || scrollActive;
-      cards.forEach(function (c) { c.classList.toggle('is-active', c === target); });
-    }
-
-    // Only recomputed on every animation frame while the pin is actually
-    // active (added/removed from the ticker in onEnter/onEnterBack and
-    // onLeave/onLeaveBack below), not for the entire page's scroll range.
-    // Above/below the pin the active card is a fixed edge value (Bloom /
-    // the last card) that onLeave/onLeaveBack set once, not something that
-    // needs recomputing every frame while the visitor is reading the rest
-    // of the page.
-    function setActive() {
-      scrollActive = nearestCenter();
-      render();
-    }
-
-    // Hover/focus lights a cover immediately, same rule as the Tile
-    // component elsewhere in the design system; mouseleave/blur hands
-    // control back to whatever the scroll position says right now, not a
-    // stale value. Skipped entirely on touch: without a real hover
-    // capability a tap would otherwise "stick" a card lit until the next
-    // tap elsewhere, which isn't how hover is supposed to behave.
-    var supportsHover = matchMedia('(hover: hover) and (pointer: fine)').matches;
-    var hoverCleanups = [];
-    if (supportsHover) {
-      cards.forEach(function (card) {
-        function enter() { hoverActive = card; render(); }
-        function leave() { hoverActive = null; render(); }
-        card.addEventListener('mouseenter', enter);
-        card.addEventListener('mouseleave', leave);
-        card.addEventListener('focus', enter);
-        card.addEventListener('blur', leave);
-        hoverCleanups.push(function () {
-          card.removeEventListener('mouseenter', enter);
-          card.removeEventListener('mouseleave', leave);
-          card.removeEventListener('focus', enter);
-          card.removeEventListener('blur', leave);
-        });
-      });
-    }
-
-    gsap.to(track, {
-      x: function () { return endX(); },
-      ease: 'none',
-      scrollTrigger: {
-        trigger: pinSection,
-        start: 'top top',
-        end: function () { return '+=' + ((startX() - endX()) + innerHeight * 0.6); },
-        scrub: true,
-        pin: true,
-        onUpdate: function (self) {
-          if (fill) fill.style.width = (self.progress * 100) + '%';
-        },
-        onEnter: function () { gsap.ticker.add(setActive); },
-        onEnterBack: function () { gsap.ticker.add(setActive); },
-        onLeave: function () { gsap.ticker.remove(setActive); scrollActive = cards[cards.length - 1]; render(); },
-        onLeaveBack: function () { gsap.ticker.remove(setActive); scrollActive = cards[0]; render(); },
-      },
-    });
-
-    return function () {
-      gsap.ticker.remove(setActive);
-      hoverCleanups.forEach(function (fn) { fn(); });
-      removeEventListener('pointermove', onMove);
-      if (media) media.style.transform = '';
-      if (fill) fill.style.width = '';
-      cards.forEach(function (c, i) { c.classList.toggle('is-active', i === 0); });
-    };
-  });
-
-  // Corridor image loading: shared by every variant (3D, row, and the
-  // no-JS default), set up once outside matchMedia so a resize across the
-  // 860px breakpoint never re-triggers it. The five works' and the door's
-  // img/source elements keep their real src/srcset in the markup
-  // (loading="lazy", see build/build.js and the door figure above) so a
-  // visitor without JS
-  // still gets working images via the browser's own native lazy loading,
-  // completely untouched by anything below. With JS, this block takes over
-  // instead: it moves each real src/srcset into a data- attribute and
-  // clears the live one before the browser can act on it, then only
-  // restores them once an IntersectionObserver reports the corridor is
-  // within 1.5 viewport heights (rootMargin below), so no corridor image
-  // request fires before then. Each frame shows a dimmed, band-coloured
-  // scrim (plus the always-visible plaque) until its own image has
-  // decoded, then fades the real image in over 300ms; a decode error or a
-  // decode slower than 4000ms simply leaves that one frame's scrim in
-  // place for good, the rest of the corridor keeps working regardless.
-  (function () {
-    var corridor = document.getElementById('corridor');
-    if (!corridor) return;
-    var frames = Array.prototype.slice.call(corridor.querySelectorAll('.corr-work, .corridor-door'));
-    if (!frames.length) return;
-
-    frames.forEach(function (frame) {
-      var img = frame.querySelector('img');
-      if (!img || !img.getAttribute('src')) return;
-      img.dataset.src = img.getAttribute('src');
-      img.removeAttribute('src');
-      if (img.getAttribute('srcset')) {
-        img.dataset.srcset = img.getAttribute('srcset');
-        img.removeAttribute('srcset');
-      }
-      Array.prototype.slice.call(frame.querySelectorAll('picture source')).forEach(function (source) {
-        source.dataset.srcset = source.getAttribute('srcset');
-        source.removeAttribute('srcset');
-      });
-    });
-    corridor.classList.add('corridor--js-lazy');
-
-    function loadFrame(frame) {
-      var img = frame.querySelector('img');
-      if (!img || !img.dataset.src) return;
-      // loading="lazy" is still on the img element from the markup; left
-      // in place, restoring src/srcset here would just hand the fetch back
-      // to the browser's own native lazy-load heuristic, with its own,
-      // different proximity threshold, instead of actually starting it
-      // now the way this IntersectionObserver already decided to.
-      img.loading = 'eager';
-      Array.prototype.slice.call(frame.querySelectorAll('picture source')).forEach(function (source) {
-        if (source.dataset.srcset) source.setAttribute('srcset', source.dataset.srcset);
-      });
-      if (img.dataset.srcset) img.setAttribute('srcset', img.dataset.srcset);
-      img.setAttribute('src', img.dataset.src);
-      delete img.dataset.src;
-      delete img.dataset.srcset;
-
-      var settled = false;
-      var timer = setTimeout(function () { settled = true; }, 4000);
-      function reveal() {
-        if (settled) return; // past the 4000ms timeout: leave the scrim+plaque in place for good
-        settled = true;
-        clearTimeout(timer);
-        frame.classList.add('is-loaded');
-      }
-      if (img.complete && img.naturalWidth > 0) { reveal(); return; }
-      if (typeof img.decode === 'function') img.decode().then(reveal).catch(function () {});
-      else img.addEventListener('load', reveal);
-      // A load/decode error (404 included) never calls reveal, so the
-      // scrim and plaque simply stay; nothing else to do here.
-    }
-
-    if ('IntersectionObserver' in window) {
-      var io = new IntersectionObserver(function (entries) {
-        if (!entries.some(function (e) { return e.isIntersecting; })) return;
-        io.disconnect();
-        frames.forEach(loadFrame);
-      }, { rootMargin: '150% 0px 150% 0px' });
-      io.observe(corridor);
-    } else {
-      frames.forEach(loadFrame);
-    }
-  }());
-
-  // Corridor ("the gang"): desktop gets a pinned CSS-3D walk past the five
-  // Bloom works, ending at a door that grows to fullscreen. Mobile and
-  // reduced motion both get the plain .corridor--row horizontal scroll-snap
-  // treatment instead (added/removed by the second matchMedia below — the
-  // two conditions are each other's exact negation, so every combination of
-  // width and motion preference lands in exactly one of the two). Neither
-  // branch runs at all without JS: the unmodified default CSS (five works
-  // stacked, then the door) is what a visitor without JS sees.
-  mm.add('(min-width: 861px) and (prefers-reduced-motion: no-preference)', function () {
-    var corridor = document.getElementById('corridor');
-    var pin = document.getElementById('corridor-pin');
-    var works = document.getElementById('corridor-works');
-    var door = document.getElementById('corridor-door');
-    var fill = document.getElementById('corridor-progress-fill');
-    var items = Array.prototype.slice.call(works.querySelectorAll('.corr-work'));
-    if (!corridor || !pin || !works || !door || !items.length) return;
-
-    corridor.classList.add('corridor--3d');
-
-    // Five works, alternating left/right, hung flat against the walls at
-    // rest (REST_ROT) and spaced along Z (DEPTH_STEP) so only two or three
-    // are ever within fog range at once. Each work's own place is fixed
-    // (set once below); only the parent (.corridor-works, the "camera")
-    // dollies forward as the visitor scrolls. A rigid group move like that
-    // never changes which work has the largest raw Z value (that ordering
-    // is translation-invariant), so "nearest" can't be "whichever work is
-    // currently biggest" — that always resolves to the same work (room 1)
-    // once it's travelled far enough. What does change over time, per
-    // work, is how close its own effective depth (its fixed Z plus the
-    // camera's current Z) sits to zero, the moment it passes the camera —
-    // so every value below (rotation, x, fog, colour) is a function of
-    // that live distance, recomputed every scrub tick for every work, the
-    // 3D equivalent of the issue strip's "distance to the viewport centre".
-    var DEPTH_STEP = 550; // kept well under the CSS perspective (6000px, .corridor--3d .corridor-stage), see totalDepth below
-    // How far toward centre a passing work's x moves (1 = no movement),
-    // per slot (by index into SLOT_X_FRACTION below), not a single global
-    // number. Slot 0 (the outer slot, room 3's landscape crop on the left
-    // and room 2's portrait crop on the right) is the one that actually
-    // needs pulling: even under the width cap below, room 3's own
-    // natural (unpulled) resting x sits well past the 4% edge margin once
-    // it reaches full peak size, so it's pulled in to 0.26 of the way —
-    // calibrated directly against the real rendered rects at every scroll
-    // step, at all four required viewport sizes, not a formula. Slots 1
-    // and 2 need no pull at all for their own margin.
-    //
-    // This pull does still leave same-side works briefly overlapping by
-    // more than 5% in raw bounding-rect terms (confirmed by direct
-    // measurement, at every viewport size): room 3's own peak, pulled in
-    // just enough to clear its own margin, still reaches back across
-    // most of its own half of the screen, well past where rooms 1 and 5
-    // rest. Rooms 1 and 5 are never themselves large or far enough from
-    // centre to pull in far enough to dodge it either (their own 4%
-    // margin caps how far in they can go; pulling further than that would
-    // trade a margin violation for an overlap "fix" that isn't one).
-    // Confirmed, however (also by direct measurement, at every viewport
-    // size): every one of these moments has one of the two works at
-    // opacity 0 — rooms two DEPTH_STEP apart are always more than
-    // FOG_RANGE apart in effective depth whenever either one is near its
-    // own pass peak, so the "overlapping" work is never actually visible
-    // at the same time. There is no raw-rect configuration that clears
-    // the full acceptance criterion as literally stated (searched
-    // exhaustively, including letting a work's pull cross the centre line
-    // into the opposite half — still blocked by the SAME-size conflict
-    // there) without breaking the margin requirement instead, so
-    // test/homepage-corridor.test.js's own overlap check now only
-    // considers a pair "overlapping" while both are at least partly
-    // visible (opacity > 0.1) — see that file's own comment on the
-    // overlapFraction check for the measurements behind this.
-    var CENTER_FACTOR_FOR_SLOT = [0.26, 1, 1];
-    var REST_ROT = 70; // degrees, facing the wall
-    var PASS_ROT = 15; // degrees, turned toward the visitor at its closest point
-    var PASS_RANGE = 380; // |effective z| within which a work turns/brightens toward the visitor
-    var FOG_RANGE = 900; // |effective z| within which a work is visible at all (mist toward ink beyond this)
-    // The passing work's own on-screen size target: height reaches
-    // PASS_HEIGHT_VH (mid of the required 65-70%) of the viewport UNLESS
-    // that would make it wider than WIDTH_CAP_FRACTION (50%) of the
-    // viewport, in which case the width cap wins instead (whichever scale
-    // is smaller, i.e. reached first, wins — see passScale below). A
-    // portrait or square crop is bound by height; a landscape one (wider
-    // than tall at passRot, e.g. room 3) hits the width cap first and ends
-    // up shorter and less stretched than the height target alone would
-    // have made it — this is the bugfix: before the width cap existed,
-    // room 3 grew wide enough at PASS_HEIGHT_VH to overflow the screen
-    // edges during its pass. At rest the scale is 1 (the element's own CSS
-    // width, see .corridor--3d .corr-work below), so resting size grows
-    // too whenever that CSS width grows, "naar verhouding" with the
-    // passing size.
-    var PASS_HEIGHT_VH = 0.675;
-    var WIDTH_CAP_FRACTION = 0.50;
-    // The passing work's bounding rect must stay fully on screen with at
-    // least this fractional margin on every side during the active
-    // rotation window (10-25deg, i.e. passT roughly 0.82-1).
-    var EDGE_MARGIN_FRACTION = 0.04;
-    var FOG_BRIGHTNESS_MIN = 0.12;
-    var DOOR_AT = 0.8; // fraction of the pin's scroll range where the camera stops and the door's fast final growth starts
-    // Buffer of 2 steps past the last work's own base depth so its pass
-    // point lands with room before DOOR_AT; kept well under the stage's
-    // own CSS perspective (6000px, .corridor--3d .corridor-stage) so the
-    // nearest work (the most "overshot" once the camera stops, since a
-    // rigid dolly carries every work the same distance) never approaches
-    // the perspective plane itself (where projection would blow up).
-    var totalDepth = DEPTH_STEP * (items.length + 2);
-
-    function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
-    function lerp(a, b, t) { return a + (b - a) * t; }
-
-    // Each same-side "slot" (1st, 2nd, 3rd work on that wall) gets its own,
-    // explicitly smaller resting x-fraction: with the fairly flat
-    // perspective above, depth alone barely shifts a work's resting screen
-    // x, so relying on it to keep same-side works apart would let a nearer
-    // work's passing swing land right on top of a farther one's resting
-    // spot. These explicit, deliberately spaced fractions are what the
-    // margin and no-overlap acceptance criteria actually depend on.
-    var SLOT_X_FRACTION = [0.78, 0.32, 0.12];
-    // Which slot (by index into SLOT_X_FRACTION above) each same-side work
-    // gets, by its ordinal position on that wall (1st/2nd/3rd work passed
-    // on that side), not simply 0/1/2 in passing order: room 3's crop is
-    // landscape, so even width-capped (see WIDTH_CAP_FRACTION above) it's
-    // still the widest passer on its wall. Put it in the outermost slot
-    // (only one same-side neighbour to clear, on its inner side) instead
-    // of the cramped middle slot a plain passing-order mapping would give
-    // it.
-    var LEFT_SLOT_FOR_ORDINAL = [1, 0, 2]; // rooms 1, 3, 5 in that order
-    var RIGHT_SLOT_FOR_ORDINAL = [0, 1]; // rooms 2, 4
-    var state = items.map(function (el, i) {
-      var isLeft = i % 2 === 0;
-      var ordinal = Math.floor(i / 2);
-      var slot = (isLeft ? LEFT_SLOT_FOR_ORDINAL : RIGHT_SLOT_FOR_ORDINAL)[ordinal];
-      var baseZ = -(DEPTH_STEP * (i + 1));
-      return {
-        el: el,
-        spot: el.querySelector('.spot'),
-        floor: el.querySelector('.floor'),
-        plaque: el.querySelector('.plaque'),
-        isLeft: isLeft,
-        slot: slot,
-        baseZ: baseZ,
-        restRot: (isLeft ? 1 : -1) * REST_ROT,
-        passRot: (isLeft ? 1 : -1) * PASS_ROT,
-        centerFactor: CENTER_FACTOR_FOR_SLOT[slot],
-      };
-    });
-
-    // Each work's own resting x and pass-time scale, (re)measured rather
-    // than computed from a formula, and recomputed whenever the viewport
-    // changes (see the ScrollTrigger "refresh" listener below), not just
-    // once at setup. restX depends on innerWidth directly; passScale
-    // doesn't reduce to a formula at all, because a work's fixed Z depth
-    // (baseZ) shrinks its rendered size under the stage's own perspective
-    // well before rotation or scale ever enter the picture (a farther-back
-    // work like room 5 renders visibly smaller at scale(1) than a nearer
-    // one like room 1, even at the identical rotation): scale itself
-    // behaves linearly on the rendered size (confirmed empirically), it's
-    // only the un-scaled starting point that varies per work, so probing
-    // the real rendered width/height at scale(1) and solving for the
-    // scale that would hit the target sidesteps the whole perspective
-    // calculation.
-    function measureState() {
-      state.forEach(function (s) {
-        s.restX = (s.isLeft ? -1 : 1) * SLOT_X_FRACTION[s.slot] * innerWidth;
-        s.el.style.transform = 'translate3d(calc(-50% + ' + s.restX + 'px), -50%, ' + s.baseZ + 'px) rotateY(' + s.passRot + 'deg) scale(1)';
-        var r = s.el.getBoundingClientRect();
-        var heightScale = r.height > 0 ? (PASS_HEIGHT_VH * innerHeight) / r.height : 1;
-        var widthCapScale = r.width > 0 ? (WIDTH_CAP_FRACTION * innerWidth) / r.width : 1;
-        s.passScale = Math.min(heightScale, widthCapScale);
-      });
-    }
-    measureState();
-
-    function setWork(s, cameraZ) {
-      var effZ = s.baseZ + cameraZ;
-      var absZ = Math.abs(effZ);
-      var passT = clamp01(1 - absZ / PASS_RANGE);
-      var fogT = clamp01(1 - absZ / FOG_RANGE);
-      var visible = Math.max(fogT, passT);
-      var rotation = lerp(s.restRot, s.passRot, passT);
-      var x = lerp(s.restX, s.restX * s.centerFactor, passT);
-      var brightness = lerp(FOG_BRIGHTNESS_MIN, 1, visible);
-      var grayscale = 1 - passT;
-      // Scale: 1 at rest (the element's own CSS width governs resting
-      // size, so resting size grows too whenever that CSS width grows,
-      // "naar verhouding" with the passing size), growing toward
-      // s.passScale (see above) at passT 1.
-      var scale = lerp(1, s.passScale, passT);
-      s.el.style.transform = 'translate3d(calc(-50% + ' + x + 'px), -50%, ' + s.baseZ + 'px) rotateY(' + rotation + 'deg) scale(' + scale + ')';
-      s.el.dataset.rot = rotation; // exposes the live rotation for tests, see test/homepage-corridor.test.js
-      s.el.style.opacity = visible;
-      s.el.style.filter = 'grayscale(' + grayscale + ') brightness(' + brightness + ')';
-      if (s.spot) s.spot.style.opacity = passT;
-      if (s.floor) s.floor.style.opacity = passT;
-      if (s.plaque) s.plaque.style.opacity = passT * passT;
-      return passT;
-    }
-
-    // Marking a work "active" (.is-near, full colour/spotlight) requires
-    // its own turned-toward-the-visitor blend to already be most of the
-    // way there — not just "nearest of the five" — otherwise the work with
-    // the smallest (but still large) |effective z| during a gap between
-    // two works' passing moments would get marked active while still
-    // sitting at (or close to) its 70deg resting rotation, breaking the
-    // 10-25deg range the active work is required to stay within.
-    var NEAR_THRESHOLD = 0.85;
-    var active = null;
-    function setWorks(cameraZ) {
-      var best = null, bestPassT = NEAR_THRESHOLD;
-      state.forEach(function (s) {
-        var passT = setWork(s, cameraZ);
-        if (passT >= bestPassT) { bestPassT = passT; best = s; }
-      });
-      if (best !== active) {
-        active = best;
-        state.forEach(function (s) { s.el.classList.toggle('is-near', s === active); });
-      }
-    }
-
-    function setDoor(progress) {
-      // Visible and warmly glowing from the very start (never opacity 0),
-      // growing steadily while walking, then fast to fullscreen in the
-      // final stretch. Both phases are plain linear interpolation of the
-      // same scroll progress, no separate animation.
-      var walkT = clamp01(progress / DOOR_AT);
-      var openT = clamp01((progress - DOOR_AT) / (1 - DOOR_AT));
-      var scale = openT > 0 ? lerp(0.4, 1, openT) : lerp(0.1, 0.4, walkT);
-      var opacity = openT > 0 ? lerp(0.6, 1, openT) : lerp(0.35, 0.6, walkT);
-      door.style.transform = 'scale(' + scale + ')';
-      door.style.opacity = opacity;
-      door.classList.toggle('is-open', progress > 0.92);
-      var copy = door.querySelector('.corridor-door-copy');
-      if (copy) {
-        var copyT = clamp01((progress - 0.85) / 0.15);
-        copy.style.opacity = copyT;
-        copy.style.transform = 'translateY(' + (16 * (1 - copyT)) + 'px)';
-      }
-    }
-
-    // Edge states (above/below the pin): first/last work at rest, door
-    // closed/open, matching what onUpdate would compute at progress 0 or 1.
-    setWorks(0);
-    setDoor(0);
-
-    function cameraZForProgress(progress) {
-      return Math.min(progress / DOOR_AT, 1) * totalDepth;
-    }
-
-    // The pin exists from the moment this callback runs, exactly like the
-    // issue strip's own ScrollTrigger above: it never waits on image
-    // decoding (that's handled separately, see the lazy-load block below,
-    // which only fades individual frames in/out and never touches the
-    // pin's existence or scroll range). A visitor who scrolls fast on a
-    // slow connection always finds the pin already in place, so the page
-    // never jumps and the walk never silently fails to start.
-    var st = ScrollTrigger.create({
-      trigger: pin,
-      start: 'top top',
-      end: '+=' + Math.round(innerHeight * 3.5),
-      scrub: true,
-      pin: true,
-      onUpdate: function (self) {
-        setWorks(cameraZForProgress(self.progress));
-        setDoor(self.progress);
-        if (fill) fill.style.width = (self.progress * 100) + '%';
-      },
-      onLeave: function () { setWorks(totalDepth); setDoor(1); },
-      onLeaveBack: function () { setWorks(0); setDoor(0); },
-    });
-
-    // restX and passScale depend on innerWidth/innerHeight (measureState
-    // reads them live), so a resize within this same desktop breakpoint
-    // (no matchMedia re-entry) would otherwise leave both stale. GSAP's own
-    // global "refresh" event already fires after ScrollTrigger recalculates
-    // on a window resize (its built-in, debounced resize handling), so
-    // hooking it here, once, covers every resize without a separate resize
-    // listener of our own. Re-render immediately afterward with the
-    // trigger's own current progress so the visible state doesn't wait for
-    // the next scroll event to catch up.
-    function onGlobalRefresh() {
-      measureState();
-      setWorks(cameraZForProgress(st.progress));
-    }
-    ScrollTrigger.addEventListener('refresh', onGlobalRefresh);
-
-    return function () {
-      st.kill();
-      ScrollTrigger.removeEventListener('refresh', onGlobalRefresh);
-      corridor.classList.remove('corridor--3d');
-      state.forEach(function (s) {
-        s.el.style.transform = '';
-        delete s.el.dataset.rot;
-        s.el.style.opacity = '';
-        s.el.style.filter = '';
-        s.el.classList.remove('is-near');
-        if (s.spot) s.spot.style.opacity = '';
-        if (s.floor) s.floor.style.opacity = '';
-        if (s.plaque) s.plaque.style.opacity = '';
-      });
-      door.style.transform = '';
-      door.style.opacity = '';
-      door.classList.remove('is-open');
-      var copy = door.querySelector('.corridor-door-copy');
-      if (copy) { copy.style.opacity = ''; copy.style.transform = ''; }
-      if (fill) fill.style.width = '';
-    };
-  });
-
-  mm.add('(max-width: 860px), (prefers-reduced-motion: reduce)', function () {
-    var corridor = document.getElementById('corridor');
-    if (!corridor) return;
-    corridor.classList.add('corridor--row');
-    return function () { corridor.classList.remove('corridor--row'); };
-  });
-});
-</script>
 </body>
 </html>
