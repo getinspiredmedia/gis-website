@@ -39,6 +39,8 @@
     "test:magazine-page": "node test/magazine-page.test.js",
     "test:issue-title-casing": "node test/issue-title-casing.playwright.test.js",
     "test:main-landmark-fonts": "node test/main-landmark-fonts.test.js",
+    "test:footer-logos": "node test/footer-logos.test.js",
+    "test:submit-wrap-stability": "node test/submit-wrap-stability.test.js",
     "start": "exec node server.js"
   },
   "engines": {
