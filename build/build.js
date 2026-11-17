@@ -194,6 +194,14 @@ if (readerDriftErrors.length) {
   process.exit(1);
 }
 
+const { checkFooterDrift } = require('./check-footer-drift');
+const footerDriftErrors = checkFooterDrift();
+if (footerDriftErrors.length) {
+  console.error('[build] Aborting — a hand-maintained footer copy has drifted from build/partials/footer.html:');
+  footerDriftErrors.forEach(e => console.error('  - ' + e));
+  process.exit(1);
+}
+
 pages.forEach(config => {
   const inputPath = path.join(ROOT, config.input);
   if (!fs.existsSync(inputPath)) {

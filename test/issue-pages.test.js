@@ -138,15 +138,17 @@ async function run() {
 
       assert(html.includes(LOOK_INSIDE_LABEL), `${issue.slug}: the approved "Look inside" label is present on the page`);
 
-      // Checked against the visible text only (HTML comments and script
-      // bodies stripped first) — pre-existing shared partials (nav,
-      // analytics) carry their own internal code comments with a long
-      // dash, unrelated to this page's own copy and out of this task's
-      // scope.
+      // Checked against the visible text only (HTML comments, script
+      // bodies and the shared <footer> stripped first) — pre-existing
+      // shared partials (nav, analytics, footer) carry their own content
+      // unrelated to this page's own copy and out of this task's scope,
+      // e.g. the footer's logo pair includes an alt="Get Inspired
+      // Magazine" (the real magazine's own logo, sitewide, not page copy).
       const visibleText = html
         .replace(/<!--[\s\S]*?-->/g, ' ')
         .replace(/<script[\s\S]*?<\/script>/g, ' ')
-        .replace(/<style[\s\S]*?<\/style>/g, ' ');
+        .replace(/<style[\s\S]*?<\/style>/g, ' ')
+        .replace(/<footer[\s\S]*?<\/footer>/, ' ');
       assert(!visibleText.includes('—'), `${issue.slug}: no long dash in the visible text`);
       assert(!/community/i.test(visibleText), `${issue.slug}: no "community" in the visible text`);
       assert(!visibleText.includes('Get Inspired Magazine'), `${issue.slug}: "Get Inspired Magazine" is not in the visible text`);

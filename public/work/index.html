@@ -31,8 +31,17 @@
   --ease: cubic-bezier(.16,.84,.44,1);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* Fallback metrics copied from Archivo's own hhea table (ascent/descent/line-gap) and from its xAvgCharWidth vs Arial/Liberation Sans (size-adjust), so swapping in the real webfont doesn't reflow the page (CLS). */
+@font-face {
+  font-family: 'Archivo Fallback';
+  src: local('Arial'), local('Helvetica'), local('Liberation Sans'), local('Helvetica Neue');
+  size-adjust: 99.2%;
+  ascent-override: 87.8%;
+  descent-override: 21%;
+  line-gap-override: 0%;
+}
 body {
-  font-family: 'Archivo', -apple-system, sans-serif;
+  font-family: 'Archivo', 'Archivo Fallback', -apple-system, sans-serif;
   background: var(--ink);
   color: #fff;
   -webkit-font-smoothing: antialiased;

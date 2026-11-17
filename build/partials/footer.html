@@ -1,12 +1,19 @@
 <style>
 footer{background:var(--ink);color:#fff;padding:clamp(60px,9vh,110px) 28px 40px;text-align:center}
+footer .footer-logos{display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:22px}
+footer .footer-logos img{height:40px;width:auto}
 footer .close{font-size:clamp(1.2rem,2.6vw,2rem);font-weight:600;letter-spacing:-.01em;font-variation-settings:'wdth' 106}
 footer .close + .links{margin-top:38px}
 footer .links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55)}
 footer .links a:hover{color:#fff}
 footer .stamp{margin-top:26px;font-size:11px;color:rgba(255,255,255,.55);letter-spacing:.14em;text-transform:uppercase}
+@media(max-width:600px){footer .footer-logos img{height:32px}}
 </style>
 <footer>
+  <div class="footer-logos">
+    <img src="/assets/mark.png" alt="Get Inspired Society" width="640" height="528" loading="lazy" decoding="async">
+    <img src="/assets/logos/magazine-logo.png" alt="Get Inspired Magazine" width="2000" height="2000" loading="lazy" decoding="async">
+  </div>
   <!-- FOOTER_TAGLINE -->
   <div class="links">
     <a data-footer="magazine" href="/magazine">Magazine</a><a data-footer="gallery" href="/gallery">Gallery</a><a data-footer="open-call" href="/submit">Open call</a><a data-footer="about" href="/about">About</a><a data-footer="contact" href="/contact">Contact</a><a data-footer="privacy" href="/privacy">Privacy</a>

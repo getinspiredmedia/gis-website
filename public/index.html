@@ -30,7 +30,9 @@
 :root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--band:#0f1118;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+/* Fallback metrics copied from Archivo's own hhea table (ascent/descent/line-gap) and from its xAvgCharWidth vs Arial/Liberation Sans (size-adjust), so swapping in the real webfont doesn't reflow the page (CLS). */
+@font-face{font-family:'Archivo Fallback';src:local('Arial'),local('Helvetica'),local('Liberation Sans'),local('Helvetica Neue');size-adjust:99.2%;ascent-override:87.8%;descent-override:21%;line-gap-override:0%}
+body{font-family:'Archivo','Archivo Fallback',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 img{display:block;max-width:100%}
 a{color:inherit;text-decoration:none}
 .statement{font-weight:700;line-height:.94;letter-spacing:-.02em;font-variation-settings:'wdth' 118;font-size:clamp(2.6rem,7.4vw,6.6rem)}
@@ -347,13 +349,20 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
 
 <style>
 footer{background:var(--ink);color:#fff;padding:clamp(60px,9vh,110px) 28px 40px;text-align:center}
+footer .footer-logos{display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:22px}
+footer .footer-logos img{height:40px;width:auto}
 footer .close{font-size:clamp(1.2rem,2.6vw,2rem);font-weight:600;letter-spacing:-.01em;font-variation-settings:'wdth' 106}
 footer .close + .links{margin-top:38px}
 footer .links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55)}
 footer .links a:hover{color:#fff}
 footer .stamp{margin-top:26px;font-size:11px;color:rgba(255,255,255,.55);letter-spacing:.14em;text-transform:uppercase}
+@media(max-width:600px){footer .footer-logos img{height:32px}}
 </style>
 <footer>
+  <div class="footer-logos">
+    <img src="/assets/mark.png" alt="Get Inspired Society" width="640" height="528" loading="lazy" decoding="async">
+    <img src="/assets/logos/magazine-logo.png" alt="Get Inspired Magazine" width="2000" height="2000" loading="lazy" decoding="async">
+  </div>
   <p class="close rv">Seventeen years of looking.</p>
   <div class="links">
     <a href="/magazine">Magazine</a><a href="/gallery">Gallery</a><a href="/submit">Open call</a><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a>
