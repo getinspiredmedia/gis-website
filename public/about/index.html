@@ -4,12 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>About · Get Inspired Society</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Non-blocking font load, same pattern as build/pages/submit.html. -->
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap"></noscript>
+<link rel="preload" as="font" type="font/woff2" href="/assets/fonts/Archivo-Variable.woff2" crossorigin>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <!-- Privacy-friendly analytics by Plausible — proxied via own domain so adblockers don't skew the numbers -->
@@ -24,6 +19,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 /* Fallback metrics copied from Archivo's own hhea table (ascent/descent/line-gap) and from its xAvgCharWidth vs Arial/Liberation Sans (size-adjust), so swapping in the real webfont doesn't reflow the page (CLS). */
+@font-face{font-family:'Archivo';font-style:normal;font-weight:400 700;font-stretch:75% 125%;font-display:swap;src:url('/assets/fonts/Archivo-Variable.woff2') format('woff2')}
 @font-face{font-family:'Archivo Fallback';src:local('Arial'),local('Helvetica'),local('Liberation Sans'),local('Helvetica Neue');size-adjust:99.2%;ascent-override:87.8%;descent-override:21%;line-gap-override:0%}
 body{font-family:'Archivo','Archivo Fallback',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 img{display:block;max-width:100%}
@@ -48,7 +44,7 @@ a{color:inherit;text-decoration:none}
 .sign b{color:var(--ink);font-weight:600}
 
 .facts{border-top:1px solid var(--line);padding:clamp(40px,6vh,70px) 22px}
-.facts .in{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.facts .in{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .fact b{display:block;font-weight:700;font-size:clamp(1.5rem,3vw,2.2rem);letter-spacing:-.02em;font-variation-settings:'wdth' 112;line-height:1}
 .fact span{display:block;margin-top:8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 
@@ -61,15 +57,12 @@ a{color:inherit;text-decoration:none}
 
 .exits{display:grid;grid-template-columns:1fr 1fr}
 .exit{padding:clamp(48px,8vh,90px) 34px;display:flex;flex-direction:column;justify-content:flex-end;min-height:38svh}
-.exit.a{background:var(--paper);border-right:1px solid var(--line)}
-.exit.b{background:var(--ink);color:#fff}
+.exit.a{background:var(--paper)}
 .exit h2{margin:14px 0 12px;font-weight:700;font-size:clamp(1.4rem,2.8vw,2.1rem);line-height:1.05;letter-spacing:-.02em;font-variation-settings:'wdth' 110}
 .exit p{font-size:15px;line-height:1.6;max-width:32ch;color:var(--muted)}
-.exit.b p{color:rgba(255,255,255,.72)}
 .exit .eyebrow{opacity:.6}
 .btn{margin-top:24px;align-self:flex-start;display:inline-flex;align-items:center;gap:10px;border:1px solid currentColor;border-radius:999px;padding:13px 24px;font-size:13px;font-weight:600;transition:background .3s,color .3s,gap .3s}
 .exit.a .btn:hover{background:var(--ink);color:#fff;gap:16px}
-.exit.b .btn:hover{background:#fff;color:var(--ink);gap:16px}
 
 .rv{opacity:0;transform:translateY(22px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
 .rv.is-in{opacity:1;transform:none}
@@ -80,7 +73,6 @@ a{color:inherit;text-decoration:none}
   .portrait{position:static;max-width:280px}
   .facts .in{grid-template-columns:repeat(2,1fr);gap:26px}
   .exits{grid-template-columns:1fr}
-  .exit.a{border-right:0;border-bottom:1px solid var(--line)}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -268,13 +260,13 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
 
       <div class="rv">
         <p>Get Inspired Society started as a place to keep work I did not want to lose. Photographers and artists I came across, held on to, and wanted other people to see. Seventeen years later it is still that, with more structure around it.</p>
-        <p>Four times a year an issue goes out with five artists in it. There is a room you can walk through and a magazine you can read, both open to anyone, without an account.</p>
+        <p>Four times a year an issue goes out. There is a room you can walk through and a magazine you can read, both open to anyone, without an account.</p>
       </div>
 
       <blockquote class="pull rv"><span>Most of the work I turn down is good.</span></blockquote>
 
       <div class="rv">
-        <p>There are five places in an issue. That is the whole reason for a no, most of the time. Good work waits for a theme that fits it, and some of it comes back two issues later and lands.</p>
+        <p>There are only so many places in an issue. That is the whole reason for a no, most of the time. Good work waits for a theme that fits it, and some of it comes back two issues later and lands.</p>
         <p>What I look for has not really changed. A clear voice. A direction somebody is actually going in. Work that holds up when you look at it a second time.</p>
         <p>I read the submissions, choose the themes, edit the issues and build most of what you are looking at right now. That is not a boast. It is the reason things take the time they take, and the reason this place stays small on purpose.</p>
         <p>I am in Rotterdam. If something here catches you, say so.</p>
@@ -289,7 +281,6 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
   <div class="in">
     <div class="fact rv"><b>2009</b><span>Started</span></div>
     <div class="fact rv"><b>Four</b><span>Issues a year</span></div>
-    <div class="fact rv"><b>Five</b><span>Artists an issue</span></div>
     <div class="fact rv"><b>One</b><span>Person reading</span></div>
   </div>
 </section>
@@ -307,12 +298,6 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
     <h2>The inbox is mine.</h2>
     <p>No team, no ticket system. It takes a few days and it gets an answer.</p>
     <a class="btn" href="/contact">Write to me</a>
-  </div>
-  <div class="exit b rv">
-    <span class="eyebrow">Or just look</span>
-    <h2>See what's on view.</h2>
-    <p>One work, one week, chosen by the people who made it.</p>
-    <a class="btn" href="/on-view">Back to the work</a>
   </div>
 </section>
 </main>

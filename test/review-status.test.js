@@ -3,21 +3,24 @@
  * Epic 2: every new submission requires approval before it goes live.
  * works.review_status (pending/approved/rejected) is separate from the
  * existing lifecycle status (current/previous/archived) — a submission can
- * be 'previous' + 'pending' at the same time. Covers: a /api/submit submission
- * starts pending and is invisible everywhere public (GET /api/works,
- * GET /api/works/:slug, GET /work/:slug — all three behave exactly like an
- * unknown slug); approving sets review_status=approved + records
- * approved_at and makes the work visible everywhere; rejecting sets
- * review_status=rejected and the work stays invisible; and a database that
- * predates this migration gets its existing rows grandfathered in as
- * approved (approved_at stays null, not reconstructable).
+ * be 'previous' + 'pending' at the same time. POST /api/submit (the only
+ * path that used to create a pending row) is closed now that the On View
+ * weekly open call has ended (see test/on-view-submit-closed.test.js), so
+ * pending rows here are seeded directly in the database, standing in for
+ * work submitted while the call was still open. Covers: a pending work is
+ * invisible everywhere public (GET /api/works, GET /api/works/:slug,
+ * GET /work/:slug — all three behave exactly like an unknown slug);
+ * approving sets review_status=approved + records approved_at and makes
+ * the work visible everywhere; rejecting sets review_status=rejected and
+ * the work stays invisible; and a database that predates this migration
+ * gets its existing rows grandfathered in as approved (approved_at stays
+ * null, not reconstructable).
  */
 const { spawn } = require('child_process');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
-const sharp = require('sharp');
 
 const ROOT = path.resolve(__dirname, '..');
 const DB_PATH = path.join(ROOT, 'test', '.review-status-test.db');
@@ -84,27 +87,19 @@ async function adminAuth() {
   return token;
 }
 
-// hp/captcha: /api/submit gained a honeypot + hCaptcha gate in a later epic
-// (see test/submit-public.test.js for dedicated coverage of that gate
-// itself). HCAPTCHA_SECRET is unset in this test env, so any non-empty
-// captcha token is accepted without a real hCaptcha round-trip.
-async function apiSubmit({ name, email, portfolio, work_title }, imageBuf) {
-  const form = new FormData();
-  form.append('name', name);
-  form.append('email', email);
-  form.append('portfolio', portfolio);
-  form.append('work_title', work_title);
-  form.append('hp', '');
-  form.append('captcha', 'test-captcha-token');
-  form.append('image', new Blob([imageBuf], { type: 'image/webp' }), 'test.webp');
-  return fetch(`${BASE}/api/submit`, { method: 'POST', body: form });
+// POST /api/submit is closed (the On View weekly open call has ended, see
+// test/on-view-submit-closed.test.js), so a pending row is seeded directly,
+// standing in for a work submitted while the call was still open.
+function seedPending(dbPath, { name, email, title, portfolio = 'https://example.com' }) {
+  const db = new Database(dbPath);
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const id = db.prepare(
+    "INSERT INTO works (slug,title,artist,email,portfolio,image_url,status,review_status) VALUES (?,?,?,?,?,?,?,?)"
+  ).run(slug, title, name, email, portfolio, '/uploads/test.webp', 'previous', 'pending').lastInsertRowid;
+  db.close();
+  return id;
 }
 
-function submitPlain(name, email, title, imageBuf) {
-  return apiSubmit({ name, email, portfolio: 'https://example.com', work_title: title }, imageBuf);
-}
-
-const CONFIRM = /^<p>Hi (.+),<\/p><p>We have received your work "<b>(.+)<\/b>"\. We will let you know when it goes on the wall\.<\/p><p>Creative regards,<br>Get Inspired Society<\/p>$/;
 
 async function run() {
   cleanupFiles();
@@ -180,39 +175,20 @@ async function run() {
     const adminToken = await adminAuth();
     assert(!!adminToken, 'admin auth succeeds');
 
-    const imageBuf = await sharp({
-      create: { width: 400, height: 300, channels: 3, background: { r: 100, g: 120, b: 200 } },
-    }).webp().toBuffer();
-
-    // A new submission is pending
-    const handInRes = await submitPlain('Pending Artist', 'pending-artist@example.com', 'Pending Test Work', imageBuf);
-    const handInJson = await handInRes.json();
-    assert(handInRes.status === 200 && handInJson.ok, 'submission is accepted');
+    // A pending work, seeded directly (the submission endpoint that used
+    // to create one is closed, see test/on-view-submit-closed.test.js)
+    const workId = seedPending(DB_PATH, { name: 'Pending Artist', email: 'pending-artist@example.com', title: 'Pending Test Work' });
 
     let work;
     {
       const db = new Database(DB_PATH);
-      work = db.prepare("SELECT * FROM works WHERE title='Pending Test Work'").get();
+      work = db.prepare('SELECT * FROM works WHERE id=?').get(workId);
       db.close();
     }
-    assert(!!work, 'the submission created a work row');
-    assert(work.review_status === 'pending', `a new submission is review_status=pending, got ${work.review_status}`);
-    assert(work.approved_at === null, 'a pending submission has no approved_at yet');
-    console.log('PASS - a new submission gets review_status=pending');
-
-    // The confirmation email matches the pending reality: no premature
-    // share link, and ends with the standard maker-facing sign-off.
-    {
-      const mail = emailRequests.find(m => m.subject === 'Your work is in, Get Inspired Society' && m.html.includes('Pending Test Work'));
-      assert(!!mail, 'a confirmation email was sent for the submission');
-      assert(!mail.html.includes(`${SITE_URL}/work/`), 'the confirmation email does not link to a not-yet-live work page — got ' + mail.html);
-      assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
-        'the confirmation email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
-      assert(mail.html.startsWith('<p>Hi Pending Artist,</p>') && CONFIRM.test(mail.html), 'the confirmation greets "Hi {artist}," and has the shared build-up, got ' + mail.html);
-      assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
-        'the confirmation email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
-    }
-    console.log('PASS - the confirmation email matches the pending status and has the standard sign-off');
+    assert(!!work, 'the seeded work row exists');
+    assert(work.review_status === 'pending', `a pending work is review_status=pending, got ${work.review_status}`);
+    assert(work.approved_at === null, 'a pending work has no approved_at yet');
+    console.log('PASS - a pending work has review_status=pending and no approved_at');
 
     // Invisible everywhere public
     {
@@ -248,28 +224,10 @@ async function run() {
     }
     console.log('PASS - approving a pending work sets review_status=approved and records approved_at');
 
-    // Approve triggers an email to the maker with a working /work/:slug link
-    {
-      const mail = emailRequests.find(m => m.subject === 'Your work is on the wall, Get Inspired Society');
-      assert(!!mail, 'an approval email was sent — got subjects: ' + JSON.stringify(emailRequests.map(m => m.subject)));
-      assert(mail.to === work.email || (Array.isArray(mail.to) && mail.to.includes(work.email)),
-        'the approval email is addressed to the maker — got ' + JSON.stringify(mail.to));
-      assert(mail.html.includes(`${SITE_URL}/work/${work.slug}`),
-        'the approval email links to the live /work/:slug page — got ' + mail.html);
-      assert(mail.html.includes('Want people to see it? Share your link.') && !/contest|t-shirt|most views/.test(mail.html),
-        'a work outside any active round gets the neutral share line, not the contest (see test:approve-email), got: ' + mail.html);
-      assert(mail.html.includes(`My work &quot;${work.title}&quot; is on the wall at Get Inspired Society this week. ${SITE_URL}/work/${work.slug}`),
-        'the approval email includes the ready-to-share example text with the real title and link — got ' + mail.html);
-      assert(mail.html.includes('Suggested hashtag: #GetInspiredSociety'),
-        'the approval email suggests the #GetInspiredSociety hashtag — got ' + mail.html);
-      assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
-        'the approval email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
-      assert(mail.html.startsWith('<p>Hi Pending Artist,</p>'), 'the approval email greets "Hi {artist}," — got ' + mail.html);
-      assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
-        'the approval email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
-      assert(!/railway/i.test(mail.html), 'the approval email contains no Railway domain — got ' + mail.html);
-    }
-    console.log('PASS - approving a work emails the maker with a working /work/:slug link');
+    // The approval mail is switched off (see test:approve-email) — approving
+    // still works, it just sends nothing.
+    assert(!emailRequests.some(m => m.subject === 'Your work is on the wall, Get Inspired Society'), 'approving sends no mail');
+    console.log('PASS - approving a work sends no mail');
 
     // Now visible everywhere
     {
@@ -287,15 +245,15 @@ async function run() {
     console.log('PASS - an approved work appears in the wall listing and is reachable via /api/works/:slug and /work/:slug');
 
     // ── Reject path ──────────────────────────────────────────────────────
-    await submitPlain('Rejected Artist', 'rejected-artist@example.com', 'Rejected Test Work', imageBuf);
+    const rejectedId = seedPending(DB_PATH, { name: 'Rejected Artist', email: 'rejected-artist@example.com', title: 'Rejected Test Work' });
 
     let rejected;
     {
       const db = new Database(DB_PATH);
-      rejected = db.prepare("SELECT * FROM works WHERE title='Rejected Test Work'").get();
+      rejected = db.prepare('SELECT * FROM works WHERE id=?').get(rejectedId);
       db.close();
     }
-    assert(!!rejected, 'the second submission created a work row');
+    assert(!!rejected, 'the second seeded work row exists');
 
     {
       const r = await fetch(`${BASE}/api/admin/works/${rejected.id}/reject`, {
@@ -351,58 +309,6 @@ async function run() {
       assert(rows.every(w => ['pending', 'approved', 'rejected'].includes(w.review_status)), 'every admin row carries a valid review_status');
     }
     console.log('PASS - admin API exposes a valid review_status on every row');
-
-    // ── /api/submit must not bypass the approval gate ───────────────────────
-    // /api/submit backs the publicly-shared /submit/:SUBMIT_TOKEN page — it
-    // must go through the same pending gate as every other submission, not land as approved.
-    const submitRes = await apiSubmit({
-      name: 'Submit Artist', email: 'submit-artist@example.com',
-      portfolio: 'https://example.com/portfolio', work_title: 'Submit Test Work',
-    }, imageBuf);
-    const submitJson = await submitRes.json();
-    assert(submitRes.status === 200 && submitJson.ok, '/api/submit submission is accepted');
-
-    let submitWork;
-    {
-      const db = new Database(DB_PATH);
-      submitWork = db.prepare("SELECT * FROM works WHERE title='Submit Test Work'").get();
-      db.close();
-    }
-    assert(!!submitWork, '/api/submit created a work row');
-    assert(submitWork.review_status === 'pending', `a new /api/submit submission is review_status=pending, got ${submitWork.review_status}`);
-    console.log('PASS - a new /api/submit submission gets review_status=pending');
-
-    {
-      const mail = emailRequests.find(m => m.subject === 'Your work is in, Get Inspired Society' && m.html.includes('Submit Test Work'));
-      assert(!!mail, 'a confirmation email was sent for the /api/submit submission');
-      assert(!mail.html.includes(`${SITE_URL}/work/`), 'the confirmation email does not link to a not-yet-live work page — got ' + mail.html);
-      assert(mail.html.includes('Creative regards') && mail.html.includes('Get Inspired Society'),
-        'the confirmation email closes with "Creative regards, Get Inspired Society" — got ' + mail.html);
-      assert(mail.html.startsWith('<p>Hi Submit Artist,</p>') && CONFIRM.test(mail.html), 'the /api/submit confirmation greets "Hi {artist}," and has the standard build-up, got ' + mail.html);
-      assert(!mail.subject.includes('—') && !mail.subject.includes('–') && !mail.html.includes('—') && !mail.html.includes('–'),
-        'the confirmation email (subject and body) contains no em dash or en dash — got subject: ' + mail.subject);
-    }
-    console.log('PASS - the /api/submit confirmation email matches the pending status and has the standard sign-off');
-
-    {
-      const listRes = await fetch(`${BASE}/api/works`);
-      const list = await listRes.json();
-      assert(!list.some(w => w.slug === submitWork.slug), '/api/submit work is absent from GET /api/works until approved');
-
-      const apiRes = await fetch(`${BASE}/api/works/${submitWork.slug}`);
-      assert(apiRes.status === 404, `GET /api/works/:slug returns 404 for a pending /api/submit work — got ${apiRes.status}`);
-
-      const pageRes = await fetch(`${BASE}/work/${submitWork.slug}`);
-      const html = await pageRes.text();
-      assert(html.includes('Work not found'), 'GET /work/:slug renders "not found" for a pending /api/submit work');
-
-      const adminRes = await fetch(`${BASE}/api/admin/works`, { headers: { Authorization: 'Bearer ' + adminToken } });
-      const adminRows = await adminRes.json();
-      const adminRow = adminRows.find(w => w.slug === submitWork.slug);
-      assert(!!adminRow && adminRow.review_status === 'pending', 'the /api/submit work shows up in the admin API as pending (the Pending tab), not pre-approved');
-      assert(adminRow.portfolio === 'https://example.com/portfolio', `the admin API row carries the submitter's portfolio URL — got ${adminRow.portfolio}`);
-    }
-    console.log('PASS - a pending /api/submit work is invisible on the wall and /work/:slug, and sits in the admin Pending tab until approved');
 
     child.kill();
     child = null;

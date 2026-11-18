@@ -1,10 +1,12 @@
 'use strict';
 /*
- * Every page on the site must have exactly one <main> landmark and must not
- * load its Google Fonts stylesheet render-blocking (see CLAUDE.md /
- * docs/gis-design-system.md). This is a static check against the built
- * public/ tree (built-system pages) plus the hand-maintained pages, not a
- * live-server test — npm run build must have run first.
+ * Every page on the site must have exactly one <main> landmark and must load
+ * Archivo from our own domain (/assets/fonts/Archivo-Variable.woff2, preloaded,
+ * font-display: swap in its own @font-face), never from fonts.googleapis.com
+ * or fonts.gstatic.com (see CLAUDE.md / docs/gis-design-system.md). This is a
+ * static check against the built public/ tree (built-system pages) plus the
+ * hand-maintained pages, not a live-server test — npm run build must have run
+ * first.
  */
 const fs = require('fs');
 const path = require('path');
@@ -47,25 +49,14 @@ function countMainTags(html) {
   return matches.length;
 }
 
-function hasRenderBlockingFontStylesheet(head) {
-  // A plain <link rel="stylesheet" href="...fonts.googleapis.com..."> (or
-  // href-before-rel, same thing) with no media="print" swap is render-blocking.
-  // The <noscript> fallback intentionally repeats that same blocking link for
-  // the no-JS case, so it's excluded here, not a violation.
-  const headWithoutNoscript = head.replace(/<noscript>[\s\S]*?<\/noscript>/g, '');
-  const linkTags = headWithoutNoscript.match(/<link\b[^>]*>/g) || [];
-  return linkTags.some(tag => {
-    if (!/fonts\.googleapis\.com/.test(tag)) return false;
-    if (!/rel="stylesheet"/.test(tag)) return false;
-    return !/media="print"/.test(tag);
-  });
+function hasGoogleFontsReference(html) {
+  return /fonts\.googleapis\.com|fonts\.gstatic\.com/.test(html);
 }
 
-function hasNonBlockingFontPattern(head) {
-  const hasPreload = /<link rel="preload" as="style" href="https:\/\/fonts\.googleapis\.com[^"]*">/.test(head);
-  const hasSwap = /<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^"]*" media="print" onload="this\.media='all'">/.test(head);
-  const hasNoscript = /<noscript><link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^"]*"><\/noscript>/.test(head);
-  return hasPreload && hasSwap && hasNoscript;
+function hasSelfHostedFontPattern(html, head) {
+  const hasPreload = /<link rel="preload" as="font" type="font\/woff2" href="\/assets\/fonts\/Archivo-Variable\.woff2" crossorigin>/.test(head);
+  const hasFontFace = /@font-face\s*\{?\s*font-family:\s*'Archivo';[\s\S]{0,200}?font-display:\s*swap;?[\s\S]{0,200}?src:\s*url\('\/assets\/fonts\/Archivo-Variable\.woff2'\) format\('woff2'\)/.test(html);
+  return hasPreload && hasFontFace;
 }
 
 function run() {
@@ -79,11 +70,11 @@ function run() {
     const mainCount = countMainTags(html);
     assert(mainCount === 1, `${rel}: expected exactly one <main>, found ${mainCount}`);
 
-    assert(!hasRenderBlockingFontStylesheet(head), `${rel}: has a render-blocking Google Fonts <link rel="stylesheet"> in <head>`);
-    assert(hasNonBlockingFontPattern(head), `${rel}: missing the non-blocking font-load pattern (preload + media="print" swap + noscript fallback) in <head>`);
+    assert(!hasGoogleFontsReference(html), `${rel}: still references fonts.googleapis.com or fonts.gstatic.com`);
+    assert(hasSelfHostedFontPattern(html, head), `${rel}: missing the self-hosted Archivo font pattern (preload as font + @font-face with font-display: swap)`);
 
     checked++;
-    console.log(`PASS - ${rel}: exactly one <main>, fonts load non-blocking`);
+    console.log(`PASS - ${rel}: exactly one <main>, Archivo self-hosted with font-display: swap`);
   }
   console.log(`\nALL PASS (${checked} pages)`);
 }

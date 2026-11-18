@@ -1,16 +1,19 @@
 'use strict';
 /*
  * Visitor-supplied text must not be able to add HTML to a mail, a subject must
- * never carry a CR/LF from user input, /api/submit only accepts http(s)
- * portfolio links, the pages only link http(s) portfolios, and the removed
- * hand-in flow answers with a redirect (pages) or 404 (API and POST).
+ * never carry a CR/LF from user input, the pages only link http(s) portfolios,
+ * and the removed hand-in flow answers with a redirect (pages) or 404 (API and
+ * POST). POST /api/submit is closed (the On View open call has ended, see
+ * test/on-view-submit-closed.test.js for its own coverage), so the mails and
+ * portfolio validation that endpoint used to produce are no longer exercised
+ * here — only the approve/reject/archive mails and the contact form, which
+ * still run on existing or admin-managed data.
  */
 const { spawn } = require('child_process');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
-const sharp = require('sharp');
 
 const ROOT = path.resolve(__dirname, '..');
 const DB_PATH = path.join(ROOT, 'test', '.mail-escaping-test.db');
@@ -55,23 +58,11 @@ function freshIp() {
   return { 'X-Forwarded-For': `10.0.0.${hits}` };
 }
 
-async function apiSubmit({ name, email, portfolio, work_title }, imageBuf) {
-  const form = new FormData();
-  form.append('name', name);
-  form.append('email', email);
-  form.append('portfolio', portfolio);
-  form.append('work_title', work_title);
-  form.append('hp', '');
-  form.append('captcha', 'test-captcha-token');
-  form.append('image', new Blob([imageBuf], { type: 'image/webp' }), 'test.webp');
-  return fetch(`${BASE}/api/submit`, { method: 'POST', body: form, headers: freshIp() });
-}
-
-function workRowByEmail(email) {
+function workId(slug) {
   const db = new Database(DB_PATH);
-  const row = db.prepare('SELECT * FROM works WHERE email=?').get(email);
+  const row = db.prepare('SELECT id FROM works WHERE slug=?').get(slug);
   db.close();
-  return row;
+  return row.id;
 }
 
 async function run() {
@@ -134,10 +125,6 @@ async function run() {
     await waitForServer(30);
     await new Promise(r => setTimeout(r, 1000)); // let the startup archive run and mail
 
-    const imageBuf = await sharp({
-      create: { width: 400, height: 300, channels: 3, background: { r: 100, g: 120, b: 200 } },
-    }).webp().toBuffer();
-
     const authRes = await fetch(`${BASE}/api/admin/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -146,40 +133,23 @@ async function run() {
     const adminToken = (await authRes.json()).token;
     const adminHeaders = { Authorization: 'Bearer ' + adminToken };
 
-    // ── 1. /api/submit mails: confirmation and admin notification ───────────
-    {
-      const r = await apiSubmit({ name: EVIL_NAME, email: 'evil@example.com', portfolio: 'https://example.com/?a=1&b=2', work_title: EVIL_TITLE }, imageBuf);
-      assert(r.status === 200, 'a submission with HTML in name and title is accepted, got ' + r.status);
-      const confirm = emailRequests.find(m => m.to === 'evil@example.com' && m.subject.startsWith('Your work is in'));
-      assert(!!confirm, 'the confirmation mail was sent');
-      assert(confirm.html.includes(ESC_NAME) && confirm.html.includes(ESC_TITLE), 'the confirmation mail shows name and title as escaped text, got ' + confirm.html);
-      assert(!confirm.html.includes('<a href="https://evil.example"') && !confirm.html.includes('<b>x</b>'), 'the confirmation mail contains no raw HTML from the name or title');
-      const admin = emailRequests.find(m => m.subject.startsWith('Pending approval') && m.html.includes(ESC_TITLE));
-      assert(!!admin, 'the admin notification was sent');
-      assert(admin.html.includes(ESC_NAME) && admin.html.includes('a=1&amp;b=2'), 'the admin mail escapes name and portfolio, got ' + admin.html);
-      assert(!admin.html.includes('<a href="https://evil.example"') && !admin.html.includes('<b>x</b>'), 'the admin mail contains no raw HTML from the name or title');
-      assert(admin.html.includes(`<a href="${SITE_URL}/admin">`), 'the admin link itself stays a real link');
-    }
-    console.log('PASS - /api/submit confirmation and admin mails escape name, title and portfolio');
-
-    // ── 2. approve, reject and archive mails use the database values escaped ─
+    // ── 2. reject mail uses the database values escaped; approve/archive send no mail ─
+    // The approval and archive-expiry mails are switched off (the On View
+    // open call has closed, see test/on-view-submit-closed.test.js); reject
+    // is unaffected.
     {
       const a = await fetch(`${BASE}/api/admin/works/${(workId('to-approve'))}/approve`, { method: 'POST', headers: adminHeaders });
       assert(a.status === 200, 'approve succeeds');
-      const approveMail = emailRequests.find(m => m.to === 'to-approve@example.com');
-      assert(!!approveMail && approveMail.html.includes(ESC_NAME) && approveMail.html.includes(ESC_TITLE), 'the approval mail escapes artist and title, got ' + (approveMail && approveMail.html));
-      assert(!approveMail.html.includes('<b>x</b>') && !approveMail.html.includes('<a href="https://evil.example"'), 'the approval mail has no raw HTML from artist or title');
+      assert(!emailRequests.some(m => m.to === 'to-approve@example.com'), 'approving sends no mail');
 
       const j = await fetch(`${BASE}/api/admin/works/${workId('to-reject')}/reject`, { method: 'POST', headers: adminHeaders });
       assert(j.status === 200, 'reject succeeds');
       const rejectMail = emailRequests.find(m => m.to === 'to-reject@example.com');
       assert(!!rejectMail && rejectMail.html.includes(ESC_NAME) && !rejectMail.html.includes('<a href="https://evil.example"'), 'the reject mail escapes the artist, got ' + (rejectMail && rejectMail.html));
 
-      const archiveMail = emailRequests.find(m => m.to === 'old-evil@example.com');
-      assert(!!archiveMail && archiveMail.html.includes(ESC_NAME) && archiveMail.html.includes(ESC_TITLE), 'the archive mail escapes artist and title, got ' + (archiveMail && archiveMail.html));
-      assert(!archiveMail.html.includes('<b>x</b>') && !archiveMail.html.includes('<a href="https://evil.example"'), 'the archive mail has no raw HTML from artist or title');
+      assert(!emailRequests.some(m => m.to === 'old-evil@example.com'), 'the startup archive run sends no mail');
     }
-    console.log('PASS - approval, rejection and archive mails escape artist and title');
+    console.log('PASS - rejection mail escapes artist and title; approval and archiving send no mail');
 
     // ── 3. contact form: escaped, newlines become <br> ──────────────────────
     {
@@ -196,32 +166,14 @@ async function run() {
     }
     console.log('PASS - the contact mail escapes the message and the sender, and keeps line breaks');
 
-    // ── 4. no CR/LF from user input in a subject ────────────────────────────
-    {
-      const r = await apiSubmit({ name: 'Line\r\nBcc: attacker@example.com', email: 'crlf@example.com', portfolio: 'https://example.com', work_title: 'Two\nLines' }, imageBuf);
-      assert(r.status === 200, 'a submission with line breaks in name and title is accepted, got ' + r.status);
-      const sent = emailRequests.filter(m => /Line/.test(m.subject));
-      assert(sent.length > 0, 'a mail with the name in its subject was sent');
-      assert(emailRequests.every(m => !/[\r\n]/.test(m.subject)), 'no subject contains a CR or LF');
-      assert(sent.some(m => m.subject.includes('Bcc: attacker@example.com') === true), 'the text is kept, only the line break is gone');
-    }
-    console.log('PASS - subjects never contain CR or LF from user input');
-
-    // ── 5. portfolio validation on /api/submit ──────────────────────────────
-    for (const [i, bad] of ['javascript:alert(1)', 'ftp://x', 'example.com', 'data:text/html,hi', ' '].entries()) {
-      const email = `bad-portfolio-${i}@example.com`;
-      const r = await apiSubmit({ name: 'Bad', email, portfolio: bad, work_title: 'Bad Portfolio' }, imageBuf);
-      const j = await r.json();
-      assert(r.status === 400 && /http:\/\/ or https:\/\//.test(j.error), `portfolio "${bad}" is rejected with 400 and the http(s) message, got ${r.status} ${JSON.stringify(j)}`);
-      assert(!workRowByEmail(email), `no work row for portfolio "${bad}"`);
-    }
-    for (const [i, good] of ['https://example.com', 'http://example.com'].entries()) {
-      const email = `good-portfolio-${i}@example.com`;
-      const r = await apiSubmit({ name: 'Good', email, portfolio: good, work_title: 'Good Portfolio ' + i }, imageBuf);
-      assert(r.status === 200, `portfolio "${good}" is accepted, got ${r.status}`);
-      assert(workRowByEmail(email).portfolio === good, `portfolio "${good}" is stored as given`);
-    }
-    console.log('PASS - only http(s) portfolio links are accepted, without auto-prefixing');
+    // sendEmail()'s CR/LF stripping (server.js) used to be reachable with
+    // attacker-controlled text via /api/submit's name/title fields (the only
+    // user input that both lands in a subject and isn't format-validated the
+    // way an email address is). That endpoint is closed now the On View open
+    // call has ended, and no other live subject interpolates unvalidated
+    // user text, so this test, which exercised exactly that path, no longer
+    // has a live route to drive it. The stripping itself is untouched, as
+    // defense in depth.
 
     // ── 6. pages only link http(s) portfolios ───────────────────────────────
     {
@@ -261,13 +213,6 @@ async function run() {
     await new Promise(r => setTimeout(r, 300));
     fixture.close();
     cleanupFiles();
-  }
-
-  function workId(slug) {
-    const db = new Database(DB_PATH);
-    const row = db.prepare('SELECT id FROM works WHERE slug=?').get(slug);
-    db.close();
-    return row.id;
   }
 }
 

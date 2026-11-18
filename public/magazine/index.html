@@ -4,12 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Magazine · Get Inspired Society</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Non-blocking font load, same pattern as build/pages/submit.html. -->
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap"></noscript>
+<link rel="preload" as="font" type="font/woff2" href="/assets/fonts/Archivo-Variable.woff2" crossorigin>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <!-- Privacy-friendly analytics by Plausible — proxied via own domain so adblockers don't skew the numbers -->
@@ -24,6 +19,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 /* Fallback metrics copied from Archivo's own hhea table (ascent/descent/line-gap) and from its xAvgCharWidth vs Arial/Liberation Sans (size-adjust), so swapping in the real webfont doesn't reflow the page (CLS). */
+@font-face{font-family:'Archivo';font-style:normal;font-weight:400 700;font-stretch:75% 125%;font-display:swap;src:url('/assets/fonts/Archivo-Variable.woff2') format('woff2')}
 @font-face{font-family:'Archivo Fallback';src:local('Arial'),local('Helvetica'),local('Liberation Sans'),local('Helvetica Neue');size-adjust:99.2%;ascent-override:87.8%;descent-override:21%;line-gap-override:0%}
 body{font-family:'Archivo','Archivo Fallback',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 img{display:block;max-width:100%}

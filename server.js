@@ -22,6 +22,14 @@ const ADMIN_EMAIL     = process.env.ADMIN_EMAIL        || 'info@getinspiredsocie
 const SITE_URL        = process.env.SITE_URL           || 'https://getinspiredsociety.com';
 const HCAPTCHA_SECRET = process.env.HCAPTCHA_SECRET;
 
+// The On View weekly open call has ended: POST /api/submit refuses new
+// submissions (see the route below) and the three maker-facing mails tied
+// to that flow (archive-expiry, round-closed, approve) are switched off.
+// Everything else (the works/rounds tables, /on-view, /work/:slug, the
+// admin approve/reject/archive/round machinery itself) keeps working
+// unchanged, for work that is already on the site.
+const ON_VIEW_SUBMISSIONS_CLOSED = true;
+
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -185,6 +193,7 @@ async function archiveOldWorks() {
     "UPDATE works SET status='archived', view_count_at_archive=view_count WHERE status='previous' AND review_status='approved' AND datetime(COALESCE(approved_at, created_at), '+7 days') <= datetime('now') RETURNING slug, title, artist, email"
   ).all();
   if (rows.length > 0) console.log(`[archive] archived ${rows.length} work(s)`);
+  if (ON_VIEW_SUBMISSIONS_CLOSED) return;
   for (const row of rows) {
     if (!row.email) continue;
     await sendEmail({
@@ -315,6 +324,7 @@ async function notifyClosedRounds() {
       if (seen.has(to.toLowerCase())) continue;
       seen.add(to.toLowerCase());
       sent++;
+      if (ON_VIEW_SUBMISSIONS_CLOSED) continue;
       await sendEmail({
         to,
         subject: `Round ${round_number} is closed`,
@@ -328,7 +338,7 @@ async function notifyClosedRounds() {
         ].join('\n\n'),
       });
     }
-    console.log(`[rounds] round ${round_number} closed, mailed ${sent} maker(s)`);
+    console.log(`[rounds] round ${round_number} closed, ${ON_VIEW_SUBMISSIONS_CLOSED ? 'mail switched off, would have mailed' : 'mailed'} ${sent} maker(s)`);
   }
 }
 
@@ -381,6 +391,11 @@ app.get('/society', (req, res) => res.redirect(301, '/'));
 // that were shared on social media land on /on-view. Non-strict routing makes
 // this match both /on-view/leaderboard and /on-view/leaderboard/.
 app.get('/on-view/leaderboard', (req, res) => res.redirect(301, '/on-view'));
+
+// The On View weekly submission form is closed (see ON_VIEW_SUBMISSIONS_CLOSED
+// above); its page redirects to the current open call. Non-strict routing
+// makes this match both /on-view/submit and /on-view/submit/.
+app.get('/on-view/submit', (req, res) => res.redirect(301, '/submit'));
 
 // /magazine/:issue used to be the reader itself; it is now the issue page,
 // and the reader moved to /magazine/:issue/read. An old link carrying a
@@ -549,7 +564,12 @@ function isHttpUrl(value) {
 
 // ── Submit ────────────────────────────────────────────────────────────────────
 
-app.post('/api/submit', upload.single('image'), async (req, res) => {
+app.post('/api/submit', (req, res, next) => {
+  // The On View weekly open call has ended — refused before the upload
+  // middleware even runs, so a closed-call submission never writes a file.
+  if (ON_VIEW_SUBMISSIONS_CLOSED) return res.status(410).json({ error: 'The On View open call is closed. Submit through the current open call instead.' });
+  next();
+}, upload.single('image'), async (req, res) => {
   try {
     const { name, email, portfolio, work_title, hp, captcha } = req.body || {};
 
@@ -662,7 +682,7 @@ app.post('/api/admin/works/:id/approve', requireAdmin, async (req, res) => {
     "UPDATE works SET review_status='approved', approved_at=datetime('now') WHERE id=? RETURNING slug, title, artist, email, round_number"
   ).get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Not found.' });
-  if (row.email) {
+  if (row.email && !ON_VIEW_SUBMISSIONS_CLOSED) {
     // The contest only exists for work of the round that is running right now.
     const activeRound = currentRoundNumber();
     const inActiveRound = activeRound !== null && row.round_number === activeRound;
@@ -758,6 +778,56 @@ app.post('/api/admin/rounds/:round_number/announce-winner', requireAdmin, (req, 
 
   db.prepare("UPDATE rounds SET winner_work_id=?, announced_at=datetime('now') WHERE round_number=?").run(winner.id, roundNumber);
   res.json({ ok: true, winner });
+});
+
+// ── Admin: On View data export & wipe ────────────────────────────────────────
+// The weekly open call is closed (see ON_VIEW_SUBMISSIONS_CLOSED above) and
+// André wants to be able to clear out the personal data it collected —
+// email addresses, the unused tokens table's artist_name/artist_email, and
+// the visitor hashes used for view-count dedup — while keeping what
+// /work/:slug needs to keep working: title, artist name, image and a
+// publicly-shown portfolio link. The wipe is deliberately two-step: it only
+// runs after an export has been taken in the same admin session (tracked
+// here, not just client-side, so a stale tab can't skip the export) and the
+// caller must repeat the exact word "DELETE".
+let onViewExportedAt = null;
+const WIPE_REQUIRES_EXPORT_WITHIN_MS = 30 * 60 * 1000; // 30 minutes
+
+app.get('/api/admin/on-view/export', requireAdmin, (req, res) => {
+  onViewExportedAt = Date.now();
+  res.json({
+    exported_at: new Date().toISOString(),
+    works:       db.prepare('SELECT * FROM works ORDER BY id').all(),
+    tokens:      db.prepare('SELECT * FROM tokens ORDER BY created_at').all(),
+    work_views:  db.prepare('SELECT * FROM work_views ORDER BY id').all(),
+    rounds:      db.prepare('SELECT * FROM rounds ORDER BY round_number').all(),
+  });
+});
+
+app.post('/api/admin/on-view/wipe', requireAdmin, (req, res) => {
+  if ((req.body || {}).confirm !== 'DELETE') {
+    return res.status(400).json({ error: 'Type DELETE to confirm.' });
+  }
+  if (!onViewExportedAt || (Date.now() - onViewExportedAt) > WIPE_REQUIRES_EXPORT_WITHIN_MS) {
+    return res.status(400).json({ error: 'Export the data first (in this session, within the last 30 minutes), then wipe.' });
+  }
+
+  const result = db.transaction(() => {
+    const worksWiped = db.prepare("UPDATE works SET email='' WHERE email != ''").run().changes;
+    const tokensWiped = db.prepare("DELETE FROM tokens").run().changes;
+    const viewsWiped = db.prepare("DELETE FROM work_views").run().changes;
+    return { worksWiped, tokensWiped, viewsWiped };
+  })();
+
+  onViewExportedAt = null; // a fresh export is required before the next wipe
+  res.json({
+    ok: true,
+    wiped: {
+      work_emails:        result.worksWiped,
+      token_rows:         result.tokensWiped,
+      work_view_rows:     result.viewsWiped,
+    },
+  });
 });
 
 // ── Page routes ───────────────────────────────────────────────────────────────

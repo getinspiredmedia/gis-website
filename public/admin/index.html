@@ -4,14 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin · Get Inspired Society</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&display=swap" rel="stylesheet">
+<link rel="preload" as="font" type="font/woff2" href="/assets/fonts/Archivo-Variable.woff2" crossorigin>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <style>
 :root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
 *{box-sizing:border-box;margin:0;padding:0}
+@font-face{font-family:'Archivo';font-style:normal;font-weight:400 700;font-stretch:75% 125%;font-display:swap;src:url('/assets/fonts/Archivo-Variable.woff2') format('woff2')}
 body{font-family:'Archivo',-apple-system,sans-serif;background:#f5f6f8;color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
 a{color:inherit;text-decoration:none}
 button{font:inherit;cursor:pointer}
@@ -124,6 +123,7 @@ button{font:inherit;cursor:pointer}
     <button class="tab" data-tab="approved" id="tab-approved">Approved</button>
     <button class="tab" data-tab="rejected" id="tab-rejected">Rejected</button>
     <button class="tab" data-tab="rounds" id="tab-rounds">Rounds</button>
+    <button class="tab" data-tab="data" id="tab-data">Data</button>
   </div>
 
   <!-- Pending -->
@@ -160,6 +160,17 @@ button{font:inherit;cursor:pointer}
       <thead><tr><th>Round</th><th>Window</th><th>Approved</th><th>Status</th><th>Winner</th><th>Actions</th></tr></thead>
       <tbody id="rounds-body"></tbody>
     </table>
+  </div>
+
+  <!-- Data: On View export & wipe -->
+  <div class="panel" id="panel-data">
+    <div class="section-head"><h2>On View data</h2></div>
+    <p style="max-width:560px;line-height:1.6;margin-bottom:16px">The open call is closed. Export everything below for your own archive first, then wipe the personal data it collected: email addresses, the (unused) tokens table, and visitor hashes used for view-count dedup. Titles, artist names, images and portfolio links are kept, so <code>/work/:slug</code> pages keep working.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+      <button class="btn-sm primary" id="export-btn">Export On View data</button>
+      <button class="btn-sm danger" id="wipe-btn" disabled>Delete On View personal data</button>
+    </div>
+    <div id="data-status" style="max-width:560px;line-height:1.6"></div>
   </div>
 </div>
 
@@ -364,6 +375,39 @@ function refreshAll(){
   loadWorks();
   loadRounds();
 }
+
+// ── Data: On View export & wipe ──────────────────────────────────────────────
+var exportedThisSession=false;
+var statusEl=document.getElementById('data-status');
+var wipeBtn=document.getElementById('wipe-btn');
+
+document.getElementById('export-btn').addEventListener('click',function(){
+  api('GET','/api/admin/on-view/export').then(function(data){
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='on-view-export-'+data.exported_at.replace(/[:.]/g,'-')+'.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    exportedThisSession=true;
+    wipeBtn.disabled=false;
+    statusEl.innerHTML='<p>Exported '+data.works.length+' works, '+data.tokens.length+' tokens, '+data.work_views.length+' view rows, '+data.rounds.length+' rounds. Saved to your downloads. You can now delete the personal data.</p>';
+  });
+});
+
+wipeBtn.addEventListener('click',function(){
+  if(!exportedThisSession){alert('Export the data first.');return;}
+  var typed=prompt('Type DELETE to permanently remove On View personal data (email addresses, tokens, visitor hashes). This cannot be undone.');
+  if(typed!=='DELETE')return;
+  api('POST','/api/admin/on-view/wipe',{confirm:'DELETE'}).then(function(d){
+    if(d.error){alert(d.error);return;}
+    exportedThisSession=false;
+    wipeBtn.disabled=true;
+    statusEl.innerHTML='<p>Wiped '+d.wiped.work_emails+' work email(s), '+d.wiped.token_rows+' token row(s), '+d.wiped.work_view_rows+' view-hash row(s). Titles, artist names, images and portfolio links were kept.</p>';
+    refreshAll();
+  });
+});
 
 function portfolioCell(p){
   var t=esc(p||'');

@@ -1,5 +1,7 @@
 # GIS Website — Project Brief
 
+> **Note (2026-11-18):** This brief predates most of the site as it exists today and is not actively maintained — `CLAUDE.md`'s "Projectspecifieke informatie" section is the live source of truth. Two things below are now stale: the "On View — rebuild or proxy" open decision (§ "Open Decisions") was resolved long ago (On View was built directly in this repo, not proxied) and the weekly On View open call it describes is now permanently closed, see CLAUDE.md; and "five artists per issue" below is no longer a fixed number — the issue format changed, so no page states a fixed per-issue artist count any more (see the About-page fix in CLAUDE.md).
+
 ## 1. Project description
 
 Get Inspired Society is an independent visual arts platform, active since 2009, based in Rotterdam, founded and led by André Kreft. Four issues per year, five artists per issue, twenty spots per year.

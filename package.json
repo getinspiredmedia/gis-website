@@ -18,7 +18,7 @@
     "test:view-count": "node test/view-count.test.js",
     "test:archive-email": "node test/archive-email.test.js",
     "test:review-status": "node test/review-status.test.js",
-    "test:submit-public": "node test/submit-public.test.js",
+    "test:on-view-submit-closed": "node test/on-view-submit-closed.test.js",
     "test:rounds": "node test/rounds.test.js",
     "test:leaderboard-redirect": "node test/leaderboard-redirect.test.js",
     "test:on-view-round": "node test/on-view-round.test.js",
@@ -40,7 +40,9 @@
     "test:issue-title-casing": "node test/issue-title-casing.playwright.test.js",
     "test:main-landmark-fonts": "node test/main-landmark-fonts.test.js",
     "test:footer-logos": "node test/footer-logos.test.js",
+    "test:contact-form": "node test/contact-form.test.js",
     "test:submit-wrap-stability": "node test/submit-wrap-stability.test.js",
+    "test:on-view-data-wipe": "node test/on-view-data-wipe.test.js",
     "start": "exec node server.js"
   },
   "engines": {

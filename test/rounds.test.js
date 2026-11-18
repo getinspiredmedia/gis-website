@@ -1,12 +1,15 @@
 'use strict';
 /*
  * Epic 4: weekly rounds, clocked from approval (approved_at), not
- * submission. works.round_number is assigned once at submission time,
- * based on which rounds row's [starts_at, ends_at) window covers the
- * current moment — or stays null if none does. A round is "ready for a
- * winner" once it has at least one approved work and the most recent
- * approved_at among that round's approved works is 7+ days in the past;
- * a still-pending work in the round is excluded from that aggregate
+ * submission. works.round_number used to be assigned at submission time
+ * (POST /api/submit), based on which rounds row's [starts_at, ends_at)
+ * window covered the current moment at the time; that endpoint is closed
+ * now that the On View open call has ended (see
+ * test/on-view-submit-closed.test.js), so this file no longer exercises
+ * that assignment and seeds round_number directly instead. A round is
+ * "ready for a winner" once it has at least one approved work and the most
+ * recent approved_at among that round's approved works is 7+ days in the
+ * past; a still-pending work in the round is excluded from that aggregate
  * entirely, so it never blocks readiness. The winner is chosen by hand:
  * POST /api/admin/rounds/:round_number/announce-winner takes { work_id } and
  * only succeeds on a ready, not-yet-announced round, for an approved work
@@ -21,7 +24,6 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
-const sharp = require('sharp');
 
 const ROOT = path.resolve(__dirname, '..');
 const DB_PATH = path.join(ROOT, 'test', '.rounds-test.db');
@@ -73,18 +75,6 @@ async function adminAuth() {
   return token;
 }
 
-async function apiSubmit(email, title, imageBuf) {
-  const form = new FormData();
-  form.append('name', 'Round Tester');
-  form.append('email', email);
-  form.append('portfolio', 'https://example.com');
-  form.append('work_title', title);
-  form.append('hp', '');
-  form.append('captcha', 'test-captcha-token');
-  form.append('image', new Blob([imageBuf], { type: 'image/webp' }), 'test.webp');
-  return fetch(`${BASE}/api/submit`, { method: 'POST', body: form });
-}
-
 function workByTitle(title) {
   const db = new Database(DB_PATH);
   const row = db.prepare('SELECT * FROM works WHERE title=?').get(title);
@@ -118,49 +108,6 @@ async function run() {
     await waitForServer(30);
     const adminToken = await adminAuth();
     assert(!!adminToken, 'admin auth succeeds');
-
-    const imageBuf = await sharp({
-      create: { width: 400, height: 300, channels: 3, background: { r: 60, g: 100, b: 180 } },
-    }).webp().toBuffer();
-
-    // ── round_number assignment ──────────────────────────────────────────
-    // A: no round exists at all -> stays null.
-    {
-      const r = await apiSubmit('no-round@example.com', 'No Round Work', imageBuf);
-      const j = await r.json();
-      assert(r.status === 200 && j.ok, 'submission with no round configured is accepted');
-    }
-    assert(workByTitle('No Round Work').round_number === null, 'a submission with no active round gets round_number=NULL');
-    console.log('PASS - a submission with no round configured gets round_number=NULL');
-
-    // B: seed a round covering now -> gets that round_number.
-    {
-      const db = new Database(DB_PATH);
-      db.prepare("INSERT INTO rounds (round_number, starts_at, ends_at) VALUES (1, datetime('now','-2 days'), datetime('now','+5 days'))").run();
-      db.close();
-    }
-    {
-      const r = await apiSubmit('in-window@example.com', 'In Window Work', imageBuf);
-      const j = await r.json();
-      assert(r.status === 200 && j.ok, 'in-window submission is accepted');
-    }
-    assert(workByTitle('In Window Work').round_number === 1, `a submission inside round 1's window gets round_number=1 — got ${workByTitle('In Window Work').round_number}`);
-    console.log('PASS - a submission inside a round window gets the correct round_number');
-
-    // C: round 1 has since ended, round 2 is entirely in the future -> stays null again.
-    {
-      const db = new Database(DB_PATH);
-      db.prepare("UPDATE rounds SET ends_at = datetime('now','-1 hour') WHERE round_number=1").run();
-      db.prepare("INSERT INTO rounds (round_number, starts_at, ends_at) VALUES (2, datetime('now','+10 days'), datetime('now','+17 days'))").run();
-      db.close();
-    }
-    {
-      const r = await apiSubmit('outside-window@example.com', 'Outside Window Work', imageBuf);
-      const j = await r.json();
-      assert(r.status === 200 && j.ok, 'outside-window submission is accepted');
-    }
-    assert(workByTitle('Outside Window Work').round_number === null, `a submission when no round covers now gets round_number=NULL — got ${workByTitle('Outside Window Work').round_number}`);
-    console.log('PASS - a submission outside every round window gets round_number=NULL');
 
     // ── "ready for a winner" ─────────────────────────────────────────────
     // Round 10: two approved works at different approved_at times, plus one
