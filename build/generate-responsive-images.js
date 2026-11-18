@@ -45,8 +45,8 @@ const JOBS = [
   // source's own alpha channel, with an 8px pad so anti-aliased edges
   // aren't clipped); heights match the footer's 40px/80px/@1x/@2x display
   // sizes.
-  { src: 'public/assets/logos/society-logo.webp',  outDir: 'public/assets/responsive', base: 'society-logo',  heights: [80, 120], formats: ['webp', 'png'], extract: { left: 0, top: 265, width: 1860, height: 1518 } },
-  { src: 'public/assets/logos/magazine-logo.png',  outDir: 'public/assets/responsive', base: 'magazine-logo', heights: [80, 120], formats: ['webp', 'png'], extract: { left: 0, top: 265, width: 1962, height: 1517 } },
+  { src: 'public/assets/logos/society-logo.webp',  outDir: 'public/assets/responsive', base: 'society-logo',  heights: [160, 240], formats: ['webp', 'png'], extract: { left: 0, top: 265, width: 1860, height: 1518 } },
+  { src: 'public/assets/logos/magazine-logo.png',  outDir: 'public/assets/responsive', base: 'magazine-logo', heights: [160, 240], formats: ['webp', 'png'], extract: { left: 0, top: 265, width: 1962, height: 1517 } },
 ];
 
 async function run() {
