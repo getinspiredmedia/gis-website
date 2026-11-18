@@ -43,6 +43,7 @@
     "test:contact-form": "node test/contact-form.test.js",
     "test:submit-wrap-stability": "node test/submit-wrap-stability.test.js",
     "test:on-view-data-wipe": "node test/on-view-data-wipe.test.js",
+    "test:external-hosts": "node test/external-hosts.test.js",
     "start": "exec node server.js"
   },
   "engines": {

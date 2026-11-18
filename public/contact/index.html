@@ -14,7 +14,6 @@
   plausible.init()
 </script>
 
-<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 <style>
 :root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -276,14 +275,14 @@ nav[data-variant="light"].solid .nav-toggle{color:#fff}
     <form id="contact-form" action="/api/contact" method="post" novalidate>
       <label class="field">
         <span>Your message</span>
-        <textarea id="contact-message" name="message" placeholder="Write here." required></textarea>
+        <textarea id="contact-message" name="message" placeholder="Write here." maxlength="5000" required></textarea>
       </label>
       <label class="field">
         <span>Where I can reach you</span>
         <input id="contact-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
       </label>
       <input class="hp" id="contact-hp" name="hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" placeholder="Leave empty">
-      <div class="h-captcha" data-sitekey="0a7267b2-d53c-4d0a-b414-cbce7aeaba72" style="margin-bottom:20px"></div>
+      <input type="hidden" id="contact-loaded-at" name="loaded_at">
       <div class="send">
         <button id="contact-btn" type="submit">Send it</button>
         <small>I read and answer these myself. It takes a few days, and it does get an answer.</small>
@@ -335,28 +334,27 @@ document.querySelectorAll('.rv').forEach(el=>io.observe(el));
   var okEl  = document.getElementById('contact-status-ok');
   var errEl = document.getElementById('contact-status-err');
   var btn   = document.getElementById('contact-btn');
+  document.getElementById('contact-loaded-at').value = Date.now();
   function showOk(t)  { okEl.textContent = t;  okEl.style.display = '';  errEl.style.display = 'none'; }
   function showErr(t) { errEl.textContent = t; errEl.style.display = ''; okEl.style.display = 'none'; }
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    var message = document.getElementById('contact-message').value.trim();
-    var email   = document.getElementById('contact-email').value.trim();
-    var hp      = document.getElementById('contact-hp').value;
-    var captcha = window.hcaptcha ? hcaptcha.getResponse() : '';
+    var message  = document.getElementById('contact-message').value.trim();
+    var email    = document.getElementById('contact-email').value.trim();
+    var hp       = document.getElementById('contact-hp').value;
+    var loadedAt = document.getElementById('contact-loaded-at').value;
     if (!message || !email) { showErr('Please fill in all fields.'); return; }
-    if (!captcha) { showErr('Please complete the captcha.'); return; }
     btn.disabled = true;
     btn.textContent = 'Sending…';
     fetch('/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: message, email: email, hp: hp, captcha: captcha }),
+      body: JSON.stringify({ message: message, email: email, hp: hp, loaded_at: loadedAt }),
     })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d.ok) {
           form.reset();
-          if (window.hcaptcha) hcaptcha.reset();
           btn.style.display = 'none';
           showOk('Sent. I will get back to you.');
         } else {

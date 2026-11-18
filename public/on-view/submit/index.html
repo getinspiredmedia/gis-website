@@ -13,7 +13,6 @@
   window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
   plausible.init()
 </script>
-<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 <style>
 :root{--blue:#0d2ec4;--ink:#0b0c10;--paper:#ffffff;--muted:#5b616b;--line:#e4e6ec;--ease:cubic-bezier(.16,.84,.44,1)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -96,7 +95,6 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
         </div>
       </div>
       <input class="hp" id="hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" placeholder="Leave empty">
-      <div class="h-captcha" data-sitekey="0a7267b2-d53c-4d0a-b414-cbce7aeaba72" style="margin-bottom:20px"></div>
       <button class="btn" type="submit" id="submit-btn">Submit →</button>
       <p class="msg" id="msg"></p>
     </form>
@@ -165,13 +163,11 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
     var work_title = document.getElementById('work_title').value.trim();
     var file       = fileInput.files[0];
     var hp         = document.getElementById('hp').value;
-    var captcha    = window.hcaptcha ? hcaptcha.getResponse() : '';
     msg.style.display = 'none';
     if (!name)      { showMsg('Please enter your name.'); return; }
     if (!email)     { showMsg('Please enter your email.'); return; }
     if (!portfolio) { showMsg('Please enter your portfolio URL.'); return; }
     if (!file)      { showMsg('Please select an image.'); return; }
-    if (!captcha)   { showMsg('Please complete the captcha.'); return; }
 
     var fd = new FormData();
     fd.append('name', name);
@@ -180,7 +176,6 @@ h1{font-weight:700;font-size:clamp(2.2rem,5.4vw,3.8rem);line-height:.96;letter-s
     fd.append('work_title', work_title);
     fd.append('image', file);
     fd.append('hp', hp);
-    fd.append('captcha', captcha);
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Sending…';

@@ -20,7 +20,6 @@ const RESEND_KEY      = process.env.RESEND_API_KEY;
 const FROM_EMAIL      = process.env.RESEND_FROM        || 'noreply@getinspiredsociety.com';
 const ADMIN_EMAIL     = process.env.ADMIN_EMAIL        || 'info@getinspiredsociety.com';
 const SITE_URL        = process.env.SITE_URL           || 'https://getinspiredsociety.com';
-const HCAPTCHA_SECRET = process.env.HCAPTCHA_SECRET;
 
 // The On View weekly open call has ended: POST /api/submit refuses new
 // submissions (see the route below) and the three maker-facing mails tied
@@ -218,23 +217,14 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ── hCaptcha ──────────────────────────────────────────────────────────────────
-
-async function verifyHcaptcha(token) {
-  if (!HCAPTCHA_SECRET) { console.warn('[captcha] HCAPTCHA_SECRET not set — skipping verification'); return true; }
-  try {
-    const r = await fetch('https://api.hcaptcha.com/siteverify', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body:    `secret=${encodeURIComponent(HCAPTCHA_SECRET)}&response=${encodeURIComponent(token)}`,
-    });
-    const data = await r.json();
-    return data.success === true;
-  } catch (e) {
-    console.error('[captcha] verification error:', e.message);
-    return false;
-  }
-}
+// ── Contact form spam defense (no third-party service) ──────────────────────
+// No external CAPTCHA any more: hCaptcha sent the visitor's IP to a third
+// party and could set cookies for its own bot-detection, which the Privacy
+// page explicitly promises not to do. The honeypot and rate limit stay; a
+// minimum fill time (no human fills and submits a form this fast) and a
+// message length cap are added in their place.
+const MIN_FORM_FILL_MS = 3000;
+const MAX_CONTACT_MESSAGE_LENGTH = 5000;
 
 // ── Rate-limiting ─────────────────────────────────────────────────────────────
 
@@ -535,15 +525,17 @@ app.get('/api/on-view/previous-winner', (req, res) => {
 });
 
 app.post('/api/contact', async (req, res) => {
-  const { message, email, hp, captcha } = req.body || {};
-  if (hp) return res.json({ ok: true }); // honeypot — silent, no captcha/rate-limit slot consumed
-  if (!captcha) return res.status(400).json({ error: 'Please complete the captcha.' });
-  const captchaOk = await verifyHcaptcha(captcha);
-  if (!captchaOk) return res.status(400).json({ error: 'Captcha verification failed. Please try again.' });
+  const { message, email, hp, loaded_at } = req.body || {};
+  if (hp) return res.json({ ok: true }); // honeypot — silent, no rate-limit slot consumed
+  // A form filled and sent faster than any human can is almost always a bot —
+  // silent, same as the honeypot, so as not to tip off what's being checked.
+  const fillTime = Date.now() - Number(loaded_at);
+  if (!Number.isFinite(fillTime) || fillTime < MIN_FORM_FILL_MS) return res.json({ ok: true });
   const ip = req.ip || req.socket.remoteAddress || '';
   if (!allowContact(ip)) return res.status(429).json({ error: 'Too many messages. Please wait a few minutes.' });
   if (!message?.trim() || !email?.trim())             return res.status(400).json({ error: 'Required fields missing.' });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))     return res.status(400).json({ error: 'Invalid email address.' });
+  if (message.length > MAX_CONTACT_MESSAGE_LENGTH)    return res.status(400).json({ error: 'Message is too long.' });
   await sendEmail({
     to:      ADMIN_EMAIL,
     subject: `GIS contact from ${email}`,
@@ -571,12 +563,9 @@ app.post('/api/submit', (req, res, next) => {
   next();
 }, upload.single('image'), async (req, res) => {
   try {
-    const { name, email, portfolio, work_title, hp, captcha } = req.body || {};
+    const { name, email, portfolio, work_title, hp } = req.body || {};
 
-    if (hp) return res.json({ ok: true }); // honeypot — silent, no captcha/rate-limit slot consumed
-    if (!captcha) return res.status(400).json({ error: 'Please complete the captcha.' });
-    const captchaOk = await verifyHcaptcha(captcha);
-    if (!captchaOk) return res.status(400).json({ error: 'Captcha verification failed. Please try again.' });
+    if (hp) return res.json({ ok: true }); // honeypot — silent, no rate-limit slot consumed
     const ip = req.ip || req.socket.remoteAddress || '';
     if (!allowSubmit(ip)) return res.status(429).json({ error: 'Too many submissions. Please wait a few minutes.' });
 

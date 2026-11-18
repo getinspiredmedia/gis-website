@@ -156,7 +156,7 @@ async function run() {
       const r = await fetch(`${BASE}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...freshIp() },
-        body: JSON.stringify({ email: 'a<i>@example.com', message: '<script>alert(1)</script>\nsecond line', hp: '', captcha: 'test-captcha-token' }),
+        body: JSON.stringify({ email: 'a<i>@example.com', message: '<script>alert(1)</script>\nsecond line', hp: '', loaded_at: Date.now() - 5000 }),
       });
       assert(r.status === 200, 'the contact form accepts the message, got ' + r.status);
       const mail = emailRequests.find(m => m.subject.startsWith('GIS contact from'));

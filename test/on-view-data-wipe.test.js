@@ -7,6 +7,13 @@
  * artist, image, portfolio). The wipe refuses without an export in this
  * session (a fresh server process, no export) and without the literal
  * confirmation "DELETE".
+ *
+ * Beyond the targeted assertions, this also walks the live schema (every
+ * table, every column, via sqlite_master/PRAGMA table_info — not a
+ * hardcoded list) after the wipe and scans every text value for
+ * email-shaped, IPv4-shaped or sha256-hash-shaped strings, so a future
+ * column that happens to hold personal data doesn't slip through unnoticed
+ * just because nobody remembered to add it to this file by name.
  */
 const { spawn } = require('child_process');
 const path = require('path');
@@ -25,6 +32,43 @@ function assert(cond, msg) {
 
 function cleanup() {
   for (const f of [DB_PATH, DB_PATH + '-wal', DB_PATH + '-shm']) fs.rmSync(f, { force: true });
+}
+
+// Known-public values that would otherwise look email/hash-shaped and trip
+// the scan below as false positives — not a skip-list for personal data,
+// just the test's own public fixture data (slug, portfolio link, image path).
+const PUBLIC_VALUES = new Set([
+  'wipe-me', 'Wipe Me', 'Artist Name',
+  'https://artist.example.com', '/uploads/wipe-me.webp',
+]);
+
+const EMAIL_RE = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+const IPV4_RE  = /\b(?:\d{1,3}\.){3}\d{1,3}\b/;
+const SHA256_HEX_RE = /^[a-f0-9]{64}$/i;
+
+// Walks every table/column the live schema actually has (not a hardcoded
+// list) and reports any value that looks like an email address, an IPv4
+// address, or a bare sha256 hex digest (the shape visitor_hash/any future
+// hash column would have).
+function scanForPersonalData(dbPath) {
+  const d = new Database(dbPath);
+  const findings = [];
+  const tables = d.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all();
+  for (const { name: table } of tables) {
+    const columns = d.prepare(`PRAGMA table_info("${table}")`).all().map(c => c.name);
+    const rows = d.prepare(`SELECT * FROM "${table}"`).all();
+    for (const row of rows) {
+      for (const col of columns) {
+        const value = row[col];
+        if (typeof value !== 'string' || !value || PUBLIC_VALUES.has(value)) continue;
+        if (EMAIL_RE.test(value) || IPV4_RE.test(value) || SHA256_HEX_RE.test(value)) {
+          findings.push(`${table}.${col} (row id ${row.id ?? row.round_number ?? row.token ?? '?'}) = ${JSON.stringify(value)}`);
+        }
+      }
+    }
+  }
+  d.close();
+  return findings;
 }
 
 function waitForServer(retries) {
@@ -64,7 +108,11 @@ async function run() {
       "VALUES ('wipe-me','Wipe Me','Artist Name','artist@example.com','https://artist.example.com','/uploads/wipe-me.webp','previous','approved',datetime('now'))"
     ).run();
     const workId = db.prepare("SELECT id FROM works WHERE slug='wipe-me'").get().id;
-    db.prepare("INSERT INTO work_views (work_id, visitor_hash) VALUES (?, 'some-visitor-hash')").run(workId);
+    // A realistic visitor_hash: real ones are sha256 hex digests (see
+    // CLAUDE.md), so the fixture needs the same shape for the scanner's
+    // sha256-hex detection below to actually be exercised.
+    const FAKE_VISITOR_HASH = require('crypto').createHash('sha256').update('test-visitor').digest('hex');
+    db.prepare("INSERT INTO work_views (work_id, visitor_hash) VALUES (?, ?)").run(workId, FAKE_VISITOR_HASH);
     db.prepare("INSERT INTO tokens (token, artist_name, artist_email) VALUES ('tok-1', 'Legacy Artist', 'legacy@example.com')").run();
     db.close();
 
@@ -89,9 +137,20 @@ async function run() {
     // Export: contains the personal data, and marks the session as exported.
     const exportBody = await (await fetch(`${BASE}/api/admin/on-view/export`, { headers: auth })).json();
     assert(Array.isArray(exportBody.works) && exportBody.works.some(w => w.slug === 'wipe-me' && w.email === 'artist@example.com'), 'export includes the work with its email');
-    assert(Array.isArray(exportBody.work_views) && exportBody.work_views.some(v => v.visitor_hash === 'some-visitor-hash'), 'export includes work_views with the visitor hash');
+    assert(Array.isArray(exportBody.work_views) && exportBody.work_views.some(v => v.visitor_hash === FAKE_VISITOR_HASH), 'export includes work_views with the visitor hash');
     assert(Array.isArray(exportBody.tokens) && exportBody.tokens.some(t => t.artist_email === 'legacy@example.com'), 'export includes tokens with artist_email');
     console.log('PASS - export returns works, work_views and tokens with their personal data');
+
+    // Prove the scanner itself actually detects personal data (not a
+    // vacuous pass): before the wipe, it must find the seeded email,
+    // visitor hash and token email.
+    {
+      const before = scanForPersonalData(DB_PATH);
+      assert(before.some(f => f.includes('artist@example.com')), 'the scanner finds the work email before the wipe');
+      assert(before.some(f => f.includes('legacy@example.com')), 'the scanner finds the token email before the wipe');
+      assert(before.some(f => f.includes(FAKE_VISITOR_HASH)), 'the scanner finds the sha256-shaped visitor hash before the wipe');
+    }
+    console.log('PASS - the schema scanner actually detects seeded personal data before the wipe (not a vacuous pass)');
 
     // Wipe without the exact confirmation word is refused.
     {
@@ -124,6 +183,15 @@ async function run() {
       d.close();
     }
     console.log('PASS - no email, token or visitor hash remains in the database after the wipe');
+
+    // Dynamic schema scan: every table, every column the live schema
+    // actually has, not a hardcoded list — catches a future column holding
+    // personal data even if nobody updated this test by name.
+    {
+      const findings = scanForPersonalData(DB_PATH);
+      assert(findings.length === 0, `no email/IP/hash-shaped value remains anywhere in the schema after the wipe — found: ${findings.join('; ')}`);
+    }
+    console.log('PASS - a full schema scan (every table/column) finds no email-, IP- or hash-shaped value left after the wipe');
 
     // /work/:slug still resolves: title, artist, image and portfolio kept.
     {

@@ -2,8 +2,8 @@
 /*
  * The On View weekly open call has ended. POST /api/submit refuses every
  * new submission (410, before the upload middleware even runs, so no file
- * is written and no row is created), regardless of captcha/honeypot/rate
- * limit — those no longer matter since nothing gets past the closed check.
+ * is written and no row is created), regardless of honeypot/rate limit —
+ * those no longer matter since nothing gets past the closed check.
  * /on-view/submit and /submit/:token both redirect to the current open
  * call at /submit. /on-view and /work/:slug are untouched.
  */
@@ -62,8 +62,7 @@ async function run() {
 
     const before = workCount();
 
-    // A well-formed submission attempt, no honeypot, a captcha token present
-    // (HCAPTCHA_SECRET is unset so it would otherwise pass) — still refused.
+    // A well-formed submission attempt, no honeypot — still refused.
     {
       const form = new FormData();
       form.append('name', 'Closed Call Artist');
@@ -71,7 +70,6 @@ async function run() {
       form.append('portfolio', 'https://example.com');
       form.append('work_title', 'Closed Call Work');
       form.append('hp', '');
-      form.append('captcha', 'test-captcha-token');
       form.append('image', new Blob([Buffer.from([0])], { type: 'image/webp' }), 'test.webp');
       const r = await fetch(`${BASE}/api/submit`, { method: 'POST', body: form });
       const j = await r.json();
@@ -81,8 +79,8 @@ async function run() {
     assert(workCount() === before, 'no work row was created by the refused submission');
     console.log('PASS - POST /api/submit refuses every submission with 410 and creates no row');
 
-    // An honeypot-filled, captcha-less request is refused the same way,
-    // before any of that gating logic ever runs.
+    // An honeypot-filled request is refused the same way, before any of
+    // that gating logic ever runs.
     {
       const form = new FormData();
       form.append('name', 'Bot');
@@ -91,10 +89,10 @@ async function run() {
       form.append('work_title', 'Bot Work');
       form.append('hp', 'filled-in');
       const r = await fetch(`${BASE}/api/submit`, { method: 'POST', body: form });
-      assert(r.status === 410, `a honeypot-filled, captcha-less request is still refused with 410, not silently accepted — got ${r.status}`);
+      assert(r.status === 410, `a honeypot-filled request is still refused with 410, not silently accepted — got ${r.status}`);
     }
     assert(workCount() === before, 'still no work row after the second refused attempt');
-    console.log('PASS - the closed check runs before the honeypot/captcha gate, not after');
+    console.log('PASS - the closed check runs before the honeypot gate, not after');
 
     for (const p of ['/on-view/submit', '/on-view/submit/']) {
       const r = await fetch(`${BASE}${p}`, { redirect: 'manual' });
