@@ -257,24 +257,6 @@ function allowSubmit(ip) {
   return true;
 }
 
-// Caps how many /work/:slug requests from one IP can affect the view count,
-// independent of the 24h visitor-hash dedup (see "View counting" below) —
-// that dedup alone can't stop a script that sends a new User-Agent on every
-// request. Only gates the counting step: an IP over the limit still gets the
-// page normally, so a burst never turns into a blocked visitor.
-const workViewRequests = new Map();
-
-function allowWorkView(ip) {
-  const now    = Date.now();
-  const window = 60 * 1000;
-  const limit  = 20;
-  const hits   = (workViewRequests.get(ip) || []).filter(t => now - t < window);
-  if (hits.length >= limit) return false;
-  hits.push(now);
-  workViewRequests.set(ip, hits);
-  return true;
-}
-
 // ── Email ─────────────────────────────────────────────────────────────────────
 
 const resend = RESEND_KEY ? new Resend(RESEND_KEY) : null;
@@ -336,15 +318,11 @@ notifyClosedRounds();
 const closedRoundsInterval = setInterval(notifyClosedRounds, 60 * 60 * 1000);
 
 // ── View counting ────────────────────────────────────────────────────────────
-// A view counts once per visitor per work per 24h. "Visitor" is a salted hash
-// of IP + user-agent, checked against work_views — the raw IP is never stored.
-
-const VISITOR_HASH_SALT = process.env.VISITOR_HASH_SALT || '';
-if (!VISITOR_HASH_SALT) console.warn('[views] VISITOR_HASH_SALT not set — falling back to a fixed empty salt');
-
-function hashVisitor(ip, userAgent) {
-  return crypto.createHash('sha256').update(VISITOR_HASH_SALT + '|' + ip + '|' + userAgent).digest('hex');
-}
+// On View is closed and GET /work/:slug no longer writes to work_views or
+// increments view_count (see the route below) — nothing is recorded about a
+// visitor any more. work_views itself stays (so the admin wipe can still
+// clear out any rows left from before this change), and this cleanup keeps
+// draining it on the same rolling window until it's empty for good.
 
 // Rolling window, not tied to any weekly/round logic — that doesn't exist yet.
 function cleanupOldViews() {
@@ -918,48 +896,12 @@ function renderWorkPage(work, slug) {
     .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)} · Get Inspired Society</title>`);
 }
 
-// Known link-preview/OG-scraper user-agent substrings, checked case-insensitively.
-// Excluded from the view count only — they still get the page and its OG tags
-// normally, that's the whole point of them visiting. Fail-open: an unknown or
-// missing User-Agent still counts as a view.
-const SCRAPER_USER_AGENTS = [
-  'facebookexternalhit', // Facebook / Instagram — Meta's single crawler UA unfurls links for both
-  'twitterbot',          // X / Twitter (also matches Telegram's "TelegramBot (like TwitterBot)", which is fine — both should be excluded)
-  'whatsapp',            // WhatsApp
-  'linkedinbot',         // LinkedIn
-  'slackbot',            // Slack
-  'discordbot',          // Discord
-  'telegrambot',         // Telegram
-];
-
-function isScraperUserAgent(userAgent) {
-  if (!userAgent) return false;
-  const ua = userAgent.toLowerCase();
-  return SCRAPER_USER_AGENTS.some(s => ua.includes(s));
-}
-
 app.get('/work/:slug', (req, res) => {
   const row = db.prepare(
     "SELECT id,slug,title,artist,portfolio,image_url AS image,status FROM works WHERE slug=? AND review_status='approved'"
   ).get(req.params.slug);
-  // Known OG-preview scrapers are excluded so a shared link doesn't inflate
-  // the count before a single human has opened it. Real visits count once
-  // per visitor hash per 24h (see "View counting" above); the per-IP rate
-  // limiter there additionally caps a script that varies its User-Agent to
-  // dodge that dedup. Either way the page itself always renders normally.
-  if (row && !isScraperUserAgent(req.headers['user-agent'])) {
-    const ip = req.ip || req.socket.remoteAddress || '';
-    if (allowWorkView(ip)) {
-      const visitorHash = hashVisitor(ip, req.headers['user-agent'] || '');
-      const alreadyCounted = db.prepare(
-        "SELECT 1 FROM work_views WHERE work_id=? AND visitor_hash=? AND datetime(viewed_at, '+24 hours') > datetime('now') LIMIT 1"
-      ).get(row.id, visitorHash);
-      if (!alreadyCounted) {
-        db.prepare('INSERT INTO work_views (work_id, visitor_hash) VALUES (?,?)').run(row.id, visitorHash);
-        db.prepare('UPDATE works SET view_count = view_count + 1 WHERE id=?').run(row.id);
-      }
-    }
-  }
+  // On View is closed: a visit no longer records anything about the visitor
+  // (see "View counting" above). view_count stays at whatever it last was.
   res.send(renderWorkPage(row, req.params.slug));
 });
 

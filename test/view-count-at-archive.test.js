@@ -102,21 +102,19 @@ async function run() {
     }
     console.log('PASS - archiving a work freezes view_count_at_archive to its view_count at that moment');
 
-    // A visit to the now-archived work's still-reachable page increments the
-    // live view_count further, but must not move the frozen count.
+    // A visit to the now-archived work's still-reachable page no longer
+    // touches either counter — On View is closed, GET /work/:slug doesn't
+    // write anything about a visitor any more (see view-count.test.js).
     {
       const r = await fetch(`${BASE}/work/freeze-test-work`, { headers: { 'User-Agent': 'post-archive-visitor' } });
       assert(r.status === 200, 'archived work page still responds 200');
       const db2 = new Database(DB_PATH);
       const r1 = row(db2, 'freeze-test-work');
       db2.close();
-      // A pending/rejected/unknown-slug work never counts, but this one is
-      // still review_status='approved' (only its lifecycle status changed),
-      // so the visit does count.
-      assert(r1.view_count === 6, `a post-archive visit still increments the live view_count — got ${r1.view_count}`);
+      assert(r1.view_count === 5, `a post-archive visit leaves view_count untouched — got ${r1.view_count}`);
       assert(r1.view_count_at_archive === 5, `a post-archive visit does not change the frozen count — got ${r1.view_count_at_archive}`);
     }
-    console.log('PASS - a visit after archiving grows view_count but leaves view_count_at_archive untouched');
+    console.log('PASS - a visit after archiving no longer changes view_count or view_count_at_archive');
 
     child.kill();
     child = null;
